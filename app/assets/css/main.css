@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* optional: gridstack background */
+.grid-stack {
+  background: #f9fafb;
+}

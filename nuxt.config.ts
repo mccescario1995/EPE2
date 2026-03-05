@@ -1,0 +1,45 @@
+import tailwindcss from "@tailwindcss/vite";
+
+// https://nuxt.com/docs/api/configuration/nuxt-config
+export default defineNuxtConfig({
+  compatibilityDate: "2025-07-15",
+  devtools: { enabled: true },
+  ssr: false,
+  router: {
+    options: {
+      hashMode: true,
+    },
+  },
+  nitro: {
+    preset: "static",
+  },
+  modules: ["@pinia/nuxt"],
+  css: ["~/assets/css/main.css"],
+  plugins: ["~/plugins/pinia-persisted-state.ts"],
+  build: {
+    transpile: ["gridstack"],
+  },
+  vite: {
+    plugins: [tailwindcss()] as any,
+    esbuild: {
+      drop: process.env.NODE_ENV === "production" ? ["console"] : [],
+    },
+  },
+  runtimeConfig: {
+    public: {
+      liveApi: process.env.NUXT_PUBLIC_LIVE_API,
+      localApi: process.env.NUXT_PUBLIC_LOCAL_API,
+    },
+  },
+  app: {
+    /* head: {
+      link: [
+        { rel: "icon", type: "image/x-icon", href: "/tbs/favicon.ico" }, 
+        // Optional: for better browser support
+        { rel: "shortcut icon", href: "/tbs/favicon.ico" },
+      ],
+      title: "TBS",
+    }, */
+    baseURL: "/epe/",
+  },
+});
