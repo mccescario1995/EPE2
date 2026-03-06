@@ -47,7 +47,8 @@
       <span
         v-if="icon && !loading"
         class="transition-transform duration-300 group-hover:scale-110"
-        :class="iconPosition === 'right' ? 'order-2 ml-2' : 'mr-2'"
+        :class="iconPosition === 'right' ? 'order-2 ml-2' : iconPosition === 'center' ? 'mx-auto' : 'mr-2'"
+        
       >
         <component
           v-if="typeof icon === 'string' && iconComponents[getIconComponent(icon)]"
@@ -78,9 +79,6 @@
 
 <script setup>
 import { defineAsyncComponent } from "vue";
-import { useRouter } from "vue-router";
-
-const router = useRouter();
 
 const props = defineProps({
   variant: {
@@ -115,7 +113,7 @@ const props = defineProps({
   iconPosition: {
     type: String,
     default: "left",
-    validator: (value) => ["left", "right"].includes(value),
+    validator: (value) => ["left", "right", "center"].includes(value),
   },
   loading: {
     type: Boolean,
@@ -129,21 +127,12 @@ const props = defineProps({
     type: String,
     default: "",
   },
-  to: {
-    type: [String, Object],
-    default: null,
-  },
 });
 
 const emit = defineEmits(["onclick"]);
 
 const handleClick = (event) => {
   if (props.loading || props.disabled) return;
-  
-  // If 'to' prop is provided, navigate to the route
-  if (props.to) {
-    router.push(props.to);
-  }
   
   emit("onclick", event);
 };

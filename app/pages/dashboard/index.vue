@@ -137,13 +137,13 @@
 
       <!-- Dynamic Charts Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <template v-for="chart in selectedCharts" :key="chart.type">
+        <!-- <template v-for="chart in selectedCharts" :key="chart.type">
           <chart-container 
             :type="chart.type" 
             :data="getChartData(chart.type)" 
             :title="chart.title" 
           />
-        </template>
+        </template> -->
       </div>
     </main>
   </div>
