@@ -1,0 +1,6 @@
+@EPEAPI_HostAddress = http://localhost:7244
+
+GET {{EPEAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
