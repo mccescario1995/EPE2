@@ -1,23 +1,41 @@
-<script setup>
+<script setup lang="ts">
 const router = useRouter();
+
 import { IconView, IconEdit, IconDelete } from "#components";
 
-const viewProduct = (row) => console.log("View:", row);
-const editProduct = (row) => console.log("Edit:", row);
-const deleteProduct = (row) => console.log("Delete:", row);
+const loading = ref(false);
+const exemptionData = ref(null);
 
-const users = [
-  { id: 1, name: "John Doe", email: "john@example.com", role: "User" },
-  { id: 2, name: "Jane Smith", email: "jane@example.com", role: "Admin" },
-  { id: 3, name: "Bob Johnson", email: "bob@example.com", role: "User" },
-];
+const viewProduct = (row: any) => console.log("View:", row);
+const editProduct = (row: any) => console.log("Edit:", row);
+const deleteProduct = (row: any) => console.log("Delete:", row);
+
+const fetchExemptionRequests = async () => {
+  loading.value = true;
+  try {
+    const responseExemptions = await apiFetch("/api/exception", {
+      method: "POST",
+      parseJson: true,
+    });
+
+    exemptionData.value = responseExemptions.items;
+  } catch (error) {
+    console.error("Error fetching exemption requests:", error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+watchEffect(() => {
+  fetchExemptionRequests();
+});
 </script>
 
 <template>
   <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh">
     <header class="bg-white shadow">
       <div
-        class="max-w-7xl me-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-start items-center"
+        class="max-w-7xl me-auto py-6  sm:px-6 lg:px-8 flex justify-start items-center"
       >
         <Button
           variant="ghost-primary"
@@ -30,11 +48,49 @@ const users = [
         <h1 class="text-3xl ps-5 font-bold text-gray-900">My Requests</h1>
       </div>
     </header>
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <main class="max-w-7xl mx-auto py-6 sm:px-6">
       <!-- Exemption Requests List -->
-      <div class="mb-6 bg-white p-2 rounded-lg shadow">
+      <div class="mb-6 px-2 rounded-lg">
         <base-table
-          :table-data="users"
+          :table-data="exemptionData"
+          :header="[
+            'transactionId',
+            'transactionNumber',
+            'requesterName',
+            'corporate',
+            'policyName',
+            'status',
+            'createdDate',
+          ]"
+          :badge-fields="['status', 'finalDecision']"
+          :field-mappings="{
+            status: {
+              O: 'Open',
+              P: 'Pending Approval',
+              C: 'Completed',
+            },
+            finalDecision: {
+              Pending: 'Pending',
+              Approved: 'Approved',
+              Disapproved: 'Disapproved',
+            },
+          }"
+          :field-colors="{
+            status: {
+              O: 'bg-blue-100 text-blue-800',
+              P: 'bg-yellow-100 text-yellow-800',
+              C: 'bg-green-100 text-green-800',
+            },
+            finalDecision: {
+              Pending: 'bg-yellow-100 text-yellow-800',
+              Approved: 'bg-green-100 text-green-800',
+              Disapproved: 'bg-red-100 text-red-800',
+            },
+          }"
+          :date-fields="['createdDate']"
+          :pagination="true"
+          :per-page="1"
+          :show-search="true"
           :actions="[
             {
               label: IconView,

@@ -1,4 +1,4 @@
-<template>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <template>
   <!-- Global Search -->
   <div v-if="props.showSearch" class="flex mb-6">
     <div
@@ -693,10 +693,18 @@ watch([currentPage, globalSearch], () => {
 
 // Methods
 function formatHeader(headerKey: string): string {
-  return headerKey
+  // First, handle common acronyms and patterns
+  let result = headerKey
+    // Replace underscores with spaces
     .replace(/_/g, " ")
+    // Insert space before uppercase letters (camelCase handling)
     .replace(/([a-z])([A-Z])/g, "$1 $2")
+    // Handle consecutive lowercase letters followed by uppercase (e.g.,Policyname -> Policy name)
+    .replace(/([a-z]{2,})([A-Z])/g, "$1 $2")
+    // Capitalize first letter of each word
     .replace(/\b\w/g, (char) => char.toUpperCase());
+  
+  return result;
 }
 
 function formatValue(key: string, value: any): string {
