@@ -1,7 +1,6 @@
 ﻿using FastNetCoreLibrary;
 using System.Text;
 using EPEAPI.Models;
-using EPEAPI.TokenAuthentication;
 
 namespace EPEAPI.TokenAuthentication
 {
@@ -37,9 +36,7 @@ namespace EPEAPI.TokenAuthentication
                     IncPassword = PasswordEncryptor.HashPassword(password).ToString();
                 }
 
-                var verifyUser = _dbContext.CoreVUsers
-                         .FirstOrDefault(c => c.Username == username &&
-                                         c.Userpass == IncPassword);
+                var verifyUser = _dbContext.CoreVUsers.FirstOrDefault(c => c.Username == username && c.Userpass == IncPassword);
 
                 if (verifyUser != null)
                 {
@@ -63,8 +60,8 @@ namespace EPEAPI.TokenAuthentication
 
         public TokenList NewToken(string userId)
         {
-            var tokenExpireinHrs = Int32.Parse(tokenExpiry);
-            //var tokenExpireinHrs = 24;
+            //var tokenExpireinHrs = Int32.Parse(tokenExpiry);
+            var tokenExpireinHrs = 24;
 
             var token = new TokenList
             {

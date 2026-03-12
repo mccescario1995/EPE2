@@ -9,10 +9,10 @@ namespace EPEAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ExemptionController : ControllerBase
+    public class TokenController : ControllerBase
     {
         private readonly ITokenManager tokenManager;
-        public ExemptionController(ITokenManager tokenManager)
+        public TokenController(ITokenManager tokenManager)
         {
             this.tokenManager = tokenManager;
         }

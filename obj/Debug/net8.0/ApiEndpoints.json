@@ -52,9 +52,9 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "EPEAPI.Controllers.AuthenticateController",
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
     "Method": "GetExcemptionList",
-    "RelativePath": "api/Authenticate",
+    "RelativePath": "api/Exception",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -78,9 +78,9 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "EPEAPI.Controllers.AuthenticateController",
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
     "Method": "GetExcemptionListById",
-    "RelativePath": "api/Authenticate/{id}",
+    "RelativePath": "api/Exception/{id}",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -99,25 +99,56 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "EPEAPI.Controllers.AuthenticateController",
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
     "Method": "CreateExemptionRequest",
-    "RelativePath": "api/Authenticate/create",
+    "RelativePath": "api/Exception/create",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "request",
-        "Type": "EPEAPI.Models.EpeExemptionrequest",
+        "Type": "EPEAPI.Models.EpeTransactionheader",
         "IsRequired": true
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "EPEAPI.Controllers.ExemptionController",
+    "ContainingType": "EPEAPI.Controllers.PolicyController",
+    "Method": "GetPolicyList",
+    "RelativePath": "api/Policy",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EPEAPI.Controllers.PolicyController",
+    "Method": "GetPolicyApprover",
+    "RelativePath": "api/Policy/approvers/{policyId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "policyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "policyId",
+        "Type": "",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EPEAPI.Controllers.TokenController",
     "Method": "Get",
-    "RelativePath": "api/Exemption",
+    "RelativePath": "api/Token",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,

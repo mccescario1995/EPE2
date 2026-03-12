@@ -91,10 +91,10 @@
         }
       }
     },
-    "/api/Authenticate": {
+    "/api/Exception": {
       "post": {
         "tags": [
-          "Authenticate"
+          "Exception"
         ],
         "parameters": [
           {
@@ -130,10 +130,10 @@
         }
       }
     },
-    "/api/Authenticate/{id}": {
+    "/api/Exception/{id}": {
       "post": {
         "tags": [
-          "Authenticate"
+          "Exception"
         ],
         "parameters": [
           {
@@ -160,26 +160,26 @@
         }
       }
     },
-    "/api/Authenticate/create": {
+    "/api/Exception/create": {
       "post": {
         "tags": [
-          "Authenticate"
+          "Exception"
         ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EpeExemptionrequest"
+                "$ref": "#/components/schemas/EpeTransactionheader"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/EpeExemptionrequest"
+                "$ref": "#/components/schemas/EpeTransactionheader"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/EpeExemptionrequest"
+                "$ref": "#/components/schemas/EpeTransactionheader"
               }
             }
           }
@@ -191,10 +191,52 @@
         }
       }
     },
-    "/api/Exemption": {
+    "/api/Policy": {
+      "post": {
+        "tags": [
+          "Policy"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Policy/approvers/{policyId}": {
+      "post": {
+        "tags": [
+          "Policy"
+        ],
+        "parameters": [
+          {
+            "name": "policyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "policyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Token": {
       "get": {
         "tags": [
-          "Exemption"
+          "Token"
         ],
         "responses": {
           "200": {
@@ -206,42 +248,59 @@
   },
   "components": {
     "schemas": {
-      "EpeExemptionrequest": {
+      "EpeTransactionheader": {
         "type": "object",
         "properties": {
-          "id": {
+          "transactionid": {
             "type": "integer",
-            "format": "int32"
+            "format": "int64"
           },
-          "requesterid": {
-            "type": "integer",
-            "format": "int32"
+          "transactionnumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "requestorid": {
+            "type": "string",
+            "nullable": true
+          },
+          "corporate": {
+            "type": "string",
+            "nullable": true
           },
           "policyid": {
             "type": "integer",
             "format": "int32"
           },
-          "comment": {
+          "details": {
             "type": "string",
             "nullable": true
           },
           "status": {
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "nullable": true
+          },
+          "remarks": {
+            "type": "string",
+            "nullable": true
+          },
+          "finaldecision": {
+            "type": "string",
+            "nullable": true
           },
           "isdelete": {
             "type": "integer",
             "format": "int32"
           },
-          "createdbyuserid": {
+          "createdby": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
           },
           "createddate": {
             "type": "string",
             "format": "date-time"
           },
-          "modifiedbyuserid": {
+          "modifiedby": {
             "type": "integer",
             "format": "int32",
             "nullable": true
@@ -251,11 +310,15 @@
             "format": "date-time",
             "nullable": true
           },
-          "attachment": {
+          "workstation": {
             "type": "string",
             "nullable": true
           },
-          "transactionnumber": {
+          "ipaddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "macaddress": {
             "type": "string",
             "nullable": true
           }

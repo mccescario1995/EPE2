@@ -8,9 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("sql-cons");
 
-//builder.Services.AddDbContext<EpeDbContext>(options =>
-//    options.UseSqlServer(connectionString)
-//);
+builder.Services.AddDbContext<EpeDbContext>(options =>
+    options.UseSqlServer(connectionString)
+);
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

@@ -43,6 +43,8 @@ public partial class EpeDbContext : DbContext
 
     public virtual DbSet<EpeTransactionheader> EpeTransactionheaders { get; set; }
 
+    public virtual DbSet<EpeVTransactionHeader> EpeVTransactionHeaders { get; set; }
+
     public virtual DbSet<Token> Tokens { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -871,6 +873,56 @@ public partial class EpeDbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("workstation");
+        });
+
+        modelBuilder.Entity<EpeVTransactionHeader>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("epe_vTransactionHeader");
+
+            entity.Property(e => e.Corporate)
+                .HasMaxLength(5)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(104)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.Details).IsUnicode(false);
+            entity.Property(e => e.FinalDecision)
+                .HasMaxLength(15)
+                .IsUnicode(false);
+            entity.Property(e => e.IpAddress)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.MacAddress)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.ModifiedBy)
+                .HasMaxLength(104)
+                .IsUnicode(false);
+            entity.Property(e => e.ModifiedDate).HasColumnType("datetime");
+            entity.Property(e => e.PolicyName)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.Remark)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.RequesterId)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.RequesterName)
+                .HasMaxLength(108)
+                .IsUnicode(false);
+            entity.Property(e => e.Status)
+                .HasMaxLength(1)
+                .IsUnicode(false)
+                .IsFixedLength();
+            entity.Property(e => e.TransactionId).ValueGeneratedOnAdd();
+            entity.Property(e => e.TransactionNumber).IsUnicode(false);
+            entity.Property(e => e.Workstation)
+                .HasMaxLength(50)
+                .IsUnicode(false);
         });
 
         modelBuilder.Entity<Token>(entity =>

@@ -7,10 +7,10 @@ namespace EPEAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthenticateController : ControllerBase
+    public class ExceptionController : ControllerBase
     {
         private readonly EpeDbContext _context;
-        public AuthenticateController(EpeDbContext contextdb)
+        public ExceptionController(EpeDbContext contextdb)
         {
             _context = contextdb;
         }
@@ -25,21 +25,22 @@ namespace EPEAPI.Controllers
             try
             {
 
-                var query = _context.EpeExemptionrequests.Where(u => u.Isdelete == 0 && u.Status >= 1);
-
+                var query = _context.EpeVTransactionHeaders.Where(u => u.IsDelete == 0);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var searchWords = search.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
                     // Start with TRUE so we can AND each word
-                    var predicate = PredicateBuilder.New<EpeExemptionrequest>(true);
+                    var predicate = PredicateBuilder.New<EpeVTransactionHeader>(true);
                     foreach (var word in searchWords)
                     {
                         predicate = predicate.And(u =>
-                            u.Id.ToString().Contains(word) ||
-                            u.Transactionnumber.ToLower().Contains(word) ||
-                            u.Status.ToString().Contains(word) ||
-                            u.Policyid.ToString().Contains(word)
+                            u.TransactionId.ToString().Contains(word) ||
+                            u.TransactionNumber.ToString().ToLower().Contains(word) ||
+                            u.RequesterName.ToString().Contains(word) ||
+                            u.FinalDecision.ToString().Contains(word) ||
+                            u.PolicyName.ToString().Contains(word)
                         );
                     }
 
@@ -49,7 +50,7 @@ namespace EPEAPI.Controllers
                 var totalCount = await query.CountAsync();
 
                 var items = await query
-                    .OrderByDescending(u => u.Createddate)
+                    .OrderByDescending(u => u.CreatedDate)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
@@ -58,13 +59,7 @@ namespace EPEAPI.Controllers
                 {
                     success = true,
                     items = items,
-                    pagination = new
-                    {
-                        totalCount,
-                        currentPage = page,
-                        pageSize,
-                        totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
-                    },
+
                 });
             }
             catch (Exception e)
@@ -79,8 +74,8 @@ namespace EPEAPI.Controllers
         {
             try
             {
-                var item = await _context.EpeExemptionrequests
-                    .Where(u => u.Id == id && u.Isdelete == 0)
+                var item = await _context.EpeTransactionheaders
+                    .Where(u => u.Transactionid == id && u.Isdelete == 0)
                     .FirstOrDefaultAsync();
                 if (item == null)
                 {
@@ -96,15 +91,16 @@ namespace EPEAPI.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> CreateExemptionRequest([FromBody] EpeExemptionrequest request)
+        public async Task<IActionResult> CreateExemptionRequest([FromBody] EpeTransactionheader request)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                request.Createdbyuserid = request.Requesterid;
-                request.Transactionnumber = "EPE" + DateTime.UtcNow.Ticks;
+                var userId = HttpContext.Session.GetInt32("UserId");
+                request.Createdby = userId.HasValue ? userId.Value : 0;
                 request.Createddate = DateTime.UtcNow;
-                _context.EpeExemptionrequests.Add(request);
+                _context.EpeTransactionheaders.Add(request);
+                
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
