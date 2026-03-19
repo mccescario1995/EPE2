@@ -49,7 +49,8 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SameSite = SameSiteMode.None; // Changed to None for cross-origin
+    options.Cookie.Name = ".AspNetCore.Session";
 });
 
 //Token manager(optional now)

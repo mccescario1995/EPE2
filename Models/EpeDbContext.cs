@@ -43,6 +43,8 @@ public partial class EpeDbContext : DbContext
 
     public virtual DbSet<EpeTransactionheader> EpeTransactionheaders { get; set; }
 
+    public virtual DbSet<EpeVTransactionApprover> EpeVTransactionApprovers { get; set; }
+
     public virtual DbSet<EpeVTransactionHeader> EpeVTransactionHeaders { get; set; }
 
     public virtual DbSet<Token> Tokens { get; set; }
@@ -873,6 +875,38 @@ public partial class EpeDbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("workstation");
+        });
+
+        modelBuilder.Entity<EpeVTransactionApprover>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("epe_vTransactionApprover");
+
+            entity.Property(e => e.ApproverEmail)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.ApproverName)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.ApproverType)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.CreateDate).HasColumnType("datetime");
+            entity.Property(e => e.EmployeeId)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.IsDelete).HasColumnName("isDelete");
+            entity.Property(e => e.LastSendDate).HasColumnType("datetime");
+            entity.Property(e => e.PolicyApproverId)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.Remarks)
+                .HasMaxLength(250)
+                .IsUnicode(false);
+            entity.Property(e => e.RespondDate).HasColumnType("datetime");
+            entity.Property(e => e.SentDate).HasColumnType("datetime");
+            entity.Property(e => e.TransApproverId).ValueGeneratedOnAdd();
         });
 
         modelBuilder.Entity<EpeVTransactionHeader>(entity =>

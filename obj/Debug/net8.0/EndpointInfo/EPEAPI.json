@@ -130,7 +130,7 @@
         }
       }
     },
-    "/api/Exception/{id}": {
+    "/api/Exception/edit/{id}": {
       "post": {
         "tags": [
           "Exception"
@@ -160,10 +160,75 @@
         }
       }
     },
+    "/api/Exception/view/{id}": {
+      "post": {
+        "tags": [
+          "Exception"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Exception/create": {
       "post": {
         "tags": [
           "Exception"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EpeTransactionheader"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EpeTransactionheader"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/EpeTransactionheader"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Exception/{id}": {
+      "post": {
+        "tags": [
+          "Exception"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
         ],
         "requestBody": {
           "content": {
@@ -211,21 +276,33 @@
         "parameters": [
           {
             "name": "policyId",
-            "in": "query",
+            "in": "path",
+            "required": true,
             "schema": {
               "type": "integer",
               "format": "int32"
             }
-          },
-          {
-            "name": "policyId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproverRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproverRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproverRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -248,6 +325,16 @@
   },
   "components": {
     "schemas": {
+      "ApproverRequest": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "EpeTransactionheader": {
         "type": "object",
         "properties": {

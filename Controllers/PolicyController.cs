@@ -42,22 +42,68 @@ namespace EPEAPI.Controllers
         }
 
         [HttpPost("approvers/{policyId}")]
-        public async Task<IActionResult> GetPolicyApprover([FromQuery] int policyId)
+        public async Task<IActionResult> GetPolicyApprover(int policyId, ApproverRequest request)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var query = _context.EpePolicyapprovers.Where(a => a.Policyid == policyId).Where(u => u.Isdelete == 0);
+                var userId = request.UserId;
 
-                var items = await query
-                    .OrderByDescending(u => u.Createddate)
-                    .ToListAsync();
+                var empId = await _context.CoreVUsers
+                        .Where(u => u.UserId == userId)
+                        .FirstOrDefaultAsync();
+
+                if (empId == null)
+                {
+                    return BadRequest(new { success = false, message = "User not found", userId = request });
+                }
+
+                // Order by Linesequence first (determines approval level), then by Sort (breaks ties)
+                var items = await _context.EpePolicyapprovers.Where(a => a.Policyid == policyId && a.Isdelete == 0).OrderBy(u => u.Linesequence).ThenBy(u => u.Sort).ToListAsync();
+
+                var imHead = await _context.CoreVEmployeeDetails
+                        .Where(e => e.EmplId == empId.EmplId)
+                        .Select(e => new
+                        {
+                            e.ImmediateId,
+                            e.ImmediateName,
+                            e.ImmediateEmail
+                        })
+                        .FirstOrDefaultAsync();
+
+                if (items.Any() && imHead != null)
+                {
+                    items[0].Approverid = imHead.ImmediateId;
+                    items[0].Approvername = imHead.ImmediateName;
+                    items[0].Approveremail = imHead.ImmediateEmail;
+                }
+
+                // Add computed property to identify main approver vs proxy
+                // Linesequence = 1 means Main Approver, > 1 means Proxy
+                var itemsWithRole = items.Select(a => new
+                {
+                    a.Id,
+                    a.Policyid,
+                    a.Approverid,
+                    a.Approvername,
+                    a.Approveremail,
+                    a.Approvertype,
+                    a.Sort,
+                    a.Linesequence,
+                    a.Status,
+                    a.Isdelete,
+                    a.Createdby,
+                    a.Createddate,
+                    a.Modifiedby,
+                    a.Modifieddate,
+                    IsMainApprover = a.Linesequence == 1,
+                    ApproverRole = a.Linesequence == 1 ? "Main" : "Proxy"
+                }).ToList();
 
                 return Ok(new
                 {
                     success = true,
-                    items = items,
-
+                    items = itemsWithRole,
                 });
             }
             catch (Exception e)

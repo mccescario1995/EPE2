@@ -79,8 +79,45 @@
   },
   {
     "ContainingType": "EPEAPI.Controllers.ExceptionController",
-    "Method": "GetExcemptionListById",
+    "Method": "UpdateExemptionRequest",
     "RelativePath": "api/Exception/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "EPEAPI.Models.EpeTransactionheader",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
+    "Method": "CreateExemptionRequest",
+    "RelativePath": "api/Exception/create",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "EPEAPI.Models.EpeTransactionheader",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
+    "Method": "EditExcemptionListId",
+    "RelativePath": "api/Exception/edit/{id}",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -100,15 +137,15 @@
   },
   {
     "ContainingType": "EPEAPI.Controllers.ExceptionController",
-    "Method": "CreateExemptionRequest",
-    "RelativePath": "api/Exception/create",
+    "Method": "ViewExcemptionById",
+    "RelativePath": "api/Exception/view/{id}",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "EPEAPI.Models.EpeTransactionheader",
+        "Name": "id",
+        "Type": "System.Int32",
         "IsRequired": true
       }
     ],
@@ -135,11 +172,11 @@
       {
         "Name": "policyId",
         "Type": "System.Int32",
-        "IsRequired": false
+        "IsRequired": true
       },
       {
-        "Name": "policyId",
-        "Type": "",
+        "Name": "request",
+        "Type": "EPEAPI.Models.ApproverRequest",
         "IsRequired": true
       }
     ],
