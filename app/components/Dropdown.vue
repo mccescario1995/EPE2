@@ -119,6 +119,7 @@ const fetchItems = async (query = "") => {
     const fetchedItems = await props.fetchItems(query);
     items.value = fetchedItems;
     filteredItems.value = fetchedItems;
+    // filteredItems.value = fetchedItems;
   } catch (error) {
     console.error("Error fetching items:", error);
   } finally {
@@ -174,6 +175,14 @@ watch(isOpen, async (val) => {
     searchQuery.value = "";
   }
 });
+
+// Watch for initialItems prop changes
+watch(() => props.initialItems, (newItems) => {
+  if (newItems && newItems.length > 0) {
+    items.value = newItems;
+    filteredItems.value = newItems;
+  }
+}, { immediate: true });
 
 // ✅ Updated: handle objectOutput correctly
 const selectItem = (item: Item) => {

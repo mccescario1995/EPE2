@@ -27,9 +27,6 @@ export function useAuth() {
     accessToken.value = dataJson.stringParam1;
 
     //Store user data in Pinia store
-    console.log("Login successful, access token:", accessToken.value); // Debug log for access token
-    console.log("Login successful, user data:", dataJson.profile); // Adjust based on your API response structure
-
     userStore.setUser(dataJson.stringParam1, dataJson.profile); // Adjust based on your API response structure (old = dataJson.objectParam1 , new = dataJson.profile)
 
     return { status: "SUCCESS" };

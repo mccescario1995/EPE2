@@ -6,8 +6,12 @@ import { IconView, IconEdit, IconDelete } from "#components";
 const loading = ref(false);
 const exemptionData = ref(null);
 
-const viewProduct = (row: any) => console.log("View:", row);
-const editProduct = (row: any) => console.log("Edit:", row);
+const viewProduct = (row: any) => {
+  router.push(`/exemptions/view?id=${row.transactionId}`);
+};
+const editProduct = (row: any) => {
+  router.push(`/exemptions/edit?id=${row.transactionId}`);
+};
 const deleteProduct = (row: any) => console.log("Delete:", row);
 
 const fetchExemptionRequests = async () => {
@@ -17,7 +21,7 @@ const fetchExemptionRequests = async () => {
       method: "POST",
       parseJson: true,
     });
-
+console.log("Fetched exemption requests:", responseExemptions);
     exemptionData.value = responseExemptions.items;
   } catch (error) {
     console.error("Error fetching exemption requests:", error);
@@ -89,7 +93,7 @@ watchEffect(() => {
           }"
           :date-fields="['createdDate']"
           :pagination="true"
-          :per-page="1"
+          :per-page="10"
           :show-search="true"
           :actions="[
             {
@@ -100,13 +104,13 @@ watchEffect(() => {
             },
             {
               label: IconEdit,
-              tooltip: 'Edit Product',
+              tooltip: 'Edit Request',
               handler: editProduct,
               iconClass: 'text-blue-500',
             },
             {
               label: IconDelete,
-              tooltip: 'Delete Product',
+              tooltip: 'Delete Request',
               handler: deleteProduct,
               iconClass: 'text-red-500',
               disabled: (row) => row.status === 'published', // Optional disable logic

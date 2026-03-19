@@ -1,20 +1,17 @@
+import { user } from '../../composables/useAuth';
 <script setup lang="ts">
 const router = useRouter();
 const { showToast } = useToast();
+const userStore = useUserStore();
+
+const userId = userStore.profile;
 
 // Form data
 const formData = ref({
   policyid: null as number | { id: number; label: string } | null,
-  corporate: null as string | null,
+  corporate: null as { id: string; label: string } | null,
   details: "",
 });
-
-// Corporate options
-const corporateOptions = [
-  { id: "FS", label: "FS" },
-  { id: "FL", label: "FL" },
-  { id: "FTM", label: "FTM" },
-];
 
 // Policy options - will be fetched from API
 const policyOptions = ref<{ id: number; label: string }[]>([]);
@@ -22,9 +19,48 @@ const isLoadingPolicies = ref(false);
 
 // Approvers for selected policy
 const approvers = ref<
-  { id: number; approvername: string; approvertype: string; sort: number }[]
+  { id: number; approvername: string; approveremail: string; approvertype: string; sort: number; linesequence?: number; isMainApprover?: boolean; approverRole?: string }[]
 >([]);
 const isLoadingApprovers = ref(false);
+
+// Computed property to group main approvers with their proxies
+// Main approvers: linesequence = 1 (regardless of sort value)
+// Proxies: linesequence > 1, grouped under main approvers by matching sort values
+const groupedApprovers = computed(() => {
+  const mainApprovers: any[] = [];
+  const proxiesMap: Map<number, any[]> = new Map();
+  
+  approvers.value.forEach(approver => {
+    // Determine if approver is Main (linesequence === 1) or Proxy (linesequence > 1)
+    const isMain = approver.linesequence === 1;
+    const isIM = approver.approvertype === 'IM';
+    
+    if (isMain && !isIM) {
+      // This is a Main Approver (linesequence=1, not IM)
+      mainApprovers.push(approver);
+      proxiesMap.set(approver.id, []);
+    } else if (isIM) {
+      // This is IM - add to mainApprovers but with no proxies
+      mainApprovers.push(approver);
+      // Don't add to proxiesMap - IM won't have proxies
+    } else {
+      // This is a Proxy (linesequence > 1) - group under main approver by matching sort
+      const mainApprover = mainApprovers.find(m => m.sort === approver.sort && m.approvertype !== 'IM');
+      if (mainApprover) {
+        const proxies = proxiesMap.get(mainApprover.id) || [];
+        proxies.push(approver);
+        proxiesMap.set(mainApprover.id, proxies);
+      }
+    }
+  });
+  
+  return { mainApprovers, proxiesMap };
+});
+
+// Helper function to get proxies for a main approver
+const getProxies = (mainId: number): any[] => {
+  return groupedApprovers.value.proxiesMap.get(mainId) || [];
+};
 
 // Validation errors
 const errors = ref({
@@ -38,18 +74,27 @@ const isSubmitting = ref(false);
 // Fetch policies from API
 const fetchPolicies = async () => {
   isLoadingPolicies.value = true;
+
+  console.log("Fetching approvers for userId:", userId);
   try {
-    // TODO: Replace with actual API endpoint when available
     const response = await apiFetch("/api/policy", {
       method: "POST",
       parseJson: true,
     });
 
-    policyOptions.value = response.items.map((p: any) => ({
-      id: p.policyid,
-      label: p.description,
-    }));
+    // Handle both success response and direct items array
+    const items = response.success ? response.items : response;
 
+    if (!items || !Array.isArray(items)) {
+      console.error("Invalid response format:", items);
+      policyOptions.value = [];
+      return;
+    }
+
+    policyOptions.value = items.map((p: any) => ({
+      id: p.policyid,
+      label: p.description || p.label || `Policy ${p.policyid}`,
+    }));
   } catch (error) {
     console.error("Error fetching policies:", error);
     showToast({
@@ -58,6 +103,7 @@ const fetchPolicies = async () => {
       message: "Failed to load policies. Please try again.",
       duration: 5000,
     });
+    policyOptions.value = [];
   } finally {
     isLoadingPolicies.value = false;
   }
@@ -73,20 +119,37 @@ const fetchApprovers = async (policyId: number) => {
   isLoadingApprovers.value = true;
   try {
     const response = await apiFetch(`/api/policy/approvers/${policyId}`, {
-      method: 'POST',
-      parseJson: true
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ UserId: userId.userId }),
+      credentials: "include",
+      parseJson: true,
     });
 
-    if (response.success) {
-      approvers.value = response.items.map((a: any) => ({
-        id: a.id,
-        approvername: a.approvername,
-        approvertype: a.approvertype,
-        sort: a.sort
-      }));
+    const items = response.success ? response.items : response;
+    console.log("Approvers raw response:", items);
+    if (!items || !Array.isArray(items)) {
+      console.error("Invalid approvers response:", items);
+      approvers.value = [];
+      return;
     }
+
+    approvers.value = items.map((a: any) => ({
+      id: a.id,
+      approvername: a.approvername,
+      approveremail: a.approveremail,
+      approvertype: a.approvertype,
+      sort: a.sort,
+      linesequence: a.linesequence,
+      isMainApprover: a.isMainApprover,
+      approverRole: a.approverRole,
+    }));
+
+    console.log("Mapped approvers:", approvers.value);
   } catch (error) {
-    console.error('Error fetching approvers:', error);
+    console.error("Error fetching approvers:", error);
     approvers.value = [];
   } finally {
     isLoadingApprovers.value = false;
@@ -101,7 +164,9 @@ watch(
       newPolicyId && typeof newPolicyId === "object"
         ? newPolicyId.id
         : newPolicyId;
+    console.log("Selected policyId changed:", policyId);
     if (policyId) {
+      console.log("Fetching approvers for policyId:", policyId);
       fetchApprovers(policyId as number);
     } else {
       approvers.value = [];
@@ -133,6 +198,31 @@ const getPolicyId = () => {
   return policyId && typeof policyId === "object" ? policyId.id : policyId;
 };
 
+const parseWorkstation = (): string => {
+  const ua = navigator.userAgent;
+
+  const os = ua.includes("Windows NT 10.0") ? "Windows 10/11"
+    : ua.includes("Windows NT 6.1") ? "Windows 7"
+    : ua.includes("Mac") ? "MacOS"
+    : ua.includes("Linux") ? "Linux"
+    : ua.includes("Android") ? "Android"
+    : ua.includes("iPhone") ? "iOS"
+    : "Unknown OS";
+
+  const edgeMatch = ua.match(/Edg\/([\d]+)/);
+  const chromeMatch = ua.match(/Chrome\/([\d]+)/);
+  const firefoxMatch = ua.match(/Firefox\/([\d]+)/);
+  const safariMatch = ua.match(/Version\/([\d]+)/);
+
+  const browser = edgeMatch ? `Edge ${edgeMatch[1]}`
+    : chromeMatch ? `Chrome ${chromeMatch[1]}`
+    : firefoxMatch ? `Firefox ${firefoxMatch[1]}`
+    : safariMatch ? `Safari ${safariMatch[1]}`
+    : "Unknown Browser";
+
+  return `${os} / ${browser}`.substring(0, 50); 
+};
+
 // Submit form
 const handleSubmit = async () => {
   if (!validateForm()) return;
@@ -141,9 +231,15 @@ const handleSubmit = async () => {
   try {
     const payload = {
       policyid: getPolicyId(),
-      corporate: formData.value.corporate || null,
+      corporate: formData.value.corporate?.id || null,
       details: formData.value.details,
+      status: "O", // Open status
+      requestorid: userId.emplId.toString(),
+      createdby: userId.userId,
+      workstation: parseWorkstation(),
     };
+
+    console.log("Submitting exemption request with payload:", payload);
 
     const response = await apiFetch("/api/exception/create", {
       method: "POST",
@@ -152,8 +248,9 @@ const handleSubmit = async () => {
         "Content-Type": "application/json",
       },
     });
+    console.log("Create exemption response:", response);
 
-    if (response.success) {
+    if (response) {
       showToast({
         type: "success",
         title: "Success",
@@ -220,14 +317,13 @@ onMounted(() => {
           <!-- Policy Selection -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Policy <span class="text-red-500">*</span>
+              Policy To Override <span class="text-red-500">*</span>
             </label>
             <Dropdown
               v-model="formData.policyid"
-              :items="policyOptions"
+              :initialItems="policyOptions"
               placeholder="Select a policy"
               :disabled="isLoadingPolicies"
-              objectOutput
             />
             <p v-if="errors.policyid" class="mt-1 text-xs text-red-500">
               {{ errors.policyid }}
@@ -235,25 +331,25 @@ onMounted(() => {
           </div>
 
           <!-- Corporate Selection -->
-          <div>
+          <!-- <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Corporate
             </label>
             <Dropdown
               v-model="formData.corporate"
-              :items="corporateOptions"
+              :initialItems="corporateOptions"
               placeholder="Select corporate (optional)"
               :allowAdd="false"
             />
             <p class="mt-1 text-xs text-gray-500">
               Optional - Leave empty if not applicable
             </p>
-          </div>
+          </div> -->
 
           <!-- Details -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Details <span class="text-red-500">*</span>
+              Additional Comment/Detailed Info <span class="text-red-500">*</span>
             </label>
             <BaseInput
               v-model="formData.details"
@@ -301,38 +397,68 @@ onMounted(() => {
               v-else-if="approvers.length > 0"
               class="bg-gray-50 rounded-lg border border-gray-200 divide-y divide-gray-200"
             >
-              <div
-                v-for="(approver, index) in approvers"
-                :key="approver.id"
-                class="p-3 flex items-center justify-between"
-              >
-                <div class="flex items-center">
-                  <span
-                    class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium mr-3"
-                  >
-                    {{ index + 1 }}
-                  </span>
-                  <div>
-                    <p class="text-sm font-medium text-gray-900">
-                      {{ approver.approvername }}
-                    </p>
-                    <p class="text-xs text-gray-500">
-                      {{ approver.approvertype }}
-                    </p>
+              <template v-for="(approver, index) in groupedApprovers.mainApprovers" :key="approver.id">
+                <!-- Main Approver (numbered) -->
+                <div class="p-3 flex items-center justify-between">
+                  <div class="flex items-center">
+                    <span
+                      class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium mr-3"
+                    >
+                      {{ index + 1 }}
+                    </span>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">
+                        {{ approver.approvername }}
+                      </p>
+                      <p class="text-sm text-gray-500">
+                        {{ approver.approveremail }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span 
+                      v-if="approver.approverRole" 
+                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                      :class="{
+                        'bg-purple-100 text-purple-800': approver.linesequence === 1,
+                        'bg-orange-100 text-orange-800': approver.linesequence !== 1
+                      }"
+                    >
+                      {{ approver.approverRole }}
+                    </span>
                   </div>
                 </div>
-                <span
-                  class="px-2 py-1 text-xs font-medium rounded-full"
-                  :class="{
-                    'bg-purple-100 text-purple-800':
-                      approver.approvertype === 'Head',
-                    'bg-indigo-100 text-indigo-800':
-                      approver.approvertype === 'Manual',
-                  }"
+                
+                <!-- Proxies (indented bullet points) -->
+                <div 
+                  v-if="getProxies(approver.id).length > 0"
+                  class="bg-gray-100 pl-8 pr-3 py-2"
                 >
-                  {{ approver.approvertype }}
-                </span>
-              </div>
+                  <div 
+                    v-for="proxy in getProxies(approver.id)" 
+                    :key="proxy.id"
+                    class="flex items-center py-1"
+                  >
+                    <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                    <div class="flex-1 flex items-center justify-between">
+                      <div>
+                        <p class="text-sm text-gray-700">
+                          {{ proxy.approvername }}
+                        </p>
+                        <p class="text-xs text-gray-500">
+                          {{ proxy.approveremail }}
+                        </p>
+                      </div>
+                      <span 
+                        v-if="proxy.approverRole" 
+                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800"
+                      >
+                        {{ proxy.approverRole }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </template>
             </div>
             <div
               v-else
