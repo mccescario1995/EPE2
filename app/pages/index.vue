@@ -393,6 +393,15 @@ async function Login() {
 
     return;
   }
+
+  if (user.status === "SUCCESS") {
+    showToast({
+      title: "Login Successful",
+      message: "Welcome back!",
+      type: "success",
+    });
+  }
+
   router.push("/dashboard");
 }
 

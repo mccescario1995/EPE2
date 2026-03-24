@@ -103,7 +103,7 @@ const formatDate = (date: string | Date | null) => {
 const getStatusDisplay = (status: string) => {
   const statusMap: Record<string, string> = {
     O: "Open",
-    P: "Pending Approval",
+    P: "Pending", // Approval in progress (one or more approved, waiting for all)
     C: "Completed",
   };
   return statusMap[status] || status;
@@ -165,17 +165,15 @@ const groupedApprovers = computed(() => {
   approversData.value.forEach((approver) => {
     // Determine if approver is Main (linesequence === 1) or Proxy (linesequence > 1)
     const isMain = approver.lineSequence === 1;
-    const isIM = approver.approverType === 'IM';
-    
+    const isIM = approver.approverType === "IM";
+
     if (isMain) {
       // This is a Main Approver (linesequence=1) - add to main list and create proxy array
       mainApprovers.push(approver);
       proxiesMap.set(approver.transApproverId, []);
     } else {
       // This is a Proxy (linesequence > 1) - group under main approver by matching sort
-      const mainApprover = mainApprovers.find(
-        (m) => m.sort === approver.sort
-      );
+      const mainApprover = mainApprovers.find((m) => m.sort === approver.sort);
       if (mainApprover) {
         const proxies = proxiesMap.get(mainApprover.transApproverId) || [];
         proxies.push(approver);
@@ -193,6 +191,68 @@ const getProxies = (transApproverId: number): any[] => {
   return groupedApprovers.value.proxiesMap.get(transApproverId) || [];
 };
 
+// Get the current (active) approver's transApproverId - the first one in sequence who hasn't responded
+const currentApproverId = computed(() => {
+  const { mainApprovers, proxiesMap } = groupedApprovers.value;
+  
+  for (const approver of mainApprovers) {
+    // If main approver hasn't responded, they're the current approver
+    if (approver.respond === 0) {
+      return approver.transApproverId;
+    }
+    
+    // Check if proxies haven't responded
+    const proxies = proxiesMap.get(approver.transApproverId) || [];
+    for (const proxy of proxies) {
+      if (proxy.respond === 0) {
+        return proxy.transApproverId;
+      }
+    }
+  }
+  
+  return null;
+});
+
+// Resend notification to approver
+const isResending = ref<number | null>(null);
+const resendToApprover = async (transApproverId: number) => {
+  isResending.value = transApproverId;
+  try {
+    const response = await apiFetch(`/api/exception/resend/${exemptionId.value}`, {
+      method: "POST",
+      body: JSON.stringify({ transApproverId }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response && response.success) {
+      showToast({
+        type: "success",
+        title: "Success",
+        message: "Notification sent to approver successfully!",
+        duration: 5000,
+      });
+    } else {
+      showToast({
+        type: "error",
+        title: "Error",
+        message: response?.message || "Failed to resend notification",
+        duration: 5000,
+      });
+    }
+  } catch (error: any) {
+    console.error("Error resending notification:", error);
+    showToast({
+      type: "error",
+      title: "Error",
+      message: error.message || "An error occurred while resending notification",
+      duration: 5000,
+    });
+  } finally {
+    isResending.value = null;
+  }
+};
 </script>
 
 <template>
@@ -210,14 +270,12 @@ const getProxies = (transApproverId: number): any[] => {
             customClass="rounded-full"
             @onclick="handleBack"
           />
-          <h1 class="text-3xl ps-5 font-bold text-gray-900">Request Details</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900">Request Details</h1>
         </div>
         <Button
           v-if="exemptionData"
           variant="primary"
-          size="lg"
-          icon="edit"
-          iconPosition="left"
+          size="md"
           @onclick="handleEdit"
         >
           Edit Request
@@ -263,7 +321,7 @@ const getProxies = (transApproverId: number): any[] => {
                 class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
               >
                 <div class="flex justify-between items-center">
-                  <h2>Transaction Information</h2>
+                  <h2>Request Information</h2>
                   <div>
                     <span
                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
@@ -284,31 +342,13 @@ const getProxies = (transApproverId: number): any[] => {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label class="block text-sm font-medium text-gray-500 mb-1">
-                    Transaction ID
-                  </label>
-                  <p class="text-gray-900 font-medium">
-                    {{ exemptionData.transactionId }}
-                  </p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
                     Transaction Number
                   </label>
                   <p class="text-gray-900 font-medium">
                     {{ exemptionData.transactionNumber || "N/A" }}
                   </p>
                 </div>
-              </div>
-            </div>
 
-            <!-- Requester Info -->
-            <div class="mb-8">
-              <h2
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
-              >
-                Requester Information
-              </h2>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label class="block text-sm font-medium text-gray-500 mb-1">
                     Requestor Name
@@ -317,24 +357,37 @@ const getProxies = (transApproverId: number): any[] => {
                     {{ exemptionData.requesterName || "N/A" }}
                   </p>
                 </div>
-                <div>
+              </div>
+            </div>
+
+            <div class="mb-8">
+              <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
                   <label class="block text-sm font-medium text-gray-500 mb-1">
-                    Corporate
+                    Created Date
                   </label>
                   <p class="text-gray-900">
-                    {{ exemptionData.corporate || "N/A" }}
+                    {{ formatDate(exemptionData.createdDate) }}
                   </p>
+                </div>
+
+                  <div>
+                    <!-- <div v-if="exemptionData.modifiedDate"> -->
+                    <label class="block text-sm font-medium text-gray-500 mb-1">
+                      Modified Date
+                    </label>
+                    <p class="text-gray-900">
+                    <!-- {{ formatDate(exemptionData.createdDate) }} -->
+                       {{ formatDate(exemptionData.createdDate) }}
+                  </p>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Policy & Details -->
             <div class="mb-8">
-              <h2
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
-              >
-                Request Details
-              </h2>
               <div class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -346,7 +399,7 @@ const getProxies = (transApproverId: number): any[] => {
                     </p>
                   </div>
 
-                  <div>
+                  <!-- <div>
                     <label class="block text-sm font-medium text-gray-500 mb-1">
                       Request Status
                     </label>
@@ -361,15 +414,15 @@ const getProxies = (transApproverId: number): any[] => {
                           exemptionData.finalDecision === 'Disapproved',
                       }"
                     >
-                      {{ getFinalDecisionDisplay(exemptionData.finalDecision) }}
+                      
                     </span>
-                  </div>
+                  </div> -->
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-500 mb-1">
                     Details
                   </label>
-                  <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 h-[100px]">
                     <p class="text-gray-900 whitespace-pre-wrap">
                       {{ exemptionData.details || "No details provided" }}
                     </p>
@@ -384,11 +437,31 @@ const getProxies = (transApproverId: number): any[] => {
           >
             <!-- Approvers -->
             <div class="mb-8">
-              <h2
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
-              >
+              <div class="border-b flex justify-between mb-4">
+
+                <h2
+                class="text-xl font-semibold text-gray-800 mb-2 "
+                >
                 Approvers Status
               </h2>
+              <div>
+                  <span
+                    v-if="exemptionData.finalDecision"
+                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                    :class="{
+                      'bg-yellow-100 text-yellow-800':
+                        exemptionData.finalDecision === 'Pending',
+                      'bg-green-100 text-green-800':
+                        exemptionData.finalDecision === 'Approved',
+                      'bg-red-100 text-red-800':
+                        exemptionData.finalDecision === 'Disapproved',
+                    }"
+                  >
+                    {{ getFinalDecisionDisplay(exemptionData.finalDecision) }}
+                  </span>
+                </div>
+            </div>
+
               <div
                 v-if="approversData && approversData.length > 0"
                 class="space-y-4"
@@ -428,12 +501,73 @@ const getProxies = (transApproverId: number): any[] => {
                         </div>
                       </div>
                       <!-- Approver status badge (Pending/Approved/Disapproved) -->
-                      <span
-                        class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                        :class="getApproverStatusColor(approver.respond)"
-                      >
-                        {{ getApproverStatusDisplay(approver.respond) }}
-                      </span>
+                      <div class="flex flex-col items-end gap-1">
+                        <span
+                          class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                          :class="getApproverStatusColor(approver.respond)"
+                        >
+                          {{ getApproverStatusDisplay(approver.respond) }}
+                        </span>
+                        <!-- Decision badge for decided approvers -->
+                        <span
+                          v-if="approver.respond === 1"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-200 text-green-800"
+                        >
+                          Approved
+                        </span>
+                        <span
+                          v-if="approver.respond === 2"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-200 text-red-800"
+                        >
+                          Disapproved
+                        </span>
+                        <!-- Resend button only for current pending approver -->
+                        <button
+                          v-if="approver.respond === 0 && approver.transApproverId === currentApproverId"
+                          @click="resendToApprover(approver.transApproverId)"
+                          :disabled="isResending === approver.transApproverId"
+                          class="flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
+                          title="Resend notification to approver"
+                        >
+                          <svg
+                            v-if="isResending === approver.transApproverId"
+                            class="animate-spin h-3 w-3 mr-1"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              class="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              stroke-width="4"
+                            ></circle>
+                            <path
+                              class="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          <svg
+                            v-else
+                            class="h-3 w-3 mr-1"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            />
+                          </svg>
+                          Resend
+                        </button>
+                      </div>
                     </div>
                     <!-- <div v-if="approver.responddate" class="mt-2">
                       <p class="text-xs text-gray-500">Response Date: <span class="text-gray-700">{{ formatDate(approver.responddate) }}</span></p>
@@ -443,56 +577,109 @@ const getProxies = (transApproverId: number): any[] => {
                       <p class="text-gray-700 text-sm">{{ approver.remarks }}</p>
                     </div> -->
 
-
-<div 
-                    v-if="getProxies(approver.transApproverId).length > 0"
-                    class="ml-8" 
-                  >
-                    <!-- Loop through proxy approvers for this main approver -->
                     <div
-                      v-for="proxy in getProxies(approver.transApproverId)"
-                      :key="proxy.transApproverId"
-                      class="flex items-start justify-between py-2 border-b border-gray-200 last:border-0"
+                      v-if="getProxies(approver.transApproverId).length > 0"
+                      class="ml-8"
                     >
-                      <div class="flex items-start">
-                        <span
-                          class="w-2 h-2 rounded-full bg-blue-400 mt-1.5"
-                        ></span>
-                        <!-- <span class="font-bold">></span> -->
-                        <div class="ps-3">
-                          
-                          <p class="text-sm text-gray-700">
-                            {{ proxy.approverName }}
-                          </p>
-                          <p class="text-xs text-gray-500">
-                            {{ proxy.approverEmail || "" }}
-                          </p>
+                      <!-- Loop through proxy approvers for this main approver -->
+                      <div
+                        v-for="proxy in getProxies(approver.transApproverId)"
+                        :key="proxy.transApproverId"
+                        class="flex items-start justify-between py-2 border-b border-gray-200 last:border-0"
+                      >
+                        <div class="flex items-start">
                           <span
-                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 mb-1"
-                          >
-                            {{ proxy.approverRole }}
-                          </span>
+                            class="w-2 h-2 rounded-full bg-blue-400 mt-1.5"
+                          ></span>
+                          <!-- <span class="font-bold">></span> -->
+                          <div class="ps-3">
+                            <p class="text-sm text-gray-700">
+                              {{ proxy.approverName }}
+                            </p>
+                            <p class="text-xs text-gray-500">
+                              {{ proxy.approverEmail || "" }}
+                            </p>
+                            <span
+                              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 mb-1"
+                            >
+                              {{ proxy.approverRole }}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <div class="flex flex-col items-end">
-                        <!-- Proxy approver status badge -->
-                        <span
-                          class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                          :class="getApproverStatusColor(proxy.respond)"
-                        >
-                          {{ getApproverStatusDisplay(proxy.respond) }}
-                        </span>
+                        <div class="flex flex-col items-end gap-1">
+                          <!-- Proxy approver status badge -->
+                          <span
+                            class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                            :class="getApproverStatusColor(proxy.respond)"
+                          >
+                            {{ getApproverStatusDisplay(proxy.respond) }}
+                          </span>
+                          <!-- Decision badge for decided proxy approvers -->
+                          <span
+                            v-if="proxy.respond === 1"
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-200 text-green-800"
+                          >
+                            Approved
+                          </span>
+                          <span
+                            v-if="proxy.respond === 2"
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-200 text-red-800"
+                          >
+                            Disapproved
+                          </span>
+                          <!-- Resend button only for current pending proxy -->
+                          <button
+                            v-if="proxy.respond === 0 && proxy.transApproverId === currentApproverId"
+                            @click="resendToApprover(proxy.transApproverId)"
+                            :disabled="isResending === proxy.transApproverId"
+                            class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
+                            title="Resend notification to proxy"
+                          >
+                            <svg
+                              v-if="isResending === proxy.transApproverId"
+                              class="animate-spin h-3 w-3 mr-1"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                              ></circle>
+                              <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                            <svg
+                              v-else
+                              class="h-3 w-3 mr-1"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                              />
+                            </svg>
+                            Resend
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-
-
-
-                  </div>
-                  
                 </template>
               </div>
-              <div v-else class="text-gray-500 text-sm">
+              <div v-else class="text-gray-500 text-sm flex items-center justify-center h-24">
                 No approvers assigned yet.
               </div>
             </div>
@@ -510,61 +697,8 @@ const getProxies = (transApproverId: number): any[] => {
                 </p>
               </div>
             </div>
-
-            <!-- Timestamps -->
-            <div class="mb-8">
-              <h2
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
-              >
-                Audit Trail
-              </h2>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    Created Date
-                  </label>
-                  <p class="text-gray-900">
-                    {{ formatDate(exemptionData.createdDate) }}
-                  </p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    Modified Date
-                  </label>
-                  <p class="text-gray-900">
-                    {{ formatDate(exemptionData.modifiedDate) }}
-                  </p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    Workstation
-                  </label>
-                  <p class="text-gray-900">
-                    {{ exemptionData.workstation || "N/A" }}
-                  </p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    IP Address
-                  </label>
-                  <p class="text-gray-900">
-                    {{ exemptionData.ipAddress || "N/A" }}
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
-
-        <!-- Action Buttons -->
-        <!-- <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
-          <Button variant="outline-primary" size="lg" @onclick="handleBack">
-            Back to List
-          </Button>
-          <Button variant="primary" size="lg" @onclick="handleEdit">
-            Edit Request
-          </Button>
-        </div> -->
       </div>
 
       <!-- Not Found State -->

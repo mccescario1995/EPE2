@@ -15,6 +15,7 @@
       <component
         :is="isTextarea ? 'textarea' : 'input'"
         v-model="innerValue"
+        :value="innerValue"
         :id="id"
         :type="!isTextarea ? inputType : undefined"
         :rows="isTextarea ? rowCount : undefined"
@@ -151,7 +152,8 @@ watch(
   () => props.modelValue,
   (newVal) => {
     innerValue.value = newVal;
-  }
+  },
+  { immediate: true }
 );
 
 const handleInput = (event: Event) => {
