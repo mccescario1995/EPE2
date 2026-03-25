@@ -58,7 +58,6 @@ namespace EPEAPI.Controllers
                     return BadRequest(new { success = false, message = "User not found", userId = request });
                 }
 
-                // Order by Linesequence first (determines approval level), then by Sort (breaks ties)
                 var items = await _context.EpePolicyapprovers.Where(a => a.Policyid == policyId && a.Isdelete == 0).OrderBy(u => u.Linesequence).ThenBy(u => u.Sort).ToListAsync();
 
                 var imHead = await _context.CoreVEmployeeDetails
@@ -78,8 +77,6 @@ namespace EPEAPI.Controllers
                     items[0].Approveremail = imHead.ImmediateEmail;
                 }
 
-                // Add computed property to identify main approver vs proxy
-                // Linesequence = 1 means Main Approver, > 1 means Proxy
                 var itemsWithRole = items.Select(a => new
                 {
                     a.Id,

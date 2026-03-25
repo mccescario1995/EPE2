@@ -79,27 +79,6 @@
   },
   {
     "ContainingType": "EPEAPI.Controllers.ExceptionController",
-    "Method": "UpdateExemptionRequest",
-    "RelativePath": "api/Exception/{id}",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "request",
-        "Type": "EPEAPI.Models.EpeTransactionheader",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "EPEAPI.Controllers.ExceptionController",
     "Method": "CreateExemptionRequest",
     "RelativePath": "api/Exception/create",
     "HttpMethod": "POST",
@@ -116,6 +95,27 @@
   },
   {
     "ContainingType": "EPEAPI.Controllers.ExceptionController",
+    "Method": "DeleteExemptionRequest",
+    "RelativePath": "api/Exception/delete/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "EPEAPI.Models.ApproverRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
     "Method": "EditExcemptionListId",
     "RelativePath": "api/Exception/edit/{id}",
     "HttpMethod": "POST",
@@ -125,11 +125,64 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": false
-      },
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
+    "Method": "ResendApprovalRequestEmail",
+    "RelativePath": "api/Exception/resend/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
       {
         "Name": "id",
-        "Type": "",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "EPEAPI.Dto.ResendRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
+    "Method": "RespondToApproval",
+    "RelativePath": "api/Exception/respond",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "EPEAPI.Models.ApproverResponseRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
+    "Method": "UpdateExemptionRequest",
+    "RelativePath": "api/Exception/update/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "EPEAPI.Models.EpeTransactionheader",
         "IsRequired": true
       }
     ],

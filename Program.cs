@@ -1,4 +1,5 @@
 using EPEAPI.Models;
+using EPEAPI.Services;
 using EPEAPI.TokenAuthentication;
 using Microsoft.EntityFrameworkCore;
 
@@ -55,6 +56,10 @@ builder.Services.AddSession(options =>
 
 //Token manager(optional now)
 builder.Services.AddScoped<ITokenManager, TokenManager>();
+
+// Email Notification Service
+builder.Services.AddHttpClient<EmailNotificationService>();
+builder.Services.AddScoped<EmailNotificationService>();
 
 var app = builder.Build();
 
