@@ -48,8 +48,6 @@ const deleteRequest = async () => {
       },
       // parseJson: true,
     });
-
-    console.log("Delete response:", response);
     
     if (response) {
       showDeleteConfirm.value = false;
@@ -82,7 +80,6 @@ const fetchExemptionRequests = async () => {
       method: "POST",
       parseJson: true,
     });
-console.log("Fetched exemption requests:", responseExemptions);
     exemptionData.value = responseExemptions.items;
   } catch (error) {
     console.error("Error fetching exemption requests:", error);

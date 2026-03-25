@@ -75,7 +75,6 @@ const isSubmitting = ref(false);
 const fetchPolicies = async () => {
   isLoadingPolicies.value = true;
 
-  console.log("Fetching approvers for userId:", userId);
   try {
     const response = await apiFetch("/api/policy", {
       method: "POST",
@@ -129,7 +128,6 @@ const fetchApprovers = async (policyId: number) => {
     });
 
     const items = response.success ? response.items : response;
-    console.log("Approvers raw response:", items);
     if (!items || !Array.isArray(items)) {
       console.error("Invalid approvers response:", items);
       approvers.value = [];
@@ -147,7 +145,6 @@ const fetchApprovers = async (policyId: number) => {
       approverRole: a.approverRole,
     }));
 
-    console.log("Mapped approvers:", approvers.value);
   } catch (error) {
     console.error("Error fetching approvers:", error);
     approvers.value = [];
@@ -164,9 +161,7 @@ watch(
       newPolicyId && typeof newPolicyId === "object"
         ? newPolicyId.id
         : newPolicyId;
-    console.log("Selected policyId changed:", policyId);
     if (policyId) {
-      console.log("Fetching approvers for policyId:", policyId);
       fetchApprovers(policyId as number);
     } else {
       approvers.value = [];
@@ -185,12 +180,19 @@ const validateForm = () => {
   }
 
   if (!formData.value.details || formData.value.details.trim().length < 10) {
-    errors.value.details = "Please provide details (minimum 10 characters)";
+    errors.value.details = "Please provide details (minimum 10 characters). Please explain the reason for your exemption request.";
     isValid = false;
   }
 
   return isValid;
 };
+
+// Computed property to check if form is valid
+const isFormValid = computed(() => {
+  return !!formData.value.policyid && 
+         !!formData.value.details && 
+         formData.value.details.trim().length >= 10;
+});
 
 // Get policy ID from form data (handles both object and number)
 const getPolicyId = () => {
@@ -225,7 +227,9 @@ const parseWorkstation = (): string => {
 
 // Submit form
 const handleSubmit = async () => {
-  if (!validateForm()) return;
+  if (!validateForm()) {
+    return;
+  }
 
   isSubmitting.value = true;
   try {
@@ -239,8 +243,6 @@ const handleSubmit = async () => {
       workstation: parseWorkstation(),
     };
 
-    console.log("Submitting exemption request with payload:", payload);
-
     const response = await apiFetch("/api/exception/create", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -248,7 +250,6 @@ const handleSubmit = async () => {
         "Content-Type": "application/json",
       },
     });
-    console.log("Create exemption response:", response);
 
     if (response) {
       showToast({
@@ -357,7 +358,7 @@ onMounted(() => {
               isTextarea
               :rowCount="5"
               placeholder="Explain the reason for your exemption request..."
-              :errorMessage="errors.details"
+              :error="errors.details"
               :maxCharCount="1000"
             />
           </div>
@@ -483,6 +484,7 @@ onMounted(() => {
               size="lg"
               type="submit"
               :loading="isSubmitting"
+              :disabled="!isFormValid"
             >
               Submit Request
             </Button>

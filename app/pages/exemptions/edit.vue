@@ -98,14 +98,11 @@ const fetchPolicyName = async (policyId: number) => {
     });
     const items = response.success ? response.items : response;
 
-    console.log("Fetched policies for name lookup:", items);
     if (items) {
       const policy = items.find((p: any) => p.policyid === policyId);
 
-      console.log(`Looking for policy ID ${policy.policyid}, found:`, policy.description);
       if (policy) {
         policyName.value = policy.description || `Policy ${policyId}`;
-        console.log("Policy name set to:", policyName.value);
       }
     }
 
@@ -128,8 +125,6 @@ const fetchExemptionDetails = async () => {
     return;
   }
 
-  console.log("Fetching details for exemption ID:", exemptionId.value);
-
   isLoading.value = true;
   try {
     const response = await apiFetch(
@@ -140,11 +135,8 @@ const fetchExemptionDetails = async () => {
       },
     );
 
-    console.log("Fetched exemption edit details:", response);
-
     if (response) {
       const item = response.item;
-      console.log("1. Exemption item details:", item);
 
       // Set form data
       formData.value.policyId = item.policyId;
@@ -173,28 +165,17 @@ const fetchExemptionDetails = async () => {
         ipAddress: item.ipAddress,
       };
 
-      console.log("2. Exemption details set to:", exemptionDetails.value);
-
       // Set approvers data
-      console.log("Setting approvers data:", response.approvers);
       approversData.value = response.approvers || [];
-
-      console.log("Approvers data set to:", approversData.value);
 
 
 
       // If there's a policy ID, fetch the policy name
       if (item.policyId) {
         var policyName = await fetchPolicyName(item.policyId);
-        console.log("3. Fetching policy name for policy ID:", item.policyId);
-        console.log("4. Policy name set to:", policyName);
-        // console.log("5. Current policy name value:", policyName.value);
       }
 
       policyValue.value = { id: item.policyId, label: policyName|| `Policy ${item.policyId}` };
-
-      console.log("Form data set to:", formData.value);
-      console.log("Original data for comparison:", originalData.value);
     } else {
       showToast({
         type: "error",
@@ -254,7 +235,6 @@ const validateForm = () => {
 // Get policy ID from form data (handles both object and number)
 const getPolicyId = () => {
   const policyId = formData.value.policyId;
-  console.log("Getting policy ID from form data:", policyId);
   return policyId && typeof policyId === "object" ? policyId : policyId;
 };
 
@@ -301,8 +281,6 @@ const handleSubmit = async () => {
       modifiedby: userId.userId,
     };
 
-    console.log("Updating exemption request with payload:", payload);
-
     const response = await apiFetch(`/api/exception/${exemptionId.value}`, {
       method: "PUT",
       body: JSON.stringify(payload),
@@ -310,7 +288,6 @@ const handleSubmit = async () => {
         "Content-Type": "application/json",
       },
     });
-    console.log("Update exemption response:", response);
 
     if (response && response.success) {
       showToast({
@@ -407,7 +384,7 @@ const resendToApprover = async (transApproverId: number) => {
       },
     });
 
-    if (response && response.success) {
+    if (response) {
       showToast({
         type: "success",
         title: "Success",
@@ -578,8 +555,8 @@ onMounted(() => {
             </div>
             <div class="ml-3">
               <p class="text-sm text-blue-700">
-                Note: Status and Final Decision cannot be edited. These are
-                managed by approvers.
+                Note: Request Status and Approver Status cannot be edited. These are
+                managed automatically.
               </p>
             </div>
           </div>

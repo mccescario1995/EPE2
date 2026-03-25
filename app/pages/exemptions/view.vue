@@ -36,8 +36,6 @@ const fetchExemptionDetails = async () => {
       },
     );
 
-    console.log("Fetched exemption view details:", response);
-
     if (response.success) {
       exemptionData.value = response.item;
       approversData.value = response.approvers || [];
@@ -45,8 +43,6 @@ const fetchExemptionDetails = async () => {
       if (response.item.policyid) {
         fetchPolicyName(response.item.policyid);
       }
-
-      console.log("Approvers data set:", approversData.value);
     } else {
       showToast({
         type: "error",
@@ -226,7 +222,7 @@ const resendToApprover = async (transApproverId: number) => {
       },
     });
 
-    if (response && response.success) {
+    if (response) {
       showToast({
         type: "success",
         title: "Success",
