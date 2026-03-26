@@ -516,9 +516,9 @@ namespace EPEAPI.Controllers
                     var currentSequence = currentApprover.Linesequence;
                     var currentSort = currentApprover.Sort;
 
-                    // Auto-approve group (same Sort + Linesequence)
+                    // Same Sort regardless of Linesequence = same group (main + proxy)
                     var approversInGroup = allApprovers
-                        .Where(a => a.Sort == currentSort && a.Linesequence == currentSequence && a.Respond == 0)
+                        .Where(a => a.Sort == currentSort && a.Respond == 0)
                         .ToList();
 
                     if (approversInGroup.Any())
@@ -533,8 +533,27 @@ namespace EPEAPI.Controllers
                             );
                     }
 
-                    var nextApprovers = allApprovers
-                        .Where(a => a.Linesequence > currentSequence)
+                    // ✅ Next sequence = any Linesequence that is NOT in the current group's sequences
+                    //    Reload after auto-approve to get fresh state
+                    var updatedApprovers = await _context.EpeTransactionapprovers
+                        .Where(a => a.Transactionid == request.TransactionId && a.Isdelete == 0)
+                        .OrderBy(a => a.Linesequence)
+                        .ThenBy(a => a.Sort)
+                        .ToListAsync();
+
+                    // Sequences occupied by the current sort group
+                    var currentGroupSequences = allApprovers
+                        .Where(a => a.Sort == currentSort)
+                        .Select(a => a.Linesequence)
+                        .Distinct()
+                        .ToHashSet();
+
+                    // Next approvers = those whose Linesequence is NOT part of current group
+                    // AND have a higher Linesequence than the current approver
+                    var nextApprovers = updatedApprovers
+                        .Where(a => !currentGroupSequences.Contains(a.Linesequence)
+                                && a.Linesequence > currentSequence
+                                && a.Respond == 0)
                         .ToList();
 
                     if (nextApprovers.Any())
@@ -588,7 +607,7 @@ namespace EPEAPI.Controllers
                     }
                     else
                     {
-                        // ✅ No more approvers → fully approved
+                        // No pending approvers outside this group → fully approved
                         await _context.EpeTransactionheaders
                             .Where(h => h.Transactionid == request.TransactionId)
                             .ExecuteUpdateAsync(b => b
