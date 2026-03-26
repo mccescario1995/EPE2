@@ -335,7 +335,7 @@ const formatDate = (date: string | Date | null) => {
 const getStatusDisplay = (status: string) => {
   const statusMap: Record<string, string> = {
     O: "Open",
-    P: "Pending", // Approval in progress (one or more approved, waiting for all)
+    P: "Open", // Approval in progress (one or more approved, waiting for all)
     C: "Completed",
   };
   return statusMap[status] || status;
@@ -594,9 +594,7 @@ onMounted(() => {
                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                       :class="{
                         'bg-blue-100 text-blue-800':
-                          exemptionDetails.status === 'O',
-                        'bg-yellow-100 text-yellow-800':
-                          exemptionDetails.status === 'P',
+                          exemptionDetails.status === 'O' || exemptionDetails.status === 'P',
                         'bg-green-100 text-green-800':
                           exemptionDetails.status === 'C',
                       }"
@@ -745,18 +743,18 @@ onMounted(() => {
                           {{ getApproverStatusDisplay(approver.respond) }}
                         </span>
                         <!-- Decision badge for decided approvers -->
-                        <span
+                        <!-- <span
                           v-if="approver.respond === 1"
                           class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-200 text-green-800"
                         >
                           Approved
-                        </span>
-                        <span
+                        </span> -->
+                        <!-- <span
                           v-if="approver.respond === 2"
                           class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-200 text-red-800"
                         >
-                          Disapproved
-                        </span>
+                          Disapproved -->
+                        <!-- </span> -->
                         <!-- Resend button only for current pending approver (and not satisfied by group) -->
                         <button
                           v-if="approver.respond === 0 && approver.transApproverId === currentApproverId && !isGroupSatisfied(approver.transApproverId)"

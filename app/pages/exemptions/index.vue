@@ -128,7 +128,7 @@ watchEffect(() => {
           :field-mappings="{
             status: {
               O: 'Open',
-              P: 'Pending Approval',
+              P: 'Open',
               C: 'Completed',
             },
             finalDecision: {
@@ -140,7 +140,7 @@ watchEffect(() => {
           :field-colors="{
             status: {
               O: 'bg-blue-100 text-blue-800',
-              P: 'bg-yellow-100 text-yellow-800',
+              P: 'bg-blue-100 text-blue-800',
               C: 'bg-green-100 text-green-800',
             },
             finalDecision: {
