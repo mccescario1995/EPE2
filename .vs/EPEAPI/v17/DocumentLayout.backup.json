@@ -3,44 +3,20 @@
   "WorkspaceRootPath": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\controllers\\exemptioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:controllers\\exemptioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\tokenauthentication\\tokenmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:tokenauthentication\\tokenmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\controllers\\exemptioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:controllers\\exemptioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\models\\epedbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:models\\epedbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\controllers\\authenticatecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:controllers\\authenticatecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\controllers\\accesscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:controllers\\accesscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\tokenauthentication\\itokenmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:tokenauthentication\\itokenmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\tokenauthentication\\tokenlist.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:tokenauthentication\\tokenlist.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\models\\coresystem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:models\\coresystem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\filter\\tokenauthenticationfilter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:filter\\tokenauthenticationfilter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\epeapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
@@ -74,7 +50,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 179,
-          "SelectedChildIndex": 24,
+          "SelectedChildIndex": 10,
           "Children": [
             {
               "$type": "Bookmark",
@@ -118,44 +94,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "TokenManager.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\TokenAuthentication\\TokenManager.cs",
-              "RelativeDocumentMoniker": "TokenAuthentication\\TokenManager.cs",
-              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\TokenAuthentication\\TokenManager.cs",
-              "RelativeToolTip": "TokenAuthentication\\TokenManager.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T01:18:45.043Z",
+              "WhenOpened": "2026-03-26T06:20:54.248Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "ITokenManager.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\TokenAuthentication\\ITokenManager.cs",
-              "RelativeDocumentMoniker": "TokenAuthentication\\ITokenManager.cs",
-              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\TokenAuthentication\\ITokenManager.cs",
-              "RelativeToolTip": "TokenAuthentication\\ITokenManager.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T01:18:42.56Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "TokenList.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\TokenAuthentication\\TokenList.cs",
-              "RelativeDocumentMoniker": "TokenAuthentication\\TokenList.cs",
-              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\TokenAuthentication\\TokenList.cs",
-              "RelativeToolTip": "TokenAuthentication\\TokenList.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T01:18:41.093Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 3,
               "Title": "CoreSystem.cs",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Models\\CoreSystem.cs",
               "RelativeDocumentMoniker": "Models\\CoreSystem.cs",
@@ -164,18 +116,6 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-26T01:18:02.576Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Program.cs",
-              "RelativeDocumentMoniker": "Program.cs",
-              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Program.cs",
-              "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAABBAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T01:12:00.605Z"
             },
             {
               "$type": "Document",
@@ -191,7 +131,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 4,
               "Title": "EPEAPI.csproj",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\EPEAPI.csproj",
               "RelativeDocumentMoniker": "EPEAPI.csproj",
@@ -203,19 +143,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "TokenAuthenticationFilter.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Filter\\TokenAuthenticationFilter.cs",
-              "RelativeDocumentMoniker": "Filter\\TokenAuthenticationFilter.cs",
-              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Filter\\TokenAuthenticationFilter.cs",
-              "RelativeToolTip": "Filter\\TokenAuthenticationFilter.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T01:01:16.579Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 7,
               "Title": "ApproverRequest.cs",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Dto\\ApproverRequest.cs",
               "RelativeDocumentMoniker": "Dto\\ApproverRequest.cs",
@@ -227,7 +155,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 5,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\appsettings.json",
               "RelativeDocumentMoniker": "appsettings.json",
@@ -239,7 +167,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 9,
               "Title": "EpeVTransactionHeader.cs",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Models\\EpeVTransactionHeader.cs",
               "RelativeDocumentMoniker": "Models\\EpeVTransactionHeader.cs",
@@ -251,19 +179,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "AuthenticateController.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\AuthenticateController.cs",
-              "RelativeDocumentMoniker": "Controllers\\AuthenticateController.cs",
-              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\AuthenticateController.cs",
-              "RelativeToolTip": "Controllers\\AuthenticateController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-17T23:20:08.929Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 6,
               "Title": "AuthController.cs",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\AuthController.cs",
               "RelativeDocumentMoniker": "Controllers\\AuthController.cs",
@@ -275,32 +191,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "AccessController.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\AccessController.cs",
-              "RelativeDocumentMoniker": "Controllers\\AccessController.cs",
-              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\AccessController.cs",
-              "RelativeToolTip": "Controllers\\AccessController.cs",
-              "ViewState": "AgIAAG8AAAAAAAAAAAAYwIcAAABNAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-17T23:19:12.938Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "ExemptionController.cs",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\ExemptionController.cs",
               "RelativeDocumentMoniker": "Controllers\\ExemptionController.cs",
               "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\ExemptionController.cs",
               "RelativeToolTip": "Controllers\\ExemptionController.cs",
-              "ViewState": "AgIAAFEAAAAAAAAAAAAAABoAAAA6AAAAAAAAAA==",
+              "ViewState": "AgIAAIkCAAAAAAAAAAAtwPgBAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-17T23:16:28.607Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-17T23:16:28.607Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 8,
               "Title": "PolicyController.cs",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\PolicyController.cs",
               "RelativeDocumentMoniker": "Controllers\\PolicyController.cs",
