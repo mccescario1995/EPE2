@@ -27,10 +27,10 @@ public class EmailNotificationService
                 <html>
                 <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
                     <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-                        <h2 style='color: #2c3e50;'>New Exemption Request for Approval</h2>
+                        <h2 style='color: #2c3e50;'>New Excecutive Process Exemption Request for Approval</h2>
                         <p>Dear Approver,</p>
 
-                        <p>A new exemption request has been submitted and requires your approval.</p>
+                        <p>A new excecutive process exemption request has been submitted and requires your approval.</p>
 
                         <div style='margin: 20px 0; padding: 15px; background-color: #f4f6f6; border-left: 5px solid #3498db;'>
                             <p style='margin: 5px 0;'><strong>Request Number:</strong> <span style='color: #2f6b4a;'>{requestNumber}</span></p>
@@ -290,7 +290,7 @@ public class EmailNotificationService
                 <html>
                 <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
                     <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-                        <h2 style='color: #2c3e50;'>New Message on Your Exemption Request</h2>
+                        <h2 style='color: #2c3e50;'>New Message on Your Executive Process Exemption Request</h2>
                         <p>Dear User,</p>
 
                         <p>A new message has been posted on your exemption request.</p>

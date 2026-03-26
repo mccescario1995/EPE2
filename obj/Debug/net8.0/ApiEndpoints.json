@@ -132,6 +132,32 @@
   },
   {
     "ContainingType": "EPEAPI.Controllers.ExceptionController",
+    "Method": "GetExcemptionPendingList",
+    "RelativePath": "api/Exception/pending",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "search",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
     "Method": "ResendApprovalRequestEmail",
     "RelativePath": "api/Exception/resend/{id}",
     "HttpMethod": "POST",

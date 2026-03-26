@@ -34,7 +34,61 @@ namespace EPEAPI.Controllers
             {
 
                 var query = _context.EpeVTransactionHeaders.Where(u => u.IsDelete == 0);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var searchWords = search.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                    // Start with TRUE so we can AND each word
+                    var predicate = PredicateBuilder.New<EpeVTransactionHeader>(true);
+                    foreach (var word in searchWords)
+                    {
+                        predicate = predicate.And(u =>
+                            u.TransactionId.ToString().Contains(word) ||
+                            u.TransactionNumber.ToString().ToLower().Contains(word) ||
+                            u.RequesterName.ToString().Contains(word) ||
+                            u.FinalDecision.ToString().Contains(word) ||
+                            u.PolicyName.ToString().Contains(word)
+                        );
+                    }
+
+                    query = query.Where(predicate);
+                }
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
+                    .OrderByDescending(u => u.CreatedDate)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    items = items,
+
+                });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error" + e.Message);
+            }
+
+        }
+
+        [HttpPost("pending")]
+        public async Task<IActionResult> GetExcemptionPendingList(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? search = null
+            )
+        {
+            try
+            {
+
+                var query = _context.EpeVTransactionHeaders.Where(u => u.IsDelete == 0);
+
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var searchWords = search.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -176,7 +230,7 @@ namespace EPEAPI.Controllers
                     .ThenBy(a => a.Sort)
                     .ToListAsync();
 
-                var approversWithRole = approvers.Select(a => 
+                var approversWithRole = approvers.Select(a =>
                 {
 
                     var approverName = a.ApproverName;
@@ -213,7 +267,7 @@ namespace EPEAPI.Controllers
                         IsMainApprover = a.LineSequence == 1,
                         ApproverRole = a.LineSequence == 1 ? "Main" : "Proxy"
                     };
-                    }).ToList();
+                }).ToList();
 
                 if (item == null)
                 {
@@ -238,7 +292,7 @@ namespace EPEAPI.Controllers
                 var requesterId = request.Requestorid;
 
                 var userDetails = await _context.CoreVEmployeeDetails.Where(e => e.EmplId == requesterId).FirstOrDefaultAsync();
-                
+
                 request.Corporate = userDetails?.Corporate;
                 request.Requestorid = requesterId;
                 request.Finaldecision = "Pending";
@@ -262,7 +316,7 @@ namespace EPEAPI.Controllers
                 request.Macaddress = macAddress;
 
                 _context.EpeTransactionheaders.Add(request);
-                
+
                 await _context.SaveChangesAsync();
 
                 // Get policy approvers and create transaction approvers
@@ -350,7 +404,7 @@ namespace EPEAPI.Controllers
             try
             {
                 var existingItem = await _context.EpeTransactionheaders
-                    .Where(u => u.Transactionid == id && u.Isdelete== 0)
+                    .Where(u => u.Transactionid == id && u.Isdelete == 0)
                     .FirstOrDefaultAsync();
 
                 if (existingItem == null)
@@ -457,7 +511,10 @@ namespace EPEAPI.Controllers
                 // If approved, check if main approver or proxy already approved
                 if (request.Respond == 1) // Approved
                 {
-                    // Check if there are more approvers
+                    _logger.LogInformation("Approver {ApproverId} approved transaction {TransactionId}. Checking for next approvers...",
+                        request.TransApproverId, request.TransactionId);
+
+                    // Get all approvers for this transaction
                     var allApprovers = await _context.EpeTransactionapprovers
                         .Where(a => a.Transactionid == request.TransactionId && a.Isdelete == 0)
                         .OrderBy(a => a.Linesequence)
@@ -466,26 +523,71 @@ namespace EPEAPI.Controllers
 
                     var currentApprover = approver;
                     var currentSequence = approver.Linesequence;
-                    
-                    // Check if main approver OR proxy in the same Sort group has already approved
+                    var currentSort = approver.Sort;
+
+                    _logger.LogInformation("Current approver: Sequence={Sequence}, Sort={Sort}", currentSequence, currentSort);
+
+                    // AUTO-APPROVE: Approvers with same Sort are a group (main + proxy)
+                    // If one approves, all others with same Sort are auto-approved
                     var approversInGroup = allApprovers
-                        .Where(a => a.Sort == currentApprover.Sort)
+                        .Where(a => a.Sort == currentSort && a.Linesequence == currentSequence)
                         .ToList();
-                    
-                    // Check if either main or proxy in this group has approved
-                    var hasApprovedInGroup = approversInGroup.Any(a => a.Respond == 1);
-                    
-                    // If either main or proxy has approved, move to next sequence
+
+                    // Also auto-approve proxy at next sequence with same Sort (if exists)
+                    var proxyInNextSequence = allApprovers
+                        .Where(a => a.Sort == currentSort && a.Linesequence == currentSequence + 1)
+                        .ToList();
+
+                    var allGroupsToAutoApprove = approversInGroup.Concat(proxyInNextSequence).ToList();
+
+                    _logger.LogInformation("Approvers in group (Sort={Sort}, Seq={Sequence}): {Count}. Proxies at next seq: {ProxyCount}",
+                        currentSort, currentSequence, approversInGroup.Count, proxyInNextSequence.Count);
+
+                    // Auto-approve all in group and proxy
+                    foreach (var approverToApprove in allGroupsToAutoApprove)
+                    {
+                        if (approverToApprove.Respond == 0)
+                        {
+                            _logger.LogInformation("Auto-approving approver {ApproverId} in same group/proxy", approverToApprove.Transapproverid);
+                            approverToApprove.Respond = 1;
+                            approverToApprove.Responddate = DateTime.UtcNow;
+                            approverToApprove.Remarks = "Auto-approved: Approved by Approver " + currentApprover.Transapproverid;
+                        }
+                    }
+
+                    // Check if this group has approved (including proxy)
+                    var hasApprovedInGroup = allGroupsToAutoApprove.Any(a => a.Respond == 1);
+                    _logger.LogInformation("Has approved in group: {HasApproved}", hasApprovedInGroup);
+
+                    await _context.SaveChangesAsync();
+
+                    // Reload all approvers after auto-approval
+                    allApprovers = await _context.EpeTransactionapprovers
+                        .Where(a => a.Transactionid == request.TransactionId && a.Isdelete == 0)
+                        .OrderBy(a => a.Linesequence)
+                        .ThenBy(a => a.Sort)
+                        .ToListAsync();
+
+                    // Get next sequence approvers (linesequence > current sequence)
                     var nextApprovers = allApprovers.Where(a => a.Linesequence > currentSequence).ToList();
+                    _logger.LogInformation("Next approvers count: {Count}", nextApprovers.Count);
 
                     if (nextApprovers.Any())
                     {
-                        // If either main or proxy approved, skip this group
+                        // If this group approved, send to next sequence (for that specific Sort group)
                         if (hasApprovedInGroup)
                         {
-                            // Get the minimum sequence for next approvers
+                            // At least one approved, still more approvers ahead → Status = 'P'
+                            transactionHeader.Status = "P";
+
+                            // Get the minimum sequence for next approvers (only those NOT auto-approved)
                             var nextSequence = nextApprovers.Min(a => a.Linesequence);
-                            var approversToNotify = nextApprovers.Where(a => a.Linesequence == nextSequence).ToList();
+                            var approversToNotify = nextApprovers
+                                .Where(a => a.Linesequence == nextSequence)
+                                .ToList();
+
+                            _logger.LogInformation("Notifying next sequence {Sequence}, count: {Count}",
+                                nextSequence, approversToNotify.Count);
 
                             foreach (var nextApprover in approversToNotify)
                             {
@@ -500,13 +602,20 @@ namespace EPEAPI.Controllers
                                 }
                                 else
                                 {
-                                    // Get from employee details using Approverid
-                                    var empDetail = await _context.CoreVEmployeeDetails
-                                        .Where(e => e.EmplId == nextApprover.Approverid)
+                                    // Get from policy approvers using Approverid
+                                    var approverDetail = await _context.EpePolicyapprovers
+                                        .Where(e => e.Id == int.Parse(nextApprover.Approverid))
                                         .FirstOrDefaultAsync();
-                                    approverEmail = empDetail?.Emailadd ?? "";
-                                    approverName = empDetail?.Employeename ?? "";
+
+                                    // Get from employee details using Approverid
+                                    //var empDetail = await _context.CoreVEmployeeDetails
+                                    //    .Where(e => e.EmplId == nextApprover.Approverid)
+                                    //    .FirstOrDefaultAsync();
+                                    approverEmail = approverDetail?.Approveremail ?? "";
+                                    approverName = approverDetail?.Approvername ?? "";
                                 }
+
+                                _logger.LogInformation("Preparing to send email to: {Email} ({Name})", approverEmail, approverName);
 
                                 if (!string.IsNullOrEmpty(approverEmail))
                                 {
@@ -520,11 +629,17 @@ namespace EPEAPI.Controllers
                                             transactionHeader.Details ?? "No details provided"
                                         );
 
+                                        _logger.LogInformation("Successfully sent email to next approver: {Email}", approverEmail);
                                     }
                                     catch (Exception ex)
                                     {
                                         _logger.LogError(ex, "Failed to send next approver email to {Email}", approverEmail);
                                     }
+                                }
+                                else
+                                {
+                                    _logger.LogWarning("No email found for next approver: {Name}, Type: {Type}",
+                                        approverName, nextApprover.Approvertype);
                                 }
                             }
                         }
@@ -532,7 +647,9 @@ namespace EPEAPI.Controllers
                     }
                     else
                     {
-                        // All approvers have approved - update final decision
+                        // All sequences completed - update final decision and status
+                        _logger.LogInformation("All sequences completed. Updating final decision to Approved and Status to C.");
+
                         transactionHeader.Finaldecision = "Approved";
                         transactionHeader.Status = "C";
                         await _context.SaveChangesAsync();
@@ -559,9 +676,37 @@ namespace EPEAPI.Controllers
                 }
                 else if (request.Respond == 2) // Disapproved
                 {
+                    // AUTO-DISAPPROVE: Also disapprove all others in the same sequence
+                    var allApproversForDisapprove = await _context.EpeTransactionapprovers
+                        .Where(a => a.Transactionid == request.TransactionId && a.Isdelete == 0)
+                        .OrderBy(a => a.Linesequence)
+                        .ThenBy(a => a.Sort)
+                        .ToListAsync();
+
+                    var currentSequence = approver.Linesequence;
+
+                    // Disapprove all approvers in this sequence who haven't responded yet
+                    var approversInSequence = allApproversForDisapprove
+                        .Where(a => a.Linesequence == currentSequence)
+                        .ToList();
+
+                    foreach (var approverInSequence in approversInSequence)
+                    {
+                        if (approverInSequence.Respond == 0)
+                        {
+                            _logger.LogInformation("Auto-disapproving approver {ApproverId} in same sequence", approverInSequence.Transapproverid);
+                            approverInSequence.Respond = 2;
+                            approverInSequence.Responddate = DateTime.UtcNow;
+                            approverInSequence.Remarks = "Auto-disapproved: Sequence disapproved by " + approver.Transapproverid;
+                        }
+                    }
+
                     // Update final decision to disapproved and mark as completed
+                    _logger.LogInformation("Disapproved. Updating final decision to Disapproved and Status to C.");
+
                     transactionHeader.Finaldecision = "Disapproved";
                     transactionHeader.Status = "C";
+
                     await _context.SaveChangesAsync();
 
                     // Send disapproved email to requester
@@ -596,7 +741,7 @@ namespace EPEAPI.Controllers
         }
 
         [HttpPost("resend/{id}")]
-        public async Task<IActionResult> ResendApprovalRequestEmail(int id,[FromBody] ResendRequest request)
+        public async Task<IActionResult> ResendApprovalRequestEmail(int id, [FromBody] ResendRequest request)
         {
             try
             {
