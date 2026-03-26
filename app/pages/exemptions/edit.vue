@@ -441,23 +441,39 @@ const getProxies = (transApproverId: number): any[] => {
   return groupedApprovers.value.proxiesMap.get(transApproverId) || [];
 };
 
-// Get the current (active) approver's transApproverId - the first one in sequence who hasn't responded
+// Helper function to check if a group (main + proxies) is satisfied (someone in group approved)
+const isGroupSatisfied = (transApproverId: number): boolean => {
+  const { mainApprovers, proxiesMap } = groupedApprovers.value;
+  const mainApprover = mainApprovers.find(a => a.transApproverId === transApproverId);
+  if (!mainApprover) return false;
+  
+  const groupApprovers = [mainApprover, ...(proxiesMap.get(transApproverId) || [])];
+  return groupApprovers.some(a => a.respond === 1);
+};
+
+// Get the current (active) approver's transApproverId - the first group that hasn't been satisfied
 const currentApproverId = computed(() => {
   const { mainApprovers, proxiesMap } = groupedApprovers.value;
   
   for (const approver of mainApprovers) {
-    // If main approver hasn't responded, they're the current approver
-    if (approver.respond === 0) {
-      return approver.transApproverId;
+    // Get all approvers in this group (main + proxies)
+    const groupApprovers = [approver, ...(proxiesMap.get(approver.transApproverId) || [])];
+    
+    // Check if ANY in the group has approved
+    const hasApproved = groupApprovers.some(a => a.respond === 1);
+    
+    // Check if ANY in the group is pending
+    const hasPending = groupApprovers.some(a => a.respond === 0);
+    
+    // If no one has approved yet and someone is pending, this group is active
+    if (!hasApproved && hasPending) {
+      // Find the first pending one in this group
+      const pending = groupApprovers.find(a => a.respond === 0);
+      return pending?.transApproverId;
     }
     
-    // Check if proxies haven't responded
-    const proxies = proxiesMap.get(approver.transApproverId) || [];
-    for (const proxy of proxies) {
-      if (proxy.respond === 0) {
-        return proxy.transApproverId;
-      }
-    }
+    // If someone has approved in this group, skip to next group
+    // Continue to next iteration
   }
   
   return null;
@@ -539,7 +555,7 @@ onMounted(() => {
         <!-- Info Notice -->
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4 mb-3">
           <div class="flex">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
               <svg
                 class="h-5 w-5 text-blue-400"
                 xmlns="http://www.w3.org/2000/svg"
@@ -741,9 +757,9 @@ onMounted(() => {
                         >
                           Disapproved
                         </span>
-                        <!-- Resend button only for current pending approver -->
+                        <!-- Resend button only for current pending approver (and not satisfied by group) -->
                         <button
-                          v-if="approver.respond === 0 && approver.transApproverId === currentApproverId"
+                          v-if="approver.respond === 0 && approver.transApproverId === currentApproverId && !isGroupSatisfied(approver.transApproverId)"
                           @click="resendToApprover(approver.transApproverId)"
                           :disabled="isResending === approver.transApproverId"
                           class="flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
@@ -838,9 +854,9 @@ onMounted(() => {
                           >
                             Disapproved
                           </span>
-                          <!-- Resend button only for current pending proxy -->
+                          <!-- Resend button only for current pending proxy (and not satisfied by group) -->
                           <button
-                            v-if="proxy.respond === 0 && proxy.transApproverId === currentApproverId"
+                            v-if="proxy.respond === 0 && proxy.transApproverId === currentApproverId && !isGroupSatisfied(approver.transApproverId)"
                             @click="resendToApprover(proxy.transApproverId)"
                             :disabled="isResending === proxy.transApproverId"
                             class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"

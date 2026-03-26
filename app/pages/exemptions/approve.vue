@@ -193,6 +193,7 @@ const canRespond = computed(() => {
   const currentUserId = currentUser.value?.emplId?.toString();
 
   // Try both lowercase and uppercase property names
+
   const currentUserApprover = approversData.value.find(
     (a) => String(a.employeeId ?? a.EmployeeId) === currentUserId,
   );
@@ -640,7 +641,7 @@ onMounted(async () => {
                     Details
                   </label>
                   <div
-                    class="bg-gray-50 rounded-lg p-4 border border-gray-200 h-[100px]"
+                    class="bg-gray-50 rounded-lg p-4 border border-gray-200 h-25"
                   >
                     <p class="text-gray-900 whitespace-pre-wrap">
                       {{ exemptionData.details || "No details provided" }}
