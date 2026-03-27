@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 using System.Text.Json;
+using EPEAPI.Models;
 
 namespace EPEAPI.Services;
 
@@ -8,14 +9,41 @@ public class EmailNotificationService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<EmailNotificationService> _logger;
+    private readonly EpeDbContext _context;
 
-    public EmailNotificationService(HttpClient httpClient, ILogger<EmailNotificationService> logger)
+    public EmailNotificationService(HttpClient httpClient, ILogger<EmailNotificationService> logger, EpeDbContext context)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _context = context;
     }
 
-    public async Task SendApprovalRequestEmailAsync(string toEmail, long requestId,string requestNumber, string requestorName, string requestDetails)
+    private async Task CreateWebNotificationAsync(long userId, string title, string message, string type = "info", string? relatedUrl = null)
+    {
+        try
+        {
+            var notification = new EpeNotification
+            {
+                UserId = userId,
+                Title = title,
+                Message = message,
+                Type = type,
+                IsRead = false,
+                RelatedUrl = relatedUrl,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            _context.EpeNotifications.Add(notification);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create web notification for user {UserId}", userId);
+            // Don't throw - we don't want to fail email sending if web notification fails
+        }
+    }
+
+    public async Task SendApprovalRequestEmailAsync(string toEmail, long requestId,string requestNumber, string requestorName, string requestDetails, long userId)
     {
         try
         {
@@ -33,9 +61,9 @@ public class EmailNotificationService
                         <p>A new excecutive process exemption request has been submitted and requires your approval.</p>
 
                         <div style='margin: 20px 0; padding: 15px; background-color: #f4f6f6; border-left: 5px solid #3498db;'>
-                            <p style='margin: 5px 0;'><strong>Request Number:</strong> <span style='color: #2f6b4a;'>{requestNumber}</span></p>
+                            <p style='margin: 5px 0;'><strong>Transaction Number:</strong> <span style='color: #2f6b4a;'>{requestNumber}</span></p>
                             <p style='margin: 5px 0;'><strong>Requested By:</strong> {requestorName}</p>
-                            <p style='margin: 5px 0;'><strong>Request Details:</strong> {requestDetails}</p>
+                            <p style='margin: 5px 0;'><strong>Transaction Details:</strong> {requestDetails}</p>
                         </div>
 
                         <p>Please review and take action on this request at your earliest convenience.</p>
@@ -86,6 +114,14 @@ public class EmailNotificationService
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogInformation("Approval request email notification sent successfully to {Email}", toEmail);
+                // Create web notification for the approver
+                await CreateWebNotificationAsync(
+                    userId,
+                    "New Approval Request",
+                    $"A new exemption request ({requestNumber}) requires your approval",
+                    "info",
+                    $"/exemptions/approve?id={requestId}"
+                );
             }
             else
             {
@@ -102,11 +138,11 @@ public class EmailNotificationService
         }
     }
 
-    public async Task SendStatusChangedEmailAsync(string toEmail, string requestNumber, string oldStatus, string newStatus, string changedBy)
+    public async Task SendStatusChangedEmailAsync(string toEmail, long requestId, string requestNumber, string oldStatus, string newStatus, string changedBy)
     {
         try
         {
-            var trackUrl = "https://apps.fastlogistics.com.ph/epe/exemptions/view?id=" + requestNumber;
+            var trackUrl = "https://apps.fastlogistics.com.ph/epe/exemptions/view?id=" + requestId;
 
             toEmail = "mccescario@fastgroup.biz"; // for testing
 
@@ -114,13 +150,13 @@ public class EmailNotificationService
                 <html>
                 <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
                     <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-                        <h2 style='color: #2c3e50;'>Exemption Request Status Updated</h2>
+                        <h2 style='color: #2c3e50;'>Executive Process Exemption Request Status Updated</h2>
                         <p>Dear User,</p>
 
                         <p>The status of your exemption request has been updated.</p>
 
                         <div style='margin: 20px 0; padding: 15px; background-color: #f4f6f6; border-left: 5px solid #e74c3c;'>
-                            <p style='margin: 5px 0;'><strong>Request Number:</strong> <span style='color: #2f6b4a;'>{requestNumber}</span></p>
+                            <p style='margin: 5px 0;'><strong>Transaction Number:</strong> <span style='color: #2f6b4a;'>{requestNumber}</span></p>
                             <p style='margin: 5px 0;'><strong>Previous Status:</strong> {oldStatus}</p>
                             <p style='margin: 5px 0;'><strong>New Status:</strong> <span style='color: #27ae60; font-weight: bold;'>{newStatus}</span></p>
                             <p style='margin: 5px 0;'><strong>Updated By:</strong> {changedBy}</p>
@@ -174,6 +210,14 @@ public class EmailNotificationService
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogInformation("Status changed email notification sent successfully to {Email}", toEmail);
+                // Create web notification for the user
+                await CreateWebNotificationAsync(
+                    0, // We don't have the user ID here easily, but we could look it up if needed
+                    "Request Status Updated",
+                    $"Your exemption request ({requestNumber}) status changed from {oldStatus} to {newStatus}",
+                    "info",
+                    $"/exemptions/view?id={requestId}"
+                );
             }
             else
             {
@@ -206,10 +250,10 @@ public class EmailNotificationService
                         <p>Dear User,</p>
 
                         <p>Your exemption request has been successfully submitted.</p>
-                        <p>Please keep the request number below for your records:</p>
+                        <p>Please keep the transaction number below for your records:</p>
 
                         <p style='margin: 20px 0; padding: 15px; background-color: #f4f6f6; border-left: 5px solid #2f6b4a; font-size: 18px; font-weight: bold;'>
-                            Request Number: <span style='color: #2f6b4a;'>{requestNumber}</span>
+                            Transaction Number: <span style='color: #2f6b4a;'>{requestNumber}</span>
                         </p>
 
                         <p>Our team will review your request shortly. You can track the progress anytime using the button below:</p>
@@ -260,6 +304,14 @@ public class EmailNotificationService
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogInformation("Request created email notification sent successfully to {Email}", toEmail);
+                // Create web notification for the user
+                await CreateWebNotificationAsync(
+                    0, // We don't have the user ID here easily, but we could look it up if needed
+                    "Request Submitted",
+                    $"Your exemption request ({requestNumber}) has been successfully submitted",
+                    "success",
+                    $"/exemptions/view?id={requestNumber}"
+                );
             }
             else
             {
@@ -296,7 +348,7 @@ public class EmailNotificationService
                         <p>A new message has been posted on your exemption request.</p>
 
                         <div style='margin: 20px 0; padding: 15px; background-color: #f4f6f6; border-left: 5px solid #9b59b6;'>
-                            <p style='margin: 5px 0;'><strong>Request Number:</strong> <span style='color: #2f6b4a;'>{requestNumber}</span></p>
+                            <p style='margin: 5px 0;'><strong>Transaction Number:</strong> <span style='color: #2f6b4a;'>{requestNumber}</span></p>
                             <p style='margin: 5px 0;'><strong>Posted By:</strong> {postedBy}</p>
                             <p style='margin: 5px 0;'><strong>Message:</strong> {truncatedMessage}</p>
                         </div>

@@ -5,6 +5,9 @@ using LinqKit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net.NetworkInformation;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace EPEAPI.Controllers
 {
@@ -21,6 +24,86 @@ namespace EPEAPI.Controllers
             _context = contextdb;
             _emailService = emailService;
             _logger = logger;
+        }
+
+        // Helper method to get the current user ID from authentication
+        private long GetCurrentUserId()
+        {
+            // First try to get from session (used by some controllers)
+            var sessionUserId = HttpContext.Session.GetInt32("UserId");
+            if (sessionUserId.HasValue)
+            {
+                return sessionUserId.Value;
+            }
+
+            // Try to get from token header (used by TokenAuthenticationFilter)
+            if (HttpContext.Request.Headers.ContainsKey("token"))
+            {
+                var token = HttpContext.Request.Headers["token"].ToString();
+                try
+                {
+                    var handler = new JwtSecurityTokenHandler();
+                    var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
+                    if (jsonToken != null)
+                    {
+                        var userIdClaim = jsonToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+                        if (userIdClaim != null && long.TryParse(userIdClaim.Value, out var userId))
+                        {
+                            return userId;
+                        }
+                    }
+                }
+                catch
+                {
+                    // If JWT parsing fails, try the custom token format used by TokenManager
+                    try
+                    {
+                        var fromBase64 = Encoding.UTF8.GetString(Convert.FromBase64String(token));
+                        var credentials = fromBase64.Split(':');
+                        if (credentials.Length >= 3 && credentials[1].EndsWith("tsaf"))
+                        {
+                            if (long.TryParse(credentials[0], out var userId))
+                            {
+                                return userId;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore and continue to return 0
+                    }
+                }
+            }
+
+            // Try to get from Authorization header (Bearer token)
+            if (HttpContext.Request.Headers.ContainsKey("Authorization"))
+            {
+                var authHeader = HttpContext.Request.Headers["Authorization"].ToString();
+                if (authHeader.StartsWith("Bearer "))
+                {
+                    var token = authHeader.Substring("Bearer ".Length).Trim();
+                    try
+                    {
+                        var handler = new JwtSecurityTokenHandler();
+                        var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
+                        if (jsonToken != null)
+                        {
+                            var userIdClaim = jsonToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+                            if (userIdClaim != null && long.TryParse(userIdClaim.Value, out var userId))
+                            {
+                                return userId;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore and continue to return 0
+                    }
+                }
+            }
+
+            // Return 0 as fallback (should be improved in a real application)
+            return 0;
         }
 
         [HttpPost]
@@ -383,6 +466,16 @@ namespace EPEAPI.Controllers
                             }
                         }
                     }
+
+                    var requester = await _context.CoreVEmployeeDetails
+                        .Where(r => r.EmplId == request.Requestorid)
+                        .FirstOrDefaultAsync();
+
+                    await _emailService.SendRequestCreatedEmailAsync(
+                            requester.Emailadd,
+                            request.Transactionnumber,
+                            request.Details ?? "No details provided"
+                        );
                 }
 
                 await transaction.CommitAsync();
@@ -558,7 +651,7 @@ namespace EPEAPI.Controllers
 
                     if (nextApprovers.Any())
                     {
-                        // ✅ At least one approved, more sequences ahead → Status = 'P'
+                        // At least one approved, more sequences ahead → Status = 'P'
                         await _context.EpeTransactionheaders
                             .Where(h => h.Transactionid == request.TransactionId)
                             .ExecuteUpdateAsync(b => b
@@ -621,6 +714,7 @@ namespace EPEAPI.Controllers
                             {
                                 await _emailService.SendStatusChangedEmailAsync(
                                     requester.Emailadd,
+                                    transactionHeader.Transactionid,
                                     transactionHeader.Transactionnumber,
                                     "Pending",
                                     "Approved",
@@ -662,6 +756,7 @@ namespace EPEAPI.Controllers
                         {
                             await _emailService.SendStatusChangedEmailAsync(
                                 requester.Emailadd,
+                                transactionHeader.Transactionid,
                                 transactionHeader.Transactionnumber,
                                 "Pending",
                                 "Disapproved",
