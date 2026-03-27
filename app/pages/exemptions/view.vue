@@ -100,7 +100,7 @@ const getStatusDisplay = (status: string) => {
   const statusMap: Record<string, string> = {
     O: "Open",
     P: "Open", // Approval in progress (one or more approved, waiting for all)
-    C: "Completed",
+    C: "Closed",
   };
   return statusMap[status] || status;
 };
@@ -128,9 +128,9 @@ const getApproverStatusDisplay = (respond: number) => {
 // Get approver status color
 const getApproverStatusColor = (respond: number) => {
   const colorMap: Record<number, string> = {
-    0: "bg-yellow-100 text-yellow-800",
-    1: "bg-green-100 text-green-800",
-    2: "bg-red-100 text-red-800",
+    0: "bg-yellow-100 text-yellow-800 border border-yellow-900",
+    1: "bg-green-100 text-green-800 border border-green-900",
+    2: "bg-red-100 text-red-800 border border-red-900",
   };
   return colorMap[respond] || "bg-gray-100 text-gray-800";
 };
@@ -338,9 +338,9 @@ const resendToApprover = async (transApproverId: number) => {
                     <span
                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                       :class="{
-                        'bg-blue-100 text-blue-800':
-                          exemptionData.status === 'O'|| exemptionData.status === 'P',
-                        'bg-green-100 text-green-800':
+                         'bg-blue-100 text-blue-800 border border-blue-900':
+                          exemptionData.status === 'O' || exemptionData.status === 'P',
+                        'bg-gray-200 text-gray-800 border border-gray-900':
                           exemptionData.status === 'C',
                       }"
                     >
@@ -459,11 +459,11 @@ const resendToApprover = async (transApproverId: number) => {
                     v-if="exemptionData.finalDecision"
                     class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                     :class="{
-                      'bg-yellow-100 text-yellow-800':
+                      'bg-yellow-100 text-yellow-800 border border-yellow-900':
                         exemptionData.finalDecision === 'Pending',
-                      'bg-green-100 text-green-800':
+                      'bg-green-100 text-green-800 border border-green-900':
                         exemptionData.finalDecision === 'Approved',
-                      'bg-red-100 text-red-800':
+                      'bg-red-100 text-red-800 border border-red-900':
                         exemptionData.finalDecision === 'Disapproved',
                     }"
                   >
@@ -625,7 +625,7 @@ const resendToApprover = async (transApproverId: number) => {
                             {{ getApproverStatusDisplay(proxy.respond) }}
                           </span>
                           <!-- Decision badge for decided proxy approvers -->
-                          <span
+                          <!-- <span
                             v-if="proxy.respond === 1"
                             class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-200 text-green-800"
                           >
@@ -636,7 +636,7 @@ const resendToApprover = async (transApproverId: number) => {
                             class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-200 text-red-800"
                           >
                             Disapproved
-                          </span>
+                          </span> -->
                           <!-- Resend button only for current pending proxy (and not satisfied by group) -->
                           <button
                             v-if="proxy.respond === 0 && proxy.transApproverId === currentApproverId && !isGroupSatisfied(approver.transApproverId)"

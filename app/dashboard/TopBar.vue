@@ -36,8 +36,117 @@
           </div>
         </div>
 
-        <!-- Right section - User dropdown -->
+        <!-- Right section - Notification bell and User dropdown -->
         <div class="relative ml-4 flex items-center">
+          <!-- Notification Bell -->
+          <div class="mr-4 relative">
+            <button
+              type="button"
+              @click="toggleNotificationDropdown"
+              class="flex items-center border rounded-full p-1 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              id="notification-button"
+              aria-expanded="false"
+              aria-haspopup="true"
+              aria-label="Notifications"
+            >
+              <BellIcon :unreadCount="notificationStore.unreadCount" />
+              <!-- Badge for unread count -->
+              <span v-if="notificationStore.unreadCount > 0" class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center text-xs font-bold text-white bg-red-500 rounded-full">
+                {{ notificationStore.unreadCount > 99 ? '99+' : notificationStore.unreadCount }}
+              </span>
+            </button>
+
+            <!-- Notification Dropdown -->
+            <transition
+              enter-active-class="transition ease-out duration-100"
+              enter-from-class="transform opacity-0 scale-95"
+              enter-to-class="transform opacity-100 scale-100"
+              leave-active-class="transition ease-in duration-75"
+              leave-from-class="transform opacity-100 scale-100"
+              leave-to-class="transform opacity-0 scale-95"
+            >
+              <div
+                v-if="isNotificationDropdownOpen"
+                class="absolute top-10 right-0 mt-2 w-64 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                role="menu"
+                aria-orientation="vertical"
+                aria-labelledby="notification-button"
+                tabindex="-1"
+                @click.outside="closeNotificationDropdown"
+              >
+                <div class="px-4 py-2">
+                  <span class="block text-sm font-medium text-gray-700">Notifications</span>
+                </div>
+                <div class="divider my-2"></div>
+                <div class="space-y-2">
+                  <template v-if="notificationStore.notifications.length === 0">
+                    <div class="px-4 py-3 text-center text-sm text-gray-500">
+                      No notifications
+                    </div>
+                  </template>
+                  <template v-else>
+                    <template v-for="notification in notificationStore.notifications" :key="notification.id">
+                      <div
+                        class="px-4 py-3 sm:px-4"
+                        :class="{
+                          'bg-gray-50': !notification.IsRead,
+                          'cursor-pointer': true,
+                          'hover:bg-gray-100': true
+                        }"
+                        @click="markAsReadAndNavigate(notification)"
+                      >
+                        <div class="flex items-start space-x-3">
+                          <div class="flex-shrink-0">
+                            <!-- Notification icon based on type -->
+                            <svg
+                              class="h-5 w-5 text-gray-400"
+                              :class="{
+                                'text-green-500': notification.Type === 'success',
+                                'text-red-500': notification.Type === 'error',
+                                'text-yellow-500': notification.Type === 'warning',
+                                'text-blue-500': notification.Type === 'info'
+                              }"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                :d="getNotificationIconPath(notification.Type)"
+                              />
+                            </svg>
+                          </div>
+                          <div class="flex-1">
+                            <h3 class="mb-1 text-sm font-medium text-gray-900 line-clamp-1">
+                              {{ notification.Title }}
+                            </h3>
+                            <p class="mb-1 text-sm text-gray-500 line-clamp-2">
+                              {{ notification.Message }}
+                            </p>
+                            <p class="text-xs text-gray-400">
+                              {{ formatDate(notification.CreatedDate) }}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                  </template>
+                </div>
+                <div class="px-4 py-3 text-center">
+                  <button
+                    @click="markAllAsRead"
+                    class="w-full text-left text-sm text-gray-600 hover:text-gray-800"
+                  >
+                    Mark all as read
+                  </button>
+                </div>
+              </div>
+            </transition>
+          </div>
+
+          <!-- User dropdown -->
           <button
             type="button"
             @click="toggleDropdown"
@@ -214,13 +323,19 @@
 import { ref } from "vue";
 import { toggleSidebar } from "./store";
 import { useUserStore } from "../stores/useUserStore";
+import { useNotificationStore } from "../stores/useNotificationStore";
 import { getKey, encryptData } from "../../encrypt";
+import { onMounted } from "vue";
+import { useRouter } from "vue-router";
+import BellIcon from "../components/icon/Bell.vue";
 const router = useRouter();
 const userStore = useUserStore();
+const notificationStore = useNotificationStore();
 const profile = userStore.profile;
 const userDATA = userStore.profile;
 
 const isDropdownOpen = ref(false);
+const isNotificationDropdownOpen = ref(false);
 
 function toggleDropdown() {
   console.log(userStore);
@@ -229,6 +344,33 @@ function toggleDropdown() {
 
 function closeDropdown() {
   isDropdownOpen.value = false;
+}
+
+function toggleNotificationDropdown() {
+  isNotificationDropdownOpen.value = !isNotificationDropdownOpen.value;
+  if (isNotificationDropdownOpen.value) {
+    notificationStore.fetchNotifications();
+  }
+}
+
+function closeNotificationDropdown() {
+  isNotificationDropdownOpen.value = false;
+}
+
+function markAsReadAndNavigate(notification) {
+  // Mark as read
+  notificationStore.markAsRead(notification.id);
+  // Close dropdown
+  closeNotificationDropdown();
+  // Navigate to the related URL if it exists
+  if (notification.RelatedUrl) {
+    router.push(notification.RelatedUrl);
+  }
+}
+
+function markAllAsRead() {
+  notificationStore.markAllAsRead();
+  closeNotificationDropdown();
 }
 
 function Logout() {
@@ -270,4 +412,30 @@ async function storeEncryptedDataInCookie(iframeUrl) {
   link.value = iframeUrl;
   show.value = true;
 }
+
+// Helper function to get notification icon path based on type
+function getNotificationIconPath(type) {
+  switch (type) {
+    case "success":
+      return "M5 13l4 4L19 7"; // Checkmark
+    case "error":
+      return "M18 10l-5-5m0 5L13 8m0 5L8 13"; // X
+    case "warning":
+      return "M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"; // Triangle with exclamation
+    case "info":
+    default:
+      return "M13 2H6a2 2 0 00-2 2v10a2 2 0 002 2h7"; // Info symbol
+  }
+}
+
+// Helper function to format date
+function formatDate(dateString) {
+  const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+  return new Date(dateString).toLocaleDateString(undefined, options);
+}
+
+onMounted(() => {
+  // Fetch notifications when component mounts
+  notificationStore.fetchNotifications();
+});
 </script>

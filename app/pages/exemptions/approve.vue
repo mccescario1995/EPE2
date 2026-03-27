@@ -141,7 +141,7 @@ const getStatusDisplay = (status: string) => {
   const statusMap: Record<string, string> = {
     O: "Open",
     P: "Open", // Approval in progress (one or more approved, waiting for all)
-    C: "Completed",
+    C: "Closed",
   };
   return statusMap[status] || status;
 };

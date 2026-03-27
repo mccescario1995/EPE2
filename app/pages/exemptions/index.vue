@@ -129,7 +129,7 @@ watchEffect(() => {
             status: {
               O: 'Open',
               P: 'Open',
-              C: 'Completed',
+              C: 'Closed',
             },
             finalDecision: {
               Pending: 'Pending',
@@ -139,9 +139,9 @@ watchEffect(() => {
           }"
           :field-colors="{
             status: {
-              O: 'bg-blue-100 text-blue-800',
-              P: 'bg-blue-100 text-blue-800',
-              C: 'bg-green-100 text-green-800',
+              O: 'bg-blue-100 text-blue-800 border border-blue-900',
+              P: 'bg-blue-100 text-blue-800 border border-blue-900',
+              C: 'bg-gray-200 text-gray-800 border border-gray-900',
             },
             finalDecision: {
               Pending: 'bg-yellow-100 text-yellow-800',

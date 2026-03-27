@@ -421,7 +421,7 @@ onMounted(() => {
                       v-if="approver.approverRole" 
                       class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
                       :class="{
-                        'bg-purple-100 text-purple-800': approver.linesequence === 1,
+                        'bg-blue-100 text-blue-800': approver.linesequence === 1,
                         'bg-orange-100 text-orange-800': approver.linesequence !== 1
                       }"
                     >
