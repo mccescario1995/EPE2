@@ -456,7 +456,8 @@ namespace EPEAPI.Controllers
                                     request.Transactionid,
                                     request.Transactionnumber,
                                     userDetails?.Employeename ?? requesterId,
-                                    request.Details ?? "No details provided"
+                                    request.Details ?? "No details provided",
+                                    int.Parse(userDetails?.EmplId)
                                 );
                             }
                             catch (Exception ex)
@@ -688,7 +689,8 @@ namespace EPEAPI.Controllers
                                         transactionHeader.Transactionid,
                                         transactionHeader.Transactionnumber,
                                         requester?.Employeename ?? transactionHeader.Requestorid,
-                                        transactionHeader.Details ?? "No details provided"
+                                        transactionHeader.Details ?? "No details provided",
+                                        int.Parse(requester?.EmplId)
                                     );
                                 }
                                 catch (Exception ex)
@@ -843,7 +845,8 @@ namespace EPEAPI.Controllers
                         transactionHeader.Transactionid,
                         transactionHeader.Transactionnumber,
                         transactionHeader.Requestorid,
-                        transactionHeader.Details ?? "No details provided"
+                        transactionHeader.Details ?? "No details provided",
+                        int.Parse(requester?.EmplId)
                     );
                 }
                 catch (Exception ex)

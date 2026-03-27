@@ -118,8 +118,7 @@
               "RelativeToolTip": "Controllers\\AccessController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-27T00:09:59.092Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-27T00:09:59.092Z"
             },
             {
               "$type": "Document",
@@ -131,8 +130,7 @@
               "RelativeToolTip": "Models\\EpeAttachment.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-27T00:09:26.247Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-27T00:09:26.247Z"
             },
             {
               "$type": "Document",
@@ -144,8 +142,7 @@
               "RelativeToolTip": "Models\\EpeNotification.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAABQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-27T00:06:21.648Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-27T00:06:21.648Z"
             },
             {
               "$type": "Document",
@@ -153,12 +150,11 @@
               "Title": "EmailNotificationService.cs",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Services\\EmailNotificationService.cs",
               "RelativeDocumentMoniker": "Services\\EmailNotificationService.cs",
-              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Services\\EmailNotificationService.cs*",
-              "RelativeToolTip": "Services\\EmailNotificationService.cs*",
+              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Services\\EmailNotificationService.cs",
+              "RelativeToolTip": "Services\\EmailNotificationService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T08:25:59.3Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-26T08:25:59.3Z"
             },
             {
               "$type": "Document",
@@ -262,9 +258,9 @@
               "Title": "ExemptionController.cs",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\ExemptionController.cs",
               "RelativeDocumentMoniker": "Controllers\\ExemptionController.cs",
-              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\ExemptionController.cs*",
-              "RelativeToolTip": "Controllers\\ExemptionController.cs*",
-              "ViewState": "AgIAAHkBAAAAAAAAAAAkwIcBAAAvAAAAAAAAAA==",
+              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\ExemptionController.cs",
+              "RelativeToolTip": "Controllers\\ExemptionController.cs",
+              "ViewState": "AgIAADMDAAAAAAAAAAAWwEoDAABGAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-17T23:16:28.607Z",
               "EditorCaption": ""
