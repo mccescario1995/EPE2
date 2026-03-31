@@ -89,7 +89,7 @@
                       <div
                         class="px-4 py-3 sm:px-4"
                         :class="{
-                          'bg-gray-50': !notification.IsRead,
+                          'bg-gray-50': !notification.isRead,
                           'cursor-pointer': true,
                           'hover:bg-gray-100': true
                         }"
@@ -101,10 +101,10 @@
                             <svg
                               class="h-5 w-5 text-gray-400"
                               :class="{
-                                'text-green-500': notification.Type === 'success',
-                                'text-red-500': notification.Type === 'error',
-                                'text-yellow-500': notification.Type === 'warning',
-                                'text-blue-500': notification.Type === 'info'
+                                'text-green-500': notification.type === 'success',
+                                'text-red-500': notification.type === 'error',
+                                'text-yellow-500': notification.type === 'warning',
+                                'text-blue-500': notification.type === 'info'
                               }"
                               viewBox="0 0 24 24"
                               fill="none"
@@ -114,19 +114,19 @@
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                                 stroke-width="2"
-                                :d="getNotificationIconPath(notification.Type)"
+                                :d="getNotificationIconPath(notification.type)"
                               />
                             </svg>
                           </div>
                           <div class="flex-1">
                             <h3 class="mb-1 text-sm font-medium text-gray-900 line-clamp-1">
-                              {{ notification.Title }}
+                              {{ notification.title }}
                             </h3>
                             <p class="mb-1 text-sm text-gray-500 line-clamp-2">
-                              {{ notification.Message }}
+                              {{ notification.message }}
                             </p>
                             <p class="text-xs text-gray-400">
-                              {{ formatDate(notification.CreatedDate) }}
+                              {{ formatDate(notification.createdDate) }}
                             </p>
                           </div>
                         </div>
@@ -358,13 +358,14 @@ function closeNotificationDropdown() {
 }
 
 function markAsReadAndNavigate(notification) {
+  console.log("Notification clicked:", notification);
   // Mark as read
   notificationStore.markAsRead(notification.id);
   // Close dropdown
   closeNotificationDropdown();
   // Navigate to the related URL if it exists
-  if (notification.RelatedUrl) {
-    router.push(notification.RelatedUrl);
+  if (notification.relatedUrl) {
+    router.push(notification.relatedUrl);
   }
 }
 

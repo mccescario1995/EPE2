@@ -1,6 +1,8 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { apiFetch } from "~/composables/useApiFetch";
+const userStore = useUserStore();
+const userId = userStore.profile;
 
 export const useNotificationStore = defineStore("notification", () => {
   const notifications = ref<Array<any>>([]);
@@ -9,8 +11,19 @@ export const useNotificationStore = defineStore("notification", () => {
   // Fetch notifications for the current user
   const fetchNotifications = async () => {
     try {
-      const response = await apiFetch("/api/notifications");
-      notifications.value = response.data || [];
+      const response = await apiFetch("/api/notification", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ UserId: parseInt(userId.userId) }),
+        credentials: "include",
+        parseJson: true,
+      });
+
+      console.log("API response for notifications:", response);
+      notifications.value = response || [];
+      console.log("Fetched notifications:", notifications.value);
       updateUnreadCount();
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
@@ -25,18 +38,21 @@ export const useNotificationStore = defineStore("notification", () => {
 
   // Mark a notification as read
   const markAsRead = (id: string | number) => {
-    const notification = notifications.value.find(n => n.id === id);
-    if (notification && !notification.read) {
-      notification.read = true;
+    const notification = notifications.value.find((n) => n.id === id);
+
+    console.log("Marking notification as read:", notification);
+    if (notification && !notification.isRead) {
+      notification.isRead = 1; 
+      console.log("Notification marked as read:", notification);
       updateUnreadCount();
     }
   };
 
   // Mark all notifications as read
   const markAllAsRead = () => {
-    notifications.value.forEach(n => {
-      if (!n.read) {
-        n.read = true;
+    notifications.value.forEach((n) => {
+      if (!n.isRead) {
+        n.isRead = 1; // Assuming backend expects 1 for true
       }
     });
     updateUnreadCount();
@@ -44,12 +60,13 @@ export const useNotificationStore = defineStore("notification", () => {
 
   // Update the unread count
   const updateUnreadCount = () => {
-    unreadCount.value = notifications.value.filter(n => !n.read).length;
+    unreadCount.value = notifications.value.filter((n) => n.isRead !== 1).length;
+    console.log("Updated unread count:", unreadCount.value);
   };
 
   // Remove a notification (optional)
   const removeNotification = (id: string | number) => {
-    notifications.value = notifications.value.filter(n => n.id !== id);
+    notifications.value = notifications.value.filter((n) => n.id !== id);
     updateUnreadCount();
   };
 
