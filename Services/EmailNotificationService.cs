@@ -18,7 +18,7 @@ public class EmailNotificationService
         _context = context;
     }
 
-    private async Task CreateWebNotificationAsync(long userId, string title, string message, string type = "info", string? relatedUrl = null)
+    private async Task CreateWebNotificationAsync(int userId, string title, string message, string type = "info", string? relatedUrl = null)
     {
         try
         {
@@ -28,7 +28,7 @@ public class EmailNotificationService
                 Title = title,
                 Message = message,
                 Type = type,
-                IsRead = false,
+                IsRead = 0,
                 RelatedUrl = relatedUrl,
                 CreatedDate = DateTime.UtcNow
             };
@@ -43,7 +43,7 @@ public class EmailNotificationService
         }
     }
 
-    public async Task SendApprovalRequestEmailAsync(string toEmail, long requestId,string requestNumber, string requestorName, string requestDetails, long userId)
+    public async Task SendApprovalRequestEmailAsync(string toEmail, long requestId,string requestNumber, string requestorName, string requestDetails, int userId)
     {
         try
         {
@@ -138,7 +138,7 @@ public class EmailNotificationService
         }
     }
 
-    public async Task SendStatusChangedEmailAsync(string toEmail, long requestId, string requestNumber, string oldStatus, string newStatus, string changedBy)
+    public async Task SendStatusChangedEmailAsync(string toEmail, long requestId, string requestNumber, string oldStatus, string newStatus, string changedBy, int userId)
     {
         try
         {
@@ -212,7 +212,7 @@ public class EmailNotificationService
                 _logger.LogInformation("Status changed email notification sent successfully to {Email}", toEmail);
                 // Create web notification for the user
                 await CreateWebNotificationAsync(
-                    0, // We don't have the user ID here easily, but we could look it up if needed
+                    userId,
                     "Request Status Updated",
                     $"Your exemption request ({requestNumber}) status changed from {oldStatus} to {newStatus}",
                     "info",
@@ -234,11 +234,11 @@ public class EmailNotificationService
         }
     }
 
-    public async Task SendRequestCreatedEmailAsync(string toEmail, string requestNumber, string requestDetails)
+    public async Task SendRequestCreatedEmailAsync(string toEmail,long requestId, string requestNumber, string requestDetails, int userId)
     {
         try
         {
-            var trackUrl = "https://apps.fastlogistics.com.ph/epe/exemptions/view?id=" + requestNumber;
+            var trackUrl = "https://apps.fastlogistics.com.ph/epe/exemptions/view?id=" + requestId;
 
             toEmail = "mccescario@fastgroup.biz"; // for testing
 
@@ -306,11 +306,11 @@ public class EmailNotificationService
                 _logger.LogInformation("Request created email notification sent successfully to {Email}", toEmail);
                 // Create web notification for the user
                 await CreateWebNotificationAsync(
-                    0, // We don't have the user ID here easily, but we could look it up if needed
+                    userId,
                     "Request Submitted",
                     $"Your exemption request ({requestNumber}) has been successfully submitted",
                     "success",
-                    $"/exemptions/view?id={requestNumber}"
+                    $"/exemptions/view?id={requestId}"
                 );
             }
             else

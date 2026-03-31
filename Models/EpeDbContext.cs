@@ -975,6 +975,51 @@ public partial class EpeDbContext : DbContext
                 .IsUnicode(false);
         });
 
+        modelBuilder.Entity<EpeNotification>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.ToTable("epe_notification");
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+
+            entity.Property(e => e.UserId)
+                .HasColumnName("userid");
+
+            entity.Property(e => e.Title)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasDefaultValue("")
+                .HasColumnName("title");
+
+            entity.Property(e => e.Message)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasDefaultValue("")
+                .HasColumnName("message");
+
+            entity.Property(e => e.Type)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasDefaultValue("info") // info, success, warning, error
+                .HasColumnName("type");
+
+            entity.Property(e => e.IsRead)
+                .HasColumnName("isread")
+                .HasDefaultValue((byte)0);
+
+            entity.Property(e => e.RelatedUrl)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasColumnName("relatedurl");
+
+            entity.Property(e => e.CreatedDate)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnName("createddate");
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 

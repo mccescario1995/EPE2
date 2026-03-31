@@ -12,10 +12,12 @@ namespace EPEAPI.Controllers
     public class NotificationController : ControllerBase
     {
         private readonly EpeDbContext _context;
+        private readonly ILogger<ExceptionController> _logger;
 
-        public NotificationController(EpeDbContext context)
+        public NotificationController(EpeDbContext context, ILogger<ExceptionController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         // Helper method to get the current user ID from authentication
@@ -99,10 +101,17 @@ namespace EPEAPI.Controllers
         }
 
         // GET: api/notifications
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<EpeNotification>>> GetNotifications()
+        [HttpPost]
+        public async Task<ActionResult<IEnumerable<EpeNotification>>> GetNotifications(UseridRequest userid)
         {
-            var userId = GetCurrentUserId();
+            Console.WriteLine(userid);
+
+            var userId = userid.UserId;
+
+            _logger.LogInformation(" GetNotifications HIT: {UserId}", userid.UserId);
+
+            Console.WriteLine(userId);
+
             return await _context.EpeNotifications
                 .Where(n => n.UserId == userId)
                 .OrderByDescending(n => n.CreatedDate)
@@ -111,11 +120,11 @@ namespace EPEAPI.Controllers
 
         // GET: api/notifications/unread-count
         [HttpGet("unread-count")]
-        public async Task<ActionResult<int>> GetUnreadCount()
+        public async Task<ActionResult<int>> GetUnreadCount(UseridRequest userid)
         {
-            var userId = GetCurrentUserId();
+            var userId = userid.UserId;
             var count = await _context.EpeNotifications
-                .CountAsync(n => n.UserId == userId && !n.IsRead);
+                .CountAsync(n => n.UserId == userId && n.IsRead == 0);
             return count;
         }
 
@@ -129,7 +138,7 @@ namespace EPEAPI.Controllers
                 return NotFound();
             }
 
-            notification.IsRead = true;
+            notification.IsRead = 1 ;
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -141,12 +150,12 @@ namespace EPEAPI.Controllers
         {
             var userId = GetCurrentUserId();
             var notifications = await _context.EpeNotifications
-                .Where(n => n.UserId == userId && !n.IsRead)
+                .Where(n => n.UserId == userId && n.IsRead == 0)
                 .ToListAsync();
 
             foreach (var notification in notifications)
             {
-                notification.IsRead = true;
+                notification.IsRead = 1;
             }
 
             await _context.SaveChangesAsync();
