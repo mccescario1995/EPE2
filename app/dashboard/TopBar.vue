@@ -51,8 +51,15 @@
             >
               <BellIcon :unreadCount="notificationStore.unreadCount" />
               <!-- Badge for unread count -->
-              <span v-if="notificationStore.unreadCount > 0" class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center text-xs font-bold text-white bg-red-500 rounded-full">
-                {{ notificationStore.unreadCount > 99 ? '99+' : notificationStore.unreadCount }}
+              <span
+                v-if="notificationStore.unreadCount > 0"
+                class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center text-xs font-bold text-white bg-red-500 rounded-full"
+              >
+                {{
+                  notificationStore.unreadCount > 99
+                    ? "99+"
+                    : notificationStore.unreadCount
+                }}
               </span>
             </button>
 
@@ -67,44 +74,64 @@
             >
               <div
                 v-if="isNotificationDropdownOpen"
-                class="absolute top-10 right-0 mt-2 w-64 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                class="absolute top-10 right-0 mt-2 w-90 origin-top-right rounded-md bg-white py-1 shadow-md ring-1 ring-black ring-opacity-5 focus:outline-none"
                 role="menu"
                 aria-orientation="vertical"
                 aria-labelledby="notification-button"
                 tabindex="-1"
                 @click.outside="closeNotificationDropdown"
               >
-                <div class="px-4 py-2">
-                  <span class="block text-sm font-medium text-gray-700">Notifications</span>
+                <div class="px-4 py-2 flex items-center justify-between">
+                  <span class="block text-sm font-medium text-gray-700"
+                    >Notifications
+                    <span
+                      v-if="notificationStore.unreadCount > 0"
+                      class="h-4 w-4 text-xs font-bold text-white bg-red-500 rounded-full px-1"
+                    >
+                      {{
+                        notificationStore.unreadCount > 99
+                          ? "99+"
+                          : notificationStore.unreadCount
+                      }}
+                    </span></span
+                  >
                 </div>
-                <div class="divider my-2"></div>
-                <div class="space-y-2">
+
+                <div class="overflow-y-auto max-h-83 ">
                   <template v-if="notificationStore.notifications.length === 0">
                     <div class="px-4 py-3 text-center text-sm text-gray-500">
                       No notifications
                     </div>
                   </template>
                   <template v-else>
-                    <template v-for="notification in notificationStore.notifications" :key="notification.id">
+                    <template
+                      v-for="notification in notificationStore.notifications"
+                      :key="notification.id"
+                    >
                       <div
                         class="px-4 py-3 sm:px-4"
-                        :class="{
+                        :class="{                                                 
                           'bg-gray-50': !notification.isRead,
+                          'bg-gray-300': notification.isRead,
                           'cursor-pointer': true,
-                          'hover:bg-gray-100': true
+                          'hover:bg-gray-200': true,
+                          // 'hover:text-gray-700': true,
+                          'border-b': true,
                         }"
                         @click="markAsReadAndNavigate(notification)"
                       >
                         <div class="flex items-start space-x-3">
-                          <div class="flex-shrink-0">
-                            <!-- Notification icon based on type -->
+                          <!-- <div class="flex-shrink-0">
+
                             <svg
                               class="h-5 w-5 text-gray-400"
                               :class="{
-                                'text-green-500': notification.type === 'success',
+                                'text-green-500':
+                                  notification.type === 'success',
                                 'text-red-500': notification.type === 'error',
-                                'text-yellow-500': notification.type === 'warning',
-                                'text-blue-500': notification.type === 'info'
+                                'text-yellow-500':
+                                  notification.type === 'warning',
+                                'text-blue-500': notification.type === 'info',
                               }"
                               viewBox="0 0 24 24"
                               fill="none"
@@ -117,9 +144,11 @@
                                 :d="getNotificationIconPath(notification.type)"
                               />
                             </svg>
-                          </div>
+                          </div> -->
                           <div class="flex-1">
-                            <h3 class="mb-1 text-sm font-medium text-gray-900 line-clamp-1">
+                            <h3
+                              class="mb-1 text-sm font-medium text-gray-900 line-clamp-1"
+                            >
                               {{ notification.title }}
                             </h3>
                             <p class="mb-1 text-sm text-gray-500 line-clamp-2">
@@ -361,6 +390,13 @@ function markAsReadAndNavigate(notification) {
   console.log("Notification clicked:", notification);
   // Mark as read
   notificationStore.markAsRead(notification.id);
+  // Update the notification's isRead property locally to reflect the change immediately
+  var response = apiFetch(`/api/notification/${notification.id}/read`, {
+    method: "POST",
+  });
+
+  console.log("Mark as read response:", response);
+
   // Close dropdown
   closeNotificationDropdown();
   // Navigate to the related URL if it exists
@@ -371,6 +407,16 @@ function markAsReadAndNavigate(notification) {
 
 function markAllAsRead() {
   notificationStore.markAllAsRead();
+  var response = apiFetch("/api/notification/read-all", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ UserId: parseInt(profile.userId) }),
+    credentials: "include",
+    parseJson: true,
+  });
+  console.log("Mark all as read response:", response);
   closeNotificationDropdown();
 }
 
@@ -431,7 +477,13 @@ function getNotificationIconPath(type) {
 
 // Helper function to format date
 function formatDate(dateString) {
-  const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+  const options = {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  };
   return new Date(dateString).toLocaleDateString(undefined, options);
 }
 

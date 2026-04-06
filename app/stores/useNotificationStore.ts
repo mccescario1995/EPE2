@@ -61,7 +61,6 @@ export const useNotificationStore = defineStore("notification", () => {
   // Update the unread count
   const updateUnreadCount = () => {
     unreadCount.value = notifications.value.filter((n) => n.isRead !== 1).length;
-    console.log("Updated unread count:", unreadCount.value);
   };
 
   // Remove a notification (optional)

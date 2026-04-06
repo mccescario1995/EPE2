@@ -32,35 +32,36 @@ const cancelDelete = () => {
 
 const deleteRequest = async () => {
   if (!deletingItem.value) return;
-  
+
   deleteLoading.value = true;
   try {
-
     const payload = {
       userId: userId.userId,
-    }
+    };
 
-    const response = await apiFetch(`/api/exception/delete/${deletingItem.value.transactionId}`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-      headers: {
-        "Content-Type": "application/json",
+    const response = await apiFetch(
+      `/api/exception/delete/${deletingItem.value.transactionId}`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // parseJson: true,
       },
-      // parseJson: true,
-    });
-    
+    );
+
     if (response) {
       showDeleteConfirm.value = false;
       deletingItem.value = null;
       // Refresh the list after successful delete
 
       showToast({
-      title: "Request Deleted",
-      message:
-        "The exemption request has been successfully deleted.",
-      type: "error",
-      duration: 5000,
-    });
+        title: "Request Deleted",
+        message: "The exemption request has been successfully deleted.",
+        type: "error",
+        duration: 5000,
+      });
 
       await fetchExemptionRequests();
     } else {
@@ -81,11 +82,17 @@ const fetchExemptionRequests = async () => {
       parseJson: true,
     });
     exemptionData.value = responseExemptions.items;
+    console.log("Fetched exemption requests:", exemptionData.value);
   } catch (error) {
     console.error("Error fetching exemption requests:", error);
   } finally {
     loading.value = false;
   }
+};
+
+// Handle create navigation
+const handleCreate = () => {
+  router.push(`/exemptions/create`);
 };
 
 watchEffect(() => {
@@ -97,17 +104,30 @@ watchEffect(() => {
   <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh">
     <header class="bg-white shadow">
       <div
-        class="max-w-7xl me-auto py-4 px-4                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     sm:px-6 lg:px-8 flex justify-start items-center"
+        class="max-w-7xl me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
       >
+        <div class="flex items-center">
+          <Button
+            variant="ghost-primary"
+            size="lg"
+            icon="left_arrow"
+            iconPosition="center"
+            customClass="rounded-full"
+            @onclick="$router.back()"
+          />
+          <h1 class="text-2xl ps-5 font-bold text-gray-900">All Requests</h1>
+        </div>
+
         <Button
-          variant="ghost-primary"
-          size="lg"
-          icon="left_arrow"
-          iconPosition="center"
-          customClass="rounded-full"
-          @onclick="$router.back()"
-        />
-        <h1 class="text-2xl ps-5 font-bold text-gray-900">My Requests</h1>
+          v-if="exemptionData"
+          variant="primary"
+          size="md"
+          icon="add"
+          iconPosition="left"
+          @onclick="handleCreate"
+        >
+          Create Request
+        </Button>
       </div>
     </header>
     <main class="max-w-7xl mx-auto py-6 sm:px-6">
@@ -116,12 +136,10 @@ watchEffect(() => {
         <base-table
           :table-data="exemptionData"
           :header="[
-            'transactionId',
             'transactionNumber',
-            'requesterName',
-            'corporate',
             'policyName',
             'status',
+            'requesterName',
             'createdDate',
           ]"
           :badge-fields="['status', 'finalDecision']"
@@ -183,21 +201,38 @@ watchEffect(() => {
       <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
           <!-- Backdrop -->
-          <div 
-            class="fixed inset-0 bg-black opacity-50 transition-opacity" 
+          <div
+            class="fixed inset-0 bg-black opacity-50 transition-opacity"
             @click="cancelDelete"
           ></div>
-          
+
           <!-- Modal Content -->
-          <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
-              <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <div
+            class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+          >
+            <div
+              class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4"
+            >
+              <svg
+                class="w-6 h-6 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 text-center mb-2">Delete Request</h3>
+            <h3 class="text-lg font-medium text-gray-900 text-center mb-2">
+              Delete Request
+            </h3>
             <p class="text-gray-500 text-center mb-6">
-              Are you sure you want to delete this exemption request? This action cannot be undone.
+              Are you sure you want to delete this exemption request? This
+              action cannot be undone.
             </p>
             <div class="flex gap-3 justify-center">
               <button

@@ -190,38 +190,46 @@ const getProxies = (transApproverId: number): any[] => {
 // Helper function to check if a group (main + proxies) is satisfied (someone in group approved)
 const isGroupSatisfied = (transApproverId: number): boolean => {
   const { mainApprovers, proxiesMap } = groupedApprovers.value;
-  const mainApprover = mainApprovers.find(a => a.transApproverId === transApproverId);
+  const mainApprover = mainApprovers.find(
+    (a) => a.transApproverId === transApproverId,
+  );
   if (!mainApprover) return false;
-  
-  const groupApprovers = [mainApprover, ...(proxiesMap.get(transApproverId) || [])];
-  return groupApprovers.some(a => a.respond === 1);
+
+  const groupApprovers = [
+    mainApprover,
+    ...(proxiesMap.get(transApproverId) || []),
+  ];
+  return groupApprovers.some((a) => a.respond === 1);
 };
 
 // Get the current (active) approver's transApproverId - the first group that hasn't been satisfied
 const currentApproverId = computed(() => {
   const { mainApprovers, proxiesMap } = groupedApprovers.value;
-  
+
   for (const approver of mainApprovers) {
     // Get all approvers in this group (main + proxies)
-    const groupApprovers = [approver, ...(proxiesMap.get(approver.transApproverId) || [])];
-    
+    const groupApprovers = [
+      approver,
+      ...(proxiesMap.get(approver.transApproverId) || []),
+    ];
+
     // Check if ANY in the group has approved
-    const hasApproved = groupApprovers.some(a => a.respond === 1);
-    
+    const hasApproved = groupApprovers.some((a) => a.respond === 1);
+
     // Check if ANY in the group is pending
-    const hasPending = groupApprovers.some(a => a.respond === 0);
-    
+    const hasPending = groupApprovers.some((a) => a.respond === 0);
+
     // If no one has approved yet and someone is pending, this group is active
     if (!hasApproved && hasPending) {
       // Find the first pending one in this group
-      const pending = groupApprovers.find(a => a.respond === 0);
+      const pending = groupApprovers.find((a) => a.respond === 0);
       return pending?.transApproverId;
     }
-    
+
     // If someone has approved in this group, skip to next group
     // Continue to next iteration
   }
-  
+
   return null;
 });
 
@@ -230,13 +238,16 @@ const isResending = ref<number | null>(null);
 const resendToApprover = async (transApproverId: number) => {
   isResending.value = transApproverId;
   try {
-    const response = await apiFetch(`/api/exception/resend/${exemptionId.value}`, {
-      method: "POST",
-      body: JSON.stringify({ transApproverId }),
-      headers: {
-        "Content-Type": "application/json",
+    const response = await apiFetch(
+      `/api/exception/resend/${exemptionId.value}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ transApproverId }),
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     if (response) {
       showToast({
@@ -258,7 +269,8 @@ const resendToApprover = async (transApproverId: number) => {
     showToast({
       type: "error",
       title: "Error",
-      message: error.message || "An error occurred while resending notification",
+      message:
+        error.message || "An error occurred while resending notification",
       duration: 5000,
     });
   } finally {
@@ -288,6 +300,8 @@ const resendToApprover = async (transApproverId: number) => {
           v-if="exemptionData"
           variant="primary"
           size="md"
+          icon="edit"
+          iconPosition="left"
           @onclick="handleEdit"
         >
           Edit Request
@@ -338,8 +352,9 @@ const resendToApprover = async (transApproverId: number) => {
                     <span
                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                       :class="{
-                         'bg-blue-100 text-blue-800 border border-blue-900':
-                          exemptionData.status === 'O' || exemptionData.status === 'P',
+                        'bg-blue-100 text-blue-800 border border-blue-900':
+                          exemptionData.status === 'O' ||
+                          exemptionData.status === 'P',
                         'bg-gray-200 text-gray-800 border border-gray-900':
                           exemptionData.status === 'C',
                       }"
@@ -374,13 +389,13 @@ const resendToApprover = async (transApproverId: number) => {
               <div class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    Created Date
-                  </label>
-                  <p class="text-gray-900">
-                    {{ formatDate(exemptionData.createdDate) }}
-                  </p>
-                </div>
+                    <label class="block text-sm font-medium text-gray-500 mb-1">
+                      Created Date
+                    </label>
+                    <p class="text-gray-900">
+                      {{ formatDate(exemptionData.createdDate) }}
+                    </p>
+                  </div>
 
                   <div>
                     <!-- <div v-if="exemptionData.modifiedDate"> -->
@@ -388,9 +403,9 @@ const resendToApprover = async (transApproverId: number) => {
                       Modified Date
                     </label>
                     <p class="text-gray-900">
-                    <!-- {{ formatDate(exemptionData.createdDate) }} -->
-                       {{ formatDate(exemptionData.createdDate) }}
-                  </p>
+                      <!-- {{ formatDate(exemptionData.createdDate) }} -->
+                      {{ formatDate(exemptionData.createdDate) }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -432,7 +447,9 @@ const resendToApprover = async (transApproverId: number) => {
                   <label class="block text-sm font-medium text-gray-500 mb-1">
                     Details
                   </label>
-                  <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 h-[100px]">
+                  <div
+                    class="bg-gray-50 rounded-lg p-4 border border-gray-200 h-[100px]"
+                  >
                     <p class="text-gray-900 whitespace-pre-wrap">
                       {{ exemptionData.details || "No details provided" }}
                     </p>
@@ -448,13 +465,10 @@ const resendToApprover = async (transApproverId: number) => {
             <!-- Approvers -->
             <div class="mb-8">
               <div class="border-b flex justify-between mb-4">
-
-                <h2
-                class="text-xl font-semibold text-gray-800 mb-2 "
-                >
-                Approvers Status
-              </h2>
-              <div>
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">
+                  Approvers Status
+                </h2>
+                <div>
                   <span
                     v-if="exemptionData.finalDecision"
                     class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
@@ -470,7 +484,7 @@ const resendToApprover = async (transApproverId: number) => {
                     {{ getFinalDecisionDisplay(exemptionData.finalDecision) }}
                   </span>
                 </div>
-            </div>
+              </div>
 
               <div
                 v-if="approversData && approversData.length > 0"
@@ -533,7 +547,11 @@ const resendToApprover = async (transApproverId: number) => {
                         </span> -->
                         <!-- Resend button only for current pending approver (and not satisfied by group) -->
                         <button
-                          v-if="approver.respond === 0 && approver.transApproverId === currentApproverId && !isGroupSatisfied(approver.transApproverId)"
+                          v-if="
+                            approver.respond === 0 &&
+                            approver.transApproverId === currentApproverId &&
+                            !isGroupSatisfied(approver.transApproverId)
+                          "
                           @click="resendToApprover(approver.transApproverId)"
                           :disabled="isResending === approver.transApproverId"
                           class="flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
@@ -560,7 +578,7 @@ const resendToApprover = async (transApproverId: number) => {
                               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                             ></path>
                           </svg>
-                          <svg
+                          <!-- <svg
                             v-else
                             class="h-3 w-3 mr-1"
                             xmlns="http://www.w3.org/2000/svg"
@@ -574,7 +592,24 @@ const resendToApprover = async (transApproverId: number) => {
                               stroke-width="2"
                               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                             />
+                          </svg> -->
+
+                          <svg
+                            v-else
+                            class="h-3 w-3 mr-1"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 14 14"
+                          >
+                            <path
+                              fill="currentColor"
+                              fill-rule="evenodd"
+                              d="M11.688.103a1.724 1.724 0 0 1 2.208 2.208L10.39 12.816a1.72 1.72 0 0 1-1.242 1.137a1.7 1.7 0 0 1-1.619-.462L5.716 11.69l-1.89.976a.625.625 0 0 1-.911-.571l.08-3.132L.5 6.467a1.7 1.7 0 0 1-.466-1.542A1.72 1.72 0 0 1 1.17 3.61l.005-.002zm.69 1.157a.47.47 0 0 0-.286.026L1.572 4.793a.47.47 0 0 0-.31.363l-.003.014a.45.45 0 0 0 .123.412l1.95 1.948l6.33-4.177a.5.5 0 0 1 .616.783L4.225 9.8l-.033 1.27l1.355-.7a.625.625 0 0 1 .728.111l2.138 2.127l.006.006a.45.45 0 0 0 .433.124l.008-.002a.47.47 0 0 0 .342-.312v-.002l3.511-10.516l.007-.02a.47.47 0 0 0-.342-.626"
+                              clip-rule="evenodd"
+                            />
                           </svg>
+
                           Resend
                         </button>
                       </div>
@@ -639,7 +674,11 @@ const resendToApprover = async (transApproverId: number) => {
                           </span> -->
                           <!-- Resend button only for current pending proxy (and not satisfied by group) -->
                           <button
-                            v-if="proxy.respond === 0 && proxy.transApproverId === currentApproverId && !isGroupSatisfied(approver.transApproverId)"
+                            v-if="
+                              proxy.respond === 0 &&
+                              proxy.transApproverId === currentApproverId &&
+                              !isGroupSatisfied(approver.transApproverId)
+                            "
                             @click="resendToApprover(proxy.transApproverId)"
                             :disabled="isResending === proxy.transApproverId"
                             class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
@@ -689,7 +728,10 @@ const resendToApprover = async (transApproverId: number) => {
                   </div>
                 </template>
               </div>
-              <div v-else class="text-gray-500 text-sm flex items-center justify-center h-24">
+              <div
+                v-else
+                class="text-gray-500 text-sm flex items-center justify-center h-24"
+              >
                 No approvers assigned yet.
               </div>
             </div>

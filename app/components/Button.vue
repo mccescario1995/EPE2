@@ -43,12 +43,13 @@
         </svg>
       </span>
 
+
+        <!-- Added "center"  : mccesccario --> 
       <!-- Icon -->
       <span
         v-if="icon && !loading"
         class="transition-transform duration-300 group-hover:scale-110"
-        :class="iconPosition === 'right' ? 'order-2 ml-2' : iconPosition === 'center' ? 'mx-auto' : 'mr-2'"
-        
+        :class="iconPosition === 'right' ? 'order-2 ml-2' : iconPosition === 'center' ? 'mx-auto' : 'mr-2'" 
       >
         <component
           v-if="typeof icon === 'string' && iconComponents[getIconComponent(icon)]"
@@ -113,7 +114,7 @@ const props = defineProps({
   iconPosition: {
     type: String,
     default: "left",
-    validator: (value) => ["left", "right", "center"].includes(value),
+    validator: (value) => ["left", "right", "center"].includes(value), // Added "center" option : mccescario
   },
   loading: {
     type: Boolean,
@@ -197,6 +198,10 @@ const getIconComponent = (iconName) => {
     download: "DownloadIcon",
     left_arrow: "LeftArrowIcon",
     right_arrow: "RightArrowIcon",
+    add: "AddIcon", // Added AddIcon mapping
+    edit: "EditIcon", // Added EditIcon mapping
+    view: "ViewIcon", // Added ViewIcon mapping
+    save: "SaveIcon" // Added SaveIcon mapping
   };
   return icons[iconName] || null;
 };
@@ -208,6 +213,10 @@ const iconComponents = {
   DownloadIcon: defineAsyncComponent(() => import("./icon/Download.vue")),
   LeftArrowIcon: defineAsyncComponent(() => import("./icon/LeftArrow.vue")),
   RightArrowIcon: defineAsyncComponent(() => import("./icon/RightArrow.vue")),
+  AddIcon: defineAsyncComponent(() => import("./icon/Add.vue")), // Added AddIcon component
+  EditIcon: defineAsyncComponent(() => import("./icon/Edit.vue")), // Added EditIcon component
+  ViewIcon: defineAsyncComponent(() => import("./icon/View.vue")), // Added ViewIcon component
+  SaveIcon: defineAsyncComponent(() => import("./icon/Save.vue")), // Added SaveIcon component
 };
 </script>
 

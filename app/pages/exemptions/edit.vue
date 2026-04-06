@@ -515,6 +515,8 @@ onMounted(() => {
           <Button
             variant="primary"
             size="md"
+            icon="save"
+            iconPosition="left"
             @onclick="handleSubmit"
             :loading="isSubmitting"
           >

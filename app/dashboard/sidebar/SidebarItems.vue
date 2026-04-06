@@ -84,57 +84,56 @@ onMounted(async () => {
     //   isopen: false,
     //   isActive: true,
     // },
-    // {
-    //   id: 3,
-    //   title: "Exemptions",
-    //   isopen: true,
-    //   submenu: [
-    //     {
-    //       id: "E1",
-    //       title: "My Requests",
-    //       route: "/exemptions/",
-    //     },
-    //     {
-    //       id: "E2",
-    //       title: "Create Request",
-    //       route: "/exemptions/create",
-    //     },
-    //     {
-    //       id: "E3",
-    //       title: "Pending Approvals",
-    //       route: "/exemptions/pending",
-    //     },
-    //     {
-    //       id: "E4",
-    //       title: "Closed Requests",
-    //       route: "/exemptions/closed",
-    //     },
-    //   ],
-    // },
+    {
+      id: 3,
+      title: "Requests",
+      isopen: true,
+      submenu: [
+        {
+          id: "E1",
+          title: "All",
+          route: "/exemptions/",
+        },
+        // {
+        //   id: "E2",
+        //   title: "Create Request",
+        //   route: "/exemptions/create",
+        // },
+        {
+          id: "E3",
+          title: "Pending",
+          route: "/exemptions/pending",
+        },
+        {
+          id: "E4",
+          title: "Closed",
+          route: "/exemptions/closed",
+        },
+      ],
+    },
 
     // =============================================================
 
-    {
-      id: 4,
-      title: "My Requests",
-      route: "/exemptions/",
-      isopen: false,
-    },
-    {
-      id: 5,
-      title: "Create Request",
-      route: "/exemptions/create",
-    },
-    {
-      id: 5,
-      title: "Pending Approvals",
-      route: "/exemptions/pending",
-    },
-    {
-      id: 5,
-      title: "Closed Requests",
-      route: "/exemptions/closed",
-    },
+    // {
+    //   id: 4,
+    //   title: "Excemption Requests",
+    //   route: "/exemptions/",
+    // },
+    // {
+    //   id: 5,
+    //   title: "Create Request",
+    //   route: "/exemptions/create",
+    // },
+    // {
+    //   id: 5,
+    //   title: "Pending Approvals",
+    //   route: "/exemptions/pending",
+    // },
+    // {
+    //   id: 5,
+    //   title: "Closed Requests",
+    //   route: "/exemptions/closed",
+    // },
   ];
 
   const dynamicmenu = await fetchMenuList();

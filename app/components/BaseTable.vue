@@ -2,7 +2,7 @@
   <!-- Global Search -->
   <div v-if="props.showSearch" class="flex mb-6">
     <div
-      class="relative text-gray-400 focus-within:text-indigo-600 flex-1 max-w-md"
+      class="relative text-gray-400 focus-within:text-indigo-600 flex-1"
     >
       <div
         class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none"
@@ -56,9 +56,12 @@
     </Button>
   </div>
 
+  <!-- Added if condition  : mccesccario  (to remove floating div with margin)--> 
   <div
+    v-if="showFilterControls || props.showlimitfilter" 
     class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6"
   >
+
     <!-- Dynamic Filter Controls -->
     <div v-if="showFilterControls" class="flex flex-wrap gap-3">
       <div
