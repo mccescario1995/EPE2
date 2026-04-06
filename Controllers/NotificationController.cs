@@ -100,7 +100,7 @@ namespace EPEAPI.Controllers
             return 0;
         }
 
-        // GET: api/notifications
+        // GET: api/notification
         [HttpPost]
         public async Task<ActionResult<IEnumerable<EpeNotification>>> GetNotifications(UseridRequest userid)
         {
@@ -118,7 +118,7 @@ namespace EPEAPI.Controllers
                 .ToListAsync();
         }
 
-        // GET: api/notifications/unread-count
+        // GET: api/notification/unread-count
         [HttpGet("unread-count")]
         public async Task<ActionResult<int>> GetUnreadCount(UseridRequest userid)
         {
@@ -128,9 +128,9 @@ namespace EPEAPI.Controllers
             return count;
         }
 
-        // POST: api/notifications/{id}/read
+        // POST: api/notification/{id}/read
         [HttpPost("{id}/read")]
-        public async Task<ActionResult> MarkAsRead(long id)
+        public async Task<ActionResult> MarkAsRead(int id)
         {
             var notification = await _context.EpeNotifications.FindAsync(id);
             if (notification == null)
@@ -144,11 +144,11 @@ namespace EPEAPI.Controllers
             return NoContent();
         }
 
-        // POST: api/notifications/read-all
+        // POST: api/notification/read-all
         [HttpPost("read-all")]
-        public async Task<ActionResult> MarkAllAsRead()
+        public async Task<ActionResult> MarkAllAsRead(UseridRequest userid)
         {
-            var userId = GetCurrentUserId();
+            var userId = userid.UserId;
             var notifications = await _context.EpeNotifications
                 .Where(n => n.UserId == userId && n.IsRead == 0)
                 .ToListAsync();

@@ -26,85 +26,7 @@ namespace EPEAPI.Controllers
             _logger = logger;
         }
 
-        // Helper method to get the current user ID from authentication
-        private long GetCurrentUserId()
-        {
-            // First try to get from session (used by some controllers)
-            var sessionUserId = HttpContext.Session.GetInt32("UserId");
-            if (sessionUserId.HasValue)
-            {
-                return sessionUserId.Value;
-            }
-
-            // Try to get from token header (used by TokenAuthenticationFilter)
-            if (HttpContext.Request.Headers.ContainsKey("token"))
-            {
-                var token = HttpContext.Request.Headers["token"].ToString();
-                try
-                {
-                    var handler = new JwtSecurityTokenHandler();
-                    var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
-                    if (jsonToken != null)
-                    {
-                        var userIdClaim = jsonToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-                        if (userIdClaim != null && long.TryParse(userIdClaim.Value, out var userId))
-                        {
-                            return userId;
-                        }
-                    }
-                }
-                catch
-                {
-                    // If JWT parsing fails, try the custom token format used by TokenManager
-                    try
-                    {
-                        var fromBase64 = Encoding.UTF8.GetString(Convert.FromBase64String(token));
-                        var credentials = fromBase64.Split(':');
-                        if (credentials.Length >= 3 && credentials[1].EndsWith("tsaf"))
-                        {
-                            if (long.TryParse(credentials[0], out var userId))
-                            {
-                                return userId;
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        // Ignore and continue to return 0
-                    }
-                }
-            }
-
-            // Try to get from Authorization header (Bearer token)
-            if (HttpContext.Request.Headers.ContainsKey("Authorization"))
-            {
-                var authHeader = HttpContext.Request.Headers["Authorization"].ToString();
-                if (authHeader.StartsWith("Bearer "))
-                {
-                    var token = authHeader.Substring("Bearer ".Length).Trim();
-                    try
-                    {
-                        var handler = new JwtSecurityTokenHandler();
-                        var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
-                        if (jsonToken != null)
-                        {
-                            var userIdClaim = jsonToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-                            if (userIdClaim != null && long.TryParse(userIdClaim.Value, out var userId))
-                            {
-                                return userId;
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        // Ignore and continue to return 0
-                    }
-                }
-            }
-
-            // Return 0 as fallback (should be improved in a real application)
-            return 0;
-        }
+        
 
         [HttpPost]
         public async Task<IActionResult> GetExcemptionList(
@@ -170,7 +92,61 @@ namespace EPEAPI.Controllers
             try
             {
 
-                var query = _context.EpeVTransactionHeaders.Where(u => u.IsDelete == 0);
+                var query = _context.EpeVTransactionHeaders.Where(u => u.FinalDecision == "Pending" && u.IsDelete == 0);
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var searchWords = search.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                    // Start with TRUE so we can AND each word
+                    var predicate = PredicateBuilder.New<EpeVTransactionHeader>(true);
+                    foreach (var word in searchWords)
+                    {
+                        predicate = predicate.And(u =>
+                            u.TransactionId.ToString().Contains(word) ||
+                            u.TransactionNumber.ToString().ToLower().Contains(word) ||
+                            u.RequesterName.ToString().Contains(word) ||
+                            u.FinalDecision.ToString().Contains(word) ||
+                            u.PolicyName.ToString().Contains(word)
+                        );
+                    }
+
+                    query = query.Where(predicate);
+                }
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
+                    .OrderByDescending(u => u.CreatedDate)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    items = items,
+
+                });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error" + e.Message);
+            }
+
+        }
+
+        [HttpPost("closed")]
+        public async Task<IActionResult> GetExcemptionClosedList(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? search = null
+            )
+        {
+            try
+            {
+
+                var query = _context.EpeVTransactionHeaders.Where(u => u.FinalDecision == "Approved" || u.FinalDecision == "Disapproved" && u.IsDelete == 0);
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {

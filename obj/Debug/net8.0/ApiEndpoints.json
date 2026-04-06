@@ -266,7 +266,7 @@
     "Parameters": [
       {
         "Name": "id",
-        "Type": "System.Int64",
+        "Type": "System.Int32",
         "IsRequired": true
       }
     ],
@@ -279,7 +279,13 @@
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "userid",
+        "Type": "EPEAPI.Models.UseridRequest",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -289,7 +295,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "userid",
+        "Type": "EPEAPI.Models.UseridRequest",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Int32",
