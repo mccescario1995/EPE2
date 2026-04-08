@@ -60,6 +60,104 @@
     "Order": 0,
     "Parameters": [
       {
+        "Name": "userid",
+        "Type": "EPEAPI.Models.UseridRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "search",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
+    "Method": "AddAttachment",
+    "RelativePath": "api/Exception/add-attachment/{transactionId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "transactionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "Policyid",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "Details",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Requestorid",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Createdby",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "Ipaddress",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Macaddress",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Attachments",
+        "Type": "System.Collections.Generic.List\u00601[[EPEAPI.Dto.AttachmentDto, EPEAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
+    "Method": "GetAttachments",
+    "RelativePath": "api/Exception/attachments/{transactionId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "transactionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
+    "Method": "GetExcemptionClosedList",
+    "RelativePath": "api/Exception/closed",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
         "Name": "page",
         "Type": "System.Int32",
         "IsRequired": false
@@ -86,8 +184,54 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "EPEAPI.Models.EpeTransactionheader",
+        "Name": "Policyid",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "Details",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Requestorid",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Createdby",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "Ipaddress",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Macaddress",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Attachments",
+        "Type": "System.Collections.Generic.List\u00601[[EPEAPI.Dto.AttachmentDto, EPEAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EPEAPI.Controllers.ExceptionController",
+    "Method": "DeleteAttachment",
+    "RelativePath": "api/Exception/delete-attachment/{attachId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "attachId",
+        "Type": "System.Int32",
         "IsRequired": true
       }
     ],

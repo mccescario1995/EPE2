@@ -61,6 +61,9 @@ builder.Services.AddScoped<ITokenManager, TokenManager>();
 builder.Services.AddHttpClient<EmailNotificationService>();
 builder.Services.AddScoped<EmailNotificationService>();
 
+// File Upload Service
+builder.Services.AddScoped<FileUploadService>();
+
 var app = builder.Build();
 
 app.UseCors("Policy");
@@ -73,7 +76,6 @@ if (app.Environment.IsDevelopment())
 }
 
 
-
 //app.UseHttpsRedirection();
 
 app.UseRouting();
@@ -83,5 +85,7 @@ app.UseSession();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseStaticFiles();
 
 app.Run();

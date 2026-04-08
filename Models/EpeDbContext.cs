@@ -693,6 +693,8 @@ public partial class EpeDbContext : DbContext
                 .HasMaxLength(256)
                 .IsUnicode(false)
                 .HasColumnName("uploadFilename");
+            //entity.Property(e => e.IsDelete)
+            //    .HasColumnName("isDelete");
         });
 
         modelBuilder.Entity<EpePolicyapprover>(entity =>

@@ -123,6 +123,25 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UseridRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UseridRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UseridRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -131,6 +150,45 @@
       }
     },
     "/api/Exception/pending": {
+      "post": {
+        "tags": [
+          "Exception"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Exception/closed": {
       "post": {
         "tags": [
           "Exception"
@@ -222,19 +280,60 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/EpeTransactionheader"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EpeTransactionheader"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/EpeTransactionheader"
+                "type": "object",
+                "properties": {
+                  "Policyid": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Details": {
+                    "type": "string"
+                  },
+                  "Requestorid": {
+                    "type": "string"
+                  },
+                  "Createdby": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Ipaddress": {
+                    "type": "string"
+                  },
+                  "Macaddress": {
+                    "type": "string"
+                  },
+                  "Attachments": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/AttachmentDto"
+                    }
+                  }
+                }
+              },
+              "encoding": {
+                "Policyid": {
+                  "style": "form"
+                },
+                "Details": {
+                  "style": "form"
+                },
+                "Requestorid": {
+                  "style": "form"
+                },
+                "Createdby": {
+                  "style": "form"
+                },
+                "Ipaddress": {
+                  "style": "form"
+                },
+                "Macaddress": {
+                  "style": "form"
+                },
+                "Attachments": {
+                  "style": "form"
+                }
               }
             }
           }
@@ -354,6 +453,135 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Exception/attachments/{transactionId}": {
+      "get": {
+        "tags": [
+          "Exception"
+        ],
+        "parameters": [
+          {
+            "name": "transactionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Exception/add-attachment/{transactionId}": {
+      "post": {
+        "tags": [
+          "Exception"
+        ],
+        "parameters": [
+          {
+            "name": "transactionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "Policyid": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Details": {
+                    "type": "string"
+                  },
+                  "Requestorid": {
+                    "type": "string"
+                  },
+                  "Createdby": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Ipaddress": {
+                    "type": "string"
+                  },
+                  "Macaddress": {
+                    "type": "string"
+                  },
+                  "Attachments": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/AttachmentDto"
+                    }
+                  }
+                }
+              },
+              "encoding": {
+                "Policyid": {
+                  "style": "form"
+                },
+                "Details": {
+                  "style": "form"
+                },
+                "Requestorid": {
+                  "style": "form"
+                },
+                "Createdby": {
+                  "style": "form"
+                },
+                "Ipaddress": {
+                  "style": "form"
+                },
+                "Macaddress": {
+                  "style": "form"
+                },
+                "Attachments": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Exception/delete-attachment/{attachId}": {
+      "delete": {
+        "tags": [
+          "Exception"
+        ],
+        "parameters": [
+          {
+            "name": "attachId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -678,6 +906,21 @@
           "respond": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AttachmentDto": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "nullable": true
+          },
+          "referenceType": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
