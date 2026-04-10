@@ -307,10 +307,10 @@ C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\staticwebassets
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\staticwebassets.build.json.cache
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\staticwebassets.development.json
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\EPEAPI.csproj.Up2Date
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\EPEAPI.dll
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\refint\EPEAPI.dll
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\EPEAPI.pdb
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\EPEAPI.genruntimeconfig.cache
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\ref\EPEAPI.dll
+C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

@@ -567,7 +567,7 @@
       }
     },
     "/api/Exception/delete-attachment/{attachId}": {
-      "delete": {
+      "post": {
         "tags": [
           "Exception"
         ],

@@ -9,6 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.IO;
+using Microsoft.AspNetCore.Hosting;
 
 namespace EPEAPI.Controllers
 {
@@ -20,13 +21,15 @@ namespace EPEAPI.Controllers
     private readonly EmailNotificationService _emailService;
     private readonly FileUploadService _fileUploadService;
     private readonly ILogger<ExceptionController> _logger;
+    private readonly IWebHostEnvironment _env;
 
-    public ExceptionController(EpeDbContext contextdb, EmailNotificationService emailService, FileUploadService fileUploadService, ILogger<ExceptionController> logger)
+    public ExceptionController(EpeDbContext contextdb, EmailNotificationService emailService, FileUploadService fileUploadService, ILogger<ExceptionController> logger, IWebHostEnvironment env)
     {
         _context = contextdb;
         _emailService = emailService;
         _fileUploadService = fileUploadService;
         _logger = logger;
+        _env = env;
     }
 
         public class ExemptionListRequest
@@ -55,7 +58,6 @@ namespace EPEAPI.Controllers
                 {
                     var searchWords = search.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-                    // Start with TRUE so we can AND each word
                     var predicate = PredicateBuilder.New<EpeVTransactionHeader>(true);
                     foreach (var word in searchWords)
                     {
@@ -116,6 +118,7 @@ namespace EPEAPI.Controllers
 
         [HttpPost("pending")]
         public async Task<IActionResult> GetExcemptionPendingList(
+            [FromBody] UseridRequest userid,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? search = null
@@ -123,14 +126,13 @@ namespace EPEAPI.Controllers
         {
             try
             {
-
+                var currentUserEmplId = userid.UserId;
                 var query = _context.EpeVTransactionHeaders.Where(u => u.FinalDecision == "Pending" && u.IsDelete == 0);
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var searchWords = search.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-                    // Start with TRUE so we can AND each word
                     var predicate = PredicateBuilder.New<EpeVTransactionHeader>(true);
                     foreach (var word in searchWords)
                     {
@@ -148,10 +150,31 @@ namespace EPEAPI.Controllers
 
                 var totalCount = await query.CountAsync();
 
+                var approvableTransactionIds = await _context.EpeVTransactionApprovers
+                    .Where(a =>
+                        a.EmployeeId == currentUserEmplId.ToString() &&
+                        a.Respond == 0 &&
+                        a.IsDelete == 0)
+                    .Select(a => a.TransactionId)
+                    .ToListAsync();
+
                 var items = await query
                     .OrderByDescending(u => u.CreatedDate)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
+                    .Select(h => new
+                    {
+                        TransactionId = h.TransactionId,
+                        TransactionNumber = h.TransactionNumber,
+                        PolicyName = h.PolicyName,
+                        Status = h.Status,
+                        RequesterName = h.RequesterName,
+                        CreatedDate = h.CreatedDate,
+                        RequesterId = h.RequesterId,
+                        FinalDecision = h.FinalDecision,
+
+                        CanApprove = approvableTransactionIds.Contains(h.TransactionId)
+                    })
                     .ToListAsync();
 
                 return Ok(new
@@ -170,6 +193,7 @@ namespace EPEAPI.Controllers
 
         [HttpPost("closed")]
         public async Task<IActionResult> GetExcemptionClosedList(
+            [FromBody] UseridRequest userid,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? search = null
@@ -177,14 +201,13 @@ namespace EPEAPI.Controllers
         {
             try
             {
-
+                var currentUserEmplId = userid.UserId;
                 var query = _context.EpeVTransactionHeaders.Where(u => u.FinalDecision == "Approved" || u.FinalDecision == "Disapproved" && u.IsDelete == 0);
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var searchWords = search.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-                    // Start with TRUE so we can AND each word
                     var predicate = PredicateBuilder.New<EpeVTransactionHeader>(true);
                     foreach (var word in searchWords)
                     {
@@ -202,10 +225,31 @@ namespace EPEAPI.Controllers
 
                 var totalCount = await query.CountAsync();
 
+                var approvableTransactionIds = await _context.EpeVTransactionApprovers
+                    .Where(a =>
+                        a.EmployeeId == currentUserEmplId.ToString() &&
+                        a.Respond == 0 &&
+                        a.IsDelete == 0)
+                    .Select(a => a.TransactionId)
+                    .ToListAsync();
+
                 var items = await query
                     .OrderByDescending(u => u.CreatedDate)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
+                    .Select(h => new
+                    {
+                        TransactionId = h.TransactionId,
+                        TransactionNumber = h.TransactionNumber,
+                        PolicyName = h.PolicyName,
+                        Status = h.Status,
+                        RequesterName = h.RequesterName,
+                        CreatedDate = h.CreatedDate,
+                        RequesterId = h.RequesterId,
+                        FinalDecision = h.FinalDecision,
+
+                        CanApprove = approvableTransactionIds.Contains(h.TransactionId)
+                    })
                     .ToListAsync();
 
                 return Ok(new
@@ -933,7 +977,7 @@ namespace EPEAPI.Controllers
                     var savedFileName = await _fileUploadService.SaveFile(attachment.File);
                     var epeAttachment = new EpeAttachment
                     {
-                        TaskId = transactionHeader.Transactionnumber,
+                        TaskId = transactionHeader.Transactionid.ToString(),
                         ReferenceType = attachment.ReferenceType,
                         UploadFilename = attachment.File.FileName,
                         Newfilename = savedFileName,
@@ -956,9 +1000,14 @@ namespace EPEAPI.Controllers
             }
         }
 
-        [HttpDelete("delete-attachment/{attachId}")]
+        [HttpPost("delete-attachment/{attachId}")]
         public async Task<IActionResult> DeleteAttachment(int attachId)
         {
+            if (attachId <= 0 )
+            {
+                return BadRequest(new { success = false, message = "Invalid request parameters" });
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -971,6 +1020,38 @@ namespace EPEAPI.Controllers
                     return NotFound(new { success = false, message = "Attachment not found" });
                 }
 
+                //// Verify ownership
+                //var transactionHeader = await _context.EpeTransactionheaders
+                //    .Where(t => t.Transactionid.ToString() == attachment.TaskId && t.Requestorid == request.Userid && t.Isdelete == 0)
+                //    .FirstOrDefaultAsync();
+
+                //if (transactionHeader == null)
+                //{
+                //    return StatusCode(403, new { success = false, message = "Unauthorized to delete this attachment" });
+                //}
+
+                //Build file path
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads","attachments");
+                var fullPath = Path.Combine(uploadsFolder, attachment.Newfilename ?? "");
+
+                _logger.LogWarning("Full Path: " + fullPath);
+
+                // Prevent directory traversal
+                if (Path.GetFullPath(fullPath).StartsWith(Path.GetFullPath(uploadsFolder)))
+                {
+                    //Delete file if exists
+                    if (System.IO.File.Exists(fullPath))
+                    {
+                        System.IO.File.Delete(fullPath);
+                    }
+                    else
+                    {
+                        return StatusCode(500, new { success = false, message = "An error occurred while deleting the attachment" });
+                    }
+                }
+
+                _context.EpeAttachments.Remove(attachment);
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -979,7 +1060,8 @@ namespace EPEAPI.Controllers
             catch (Exception e)
             {
                 await transaction.RollbackAsync();
-                return StatusCode(500, "Error: " + e.Message);
+                // Log the error here if logging is available
+                return StatusCode(500, new { success = false, message = "An error occurred while deleting the attachment" });
             }
         }
 

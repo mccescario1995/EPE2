@@ -1,4 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- https://go.microsoft.com/fwlink/?LinkID=208121. -->
 <Project>
+  <PropertyGroup>
+    <_PublishTargetUrl>C:\Users\user\OneDrive\Desktop\EPE</_PublishTargetUrl>
+    <History>True|2026-04-10T05:45:01.5075925Z||;True|2026-04-10T13:35:54.5854008+08:00||;True|2026-04-08T17:31:15.7732477+08:00||;True|2026-04-08T17:17:53.3037840+08:00||;True|2026-04-08T17:16:18.0353594+08:00||;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
 </Project>

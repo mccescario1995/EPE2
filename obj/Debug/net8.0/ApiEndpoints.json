@@ -225,7 +225,7 @@
     "ContainingType": "EPEAPI.Controllers.ExceptionController",
     "Method": "DeleteAttachment",
     "RelativePath": "api/Exception/delete-attachment/{attachId}",
-    "HttpMethod": "DELETE",
+    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
