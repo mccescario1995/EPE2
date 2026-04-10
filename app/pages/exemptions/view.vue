@@ -7,6 +7,16 @@ const loading = ref(false);
 const exemptionData = ref<any>(null);
 const approversData = ref<any[]>([]);
 const policyName = ref<string>("");
+const attachments = ref<any[]>([]);
+
+const userStore = useUserStore();
+const userId = userStore.profile;
+
+const requesterId = computed(() => exemptionData.value?.requesterId);
+
+const exemptStatus = computed(() =>  exemptionData.value?.status);
+
+const config = useRuntimeConfig()
 
 // Get ID from route query
 const exemptionId = computed(() => {
@@ -36,13 +46,16 @@ const fetchExemptionDetails = async () => {
       },
     );
 
-    if (response.success) {
+    if (response) {
       exemptionData.value = response.item;
-      approversData.value = response.approvers || [];
+      approversData.value = response.approvers || [];      
+
       // If there's a policy ID, fetch the policy name
       if (response.item.policyid) {
         fetchPolicyName(response.item.policyid);
       }
+      // Fetch attachments
+      await fetchAttachments();
     } else {
       showToast({
         type: "error",
@@ -61,6 +74,29 @@ const fetchExemptionDetails = async () => {
     });
   } finally {
     loading.value = false;
+  }
+};
+
+// Fetch attachments
+const fetchAttachments = async () => {
+  if (!exemptionId.value) return;
+
+  try {
+    const response = await apiFetch(
+      `/api/exception/attachments/${exemptionId.value}`,
+      {
+        method: "GET",
+        parseJson: true,
+      },
+    );
+
+    if (response) {
+      attachments.value = response.data || [];
+    } else {
+      console.error("Failed to fetch attachments:", response);
+    }
+  } catch (error) {
+    console.error("Error fetching attachments:", error);
   }
 };
 
@@ -297,7 +333,7 @@ const resendToApprover = async (transApproverId: number) => {
           <h1 class="text-2xl ps-5 font-bold text-gray-900">Request Details</h1>
         </div>
         <Button
-          v-if="exemptionData"
+          v-if="requesterId === userId.emplId && exemptStatus === 'O'" 
           variant="primary"
           size="md"
           icon="edit"
@@ -457,6 +493,60 @@ const resendToApprover = async (transApproverId: number) => {
                 </div>
               </div>
             </div>
+
+            <!-- Attachments -->
+            <div class="mb-8">
+              <h2
+                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
+              >
+                Attachments
+              </h2>
+              <div v-if="attachments.length > 0" class="space-y-2">
+                <div
+                  v-for="attachment in attachments"
+                  :key="attachment.attachId"
+                  class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                >
+                  <div class="flex items-center">
+                    <svg
+                      class="h-5 w-5 text-gray-400 mr-3"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                      />
+                    </svg>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">
+                        {{ attachment.uploadFilename }}
+                      </p>
+                      <p class="text-xs text-gray-500">
+                        {{ attachment.referenceType }} •
+                        {{ attachment.filetype }} •
+                        {{
+                          new Date(attachment.createdate).toLocaleDateString()
+                        }}
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    :href="`${config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
+                    target="_blank"
+                    class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
+                  >
+                    View
+                  </a>
+                </div>
+              </div>
+              <div v-else class="text-gray-500 text-sm">
+                No attachments found.
+              </div>
+            </div>
           </div>
 
           <div
@@ -522,6 +612,22 @@ const resendToApprover = async (transApproverId: number) => {
                               {{ approver.approverRole }}
                             </span>
                           </div>
+                          <div v-if="approver.remarks" class="mt-2 mx-2 w-full">
+                            <label
+                              class="block text-sm font-medium text-gray-500 mb-1"
+                            >
+                              Remarks:
+                            </label>
+                            <div
+                              class="ml-3 w-auto"
+                            >
+                              <p class="text-gray-900 whitespace-pre-wrap">
+                                {{
+                                  approver.remarks || "No remarks provided"
+                                }}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <!-- Approver status badge (Pending/Approved/Disapproved) -->
@@ -550,7 +656,8 @@ const resendToApprover = async (transApproverId: number) => {
                           v-if="
                             approver.respond === 0 &&
                             approver.transApproverId === currentApproverId &&
-                            !isGroupSatisfied(approver.transApproverId)
+                            !isGroupSatisfied(approver.transApproverId) &&
+                            approver.employeeId === userId.emplId
                           "
                           @click="resendToApprover(approver.transApproverId)"
                           :disabled="isResending === approver.transApproverId"
@@ -677,7 +784,8 @@ const resendToApprover = async (transApproverId: number) => {
                             v-if="
                               proxy.respond === 0 &&
                               proxy.transApproverId === currentApproverId &&
-                              !isGroupSatisfied(approver.transApproverId)
+                              !isGroupSatisfied(approver.transApproverId) 
+                              &&  proxy.employeeId === userId.emplId
                             "
                             @click="resendToApprover(proxy.transApproverId)"
                             :disabled="isResending === proxy.transApproverId"
@@ -720,7 +828,7 @@ const resendToApprover = async (transApproverId: number) => {
                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                               />
                             </svg>
-                            Resend
+                            Resend {{ proxy }} 2
                           </button>
                         </div>
                       </div>

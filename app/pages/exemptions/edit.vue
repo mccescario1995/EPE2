@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import { parse } from "path";
+
 const router = useRouter();
 const route = useRoute();
 const { showToast } = useToast();
 const userStore = useUserStore();
 
 const userId = userStore.profile;
+
+const config = useRuntimeConfig();
 
 // Get ID from route query
 const exemptionId = computed(() => {
@@ -25,7 +29,9 @@ const formData = ref({
 const exemptionDetails = ref<any>(null);
 const approversData = ref<any[]>([]);
 const policyName = ref<string>("");
-const policyValue = ref<{ id: number; label: string } | null>(null);  
+const policyValue = ref<{ id: number; label: string } | null>(null);
+const attachments = ref<any[]>([]);
+const newAttachments = ref<{ file: File; referenceType: string }[]>([]);
 
 // Store original data for comparison
 const originalData = ref({
@@ -168,14 +174,18 @@ const fetchExemptionDetails = async () => {
       // Set approvers data
       approversData.value = response.approvers || [];
 
-
+      // Fetch attachments
+      await fetchAttachments();
 
       // If there's a policy ID, fetch the policy name
       if (item.policyId) {
         var policyName = await fetchPolicyName(item.policyId);
       }
 
-      policyValue.value = { id: item.policyId, label: policyName|| `Policy ${item.policyId}` };
+      policyValue.value = {
+        id: item.policyId,
+        label: policyName || `Policy ${item.policyId}`,
+      };
     } else {
       showToast({
         type: "error",
@@ -196,6 +206,29 @@ const fetchExemptionDetails = async () => {
     router.push("/exemptions");
   } finally {
     isLoading.value = false;
+  }
+};
+
+// Fetch attachments
+const fetchAttachments = async () => {
+  if (!exemptionId.value) return;
+
+  try {
+    const response = await apiFetch(
+      `/api/exception/attachments/${exemptionId.value}`,
+      {
+        method: "GET",
+        parseJson: true,
+      },
+    );
+
+    if (response.success) {
+      attachments.value = response.data || [];
+    } else {
+      console.error("Failed to fetch attachments:", response);
+    }
+  } catch (error) {
+    console.error("Error fetching attachments:", error);
   }
 };
 
@@ -376,13 +409,16 @@ const isResending = ref<number | null>(null);
 const resendToApprover = async (transApproverId: number) => {
   isResending.value = transApproverId;
   try {
-    const response = await apiFetch(`/api/exception/resend/${exemptionId.value}`, {
-      method: "POST",
-      body: JSON.stringify({ transApproverId }),
-      headers: {
-        "Content-Type": "application/json",
+    const response = await apiFetch(
+      `/api/exception/resend/${exemptionId.value}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ transApproverId }),
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     if (response) {
       showToast({
@@ -404,7 +440,8 @@ const resendToApprover = async (transApproverId: number) => {
     showToast({
       type: "error",
       title: "Error",
-      message: error.message || "An error occurred while resending notification",
+      message:
+        error.message || "An error occurred while resending notification",
       duration: 5000,
     });
   } finally {
@@ -444,40 +481,158 @@ const getProxies = (transApproverId: number): any[] => {
 // Helper function to check if a group (main + proxies) is satisfied (someone in group approved)
 const isGroupSatisfied = (transApproverId: number): boolean => {
   const { mainApprovers, proxiesMap } = groupedApprovers.value;
-  const mainApprover = mainApprovers.find(a => a.transApproverId === transApproverId);
+  const mainApprover = mainApprovers.find(
+    (a) => a.transApproverId === transApproverId,
+  );
   if (!mainApprover) return false;
-  
-  const groupApprovers = [mainApprover, ...(proxiesMap.get(transApproverId) || [])];
-  return groupApprovers.some(a => a.respond === 1);
+
+  const groupApprovers = [
+    mainApprover,
+    ...(proxiesMap.get(transApproverId) || []),
+  ];
+  return groupApprovers.some((a) => a.respond === 1);
 };
 
 // Get the current (active) approver's transApproverId - the first group that hasn't been satisfied
 const currentApproverId = computed(() => {
   const { mainApprovers, proxiesMap } = groupedApprovers.value;
-  
+
   for (const approver of mainApprovers) {
     // Get all approvers in this group (main + proxies)
-    const groupApprovers = [approver, ...(proxiesMap.get(approver.transApproverId) || [])];
-    
+    const groupApprovers = [
+      approver,
+      ...(proxiesMap.get(approver.transApproverId) || []),
+    ];
+
     // Check if ANY in the group has approved
-    const hasApproved = groupApprovers.some(a => a.respond === 1);
-    
+    const hasApproved = groupApprovers.some((a) => a.respond === 1);
+
     // Check if ANY in the group is pending
-    const hasPending = groupApprovers.some(a => a.respond === 0);
-    
+    const hasPending = groupApprovers.some((a) => a.respond === 0);
+
     // If no one has approved yet and someone is pending, this group is active
     if (!hasApproved && hasPending) {
       // Find the first pending one in this group
-      const pending = groupApprovers.find(a => a.respond === 0);
+      const pending = groupApprovers.find((a) => a.respond === 0);
       return pending?.transApproverId;
     }
-    
+
     // If someone has approved in this group, skip to next group
     // Continue to next iteration
   }
-  
+
   return null;
 });
+
+// Add new attachment
+const addNewAttachment = () => {
+  if (newAttachments.value.length < 5) {
+    newAttachments.value.push({ file: null as any, referenceType: "" });
+  }
+};
+
+// Remove new attachment
+const removeNewAttachment = (index: number) => {
+  newAttachments.value.splice(index, 1);
+};
+
+// Handle file change for new attachments
+const handleNewFileChange = (index: number, event: Event) => {
+  const target = event.target as HTMLInputElement;
+
+  if (target.files && target.files[0] && newAttachments.value[index]) {
+    newAttachments.value[index].file = target.files[0];
+  }
+};
+
+// Delete existing attachment
+const deleteAttachment = async (attachId: number) => {
+  if (!confirm("Are you sure you want to delete this attachment?")) return;
+
+  try {
+    const response = await apiFetch(
+      `/api/exception/delete-attachment/${attachId}`,
+      {
+        method: "POST",
+      },
+    );
+
+    if (response) {
+      showToast({
+        type: "success",
+        title: "Success",
+        message: "Attachment deleted successfully!",
+        duration: 3000,
+      });
+      await fetchAttachments();
+    } else {
+      showToast({
+        type: "error",
+        title: "Error",
+        message: response.message || "Failed to delete attachment",
+        duration: 3000,
+      });
+    }
+  } catch (error) {
+    console.error("Error deleting attachment:", error);
+    showToast({
+      type: "error",
+      title: "Error",
+      message: "Failed to delete attachment",
+      duration: 3000,
+    });
+  }
+};
+
+// Add new attachments
+const addNewAttachments = async () => {
+  if (newAttachments.value.length === 0) return;
+
+  const formData = new FormData();
+  newAttachments.value.forEach((attachment, index) => {
+    formData.append(`attachments[${index}].file`, attachment.file);
+    formData.append(
+      `attachments[${index}].referenceType`,
+      attachment.referenceType,
+    );
+  });
+
+  try {
+    const response = await apiFetch(
+      `/api/exception/add-attachment/${exemptionId.value}`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+    if (response) {
+      showToast({
+        type: "success",
+        title: "Success",
+        message: "Attachments added successfully!",
+        duration: 3000,
+      });
+      newAttachments.value = [];
+      await fetchAttachments();
+    } else {
+      showToast({
+        type: "error",
+        title: "Error",
+        message: response.message || "Failed to add attachments",
+        duration: 3000,
+      });
+    }
+  } catch (error) {
+    console.error("Error adding attachments:", error);
+    showToast({
+      type: "error",
+      title: "Error",
+      message: "Failed to add attachments",
+      duration: 3000,
+    });
+  }
+};
 
 // Fetch policies on mount
 onMounted(() => {
@@ -493,6 +648,7 @@ onMounted(() => {
         class="max-w-7xl me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
       >
         <div class="flex items-center">
+          <!-- v-if="row.requesterId === userId.emplId && exemptionDetails.status !== 'C'" -->
           <Button
             variant="ghost-primary"
             size="lg"
@@ -573,8 +729,8 @@ onMounted(() => {
             </div>
             <div class="ml-3">
               <p class="text-sm text-blue-700">
-                Note: Request Status and Approver Status cannot be edited. These are
-                managed automatically.
+                Note: Request Status and Approver Status cannot be edited. These
+                are managed automatically.
               </p>
             </div>
           </div>
@@ -596,7 +752,8 @@ onMounted(() => {
                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                       :class="{
                         'bg-blue-100 text-blue-800 border border-blue-900':
-                          exemptionDetails.status === 'O' || exemptionDetails.status === 'P',
+                          exemptionDetails.status === 'O' ||
+                          exemptionDetails.status === 'P',
                         'bg-gray-200 text-gray-800 border border-gray-900':
                           exemptionDetails.status === 'C',
                       }"
@@ -669,6 +826,144 @@ onMounted(() => {
                 </div>
               </div>
             </div>
+
+            <!-- Attachments -->
+            <div class="mb-8">
+              <h2
+                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
+              >
+                Attachments
+              </h2>
+
+              <!-- Existing Attachments -->
+              <div v-if="attachments.length > 0" class="mb-6">
+                <h3 class="text-lg font-medium text-gray-700 mb-3">
+                  Existing Attachments
+                </h3>
+                <div class="space-y-2">
+                  <div
+                    v-for="attachment in attachments"
+                    :key="attachment.attachId"
+                    class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                  >
+                    <div class="flex items-center">
+                      <svg
+                        class="h-5 w-5 text-gray-400 mr-3"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                        />
+                      </svg>
+                      <div>
+                        <p class="text-sm font-medium text-gray-900">
+                          {{ attachment.uploadFilename }}
+                        </p>
+                        <p class="text-xs text-gray-500">
+                          {{ attachment.referenceType }} •
+                          {{ attachment.filetype }} •
+                          {{
+                            new Date(attachment.createdate).toLocaleDateString()
+                          }}
+                        </p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <a
+                        :href="`${config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
+                        target="_blank"
+                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
+                      >
+                        View
+                      </a>
+                      <button
+                        @click="deleteAttachment(attachment.attachId)"
+                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Add New Attachments -->
+              <div>
+                <h3 class="text-lg font-medium text-gray-700 mb-3">
+                  Add New Attachments (Max 5 files, 10MB each)
+                </h3>
+                <div
+                  v-for="(attachment, index) in newAttachments"
+                  :key="index"
+                  class="mb-4 p-4 border border-gray-200 rounded-lg"
+                >
+                  <div class="flex items-center gap-4">
+                    <div class="flex-1">
+                      <input
+                        type="file"
+                        @change="(e) => handleNewFileChange(index, e)"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
+                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      <p
+                        v-if="attachment.file"
+                        class="mt-1 text-xs text-gray-500"
+                      >
+                        Selected: {{ attachment.file.name }} ({{
+                          (attachment.file.size / 1024 / 1024).toFixed(2)
+                        }}
+                        MB)
+                      </p>
+                    </div>
+                    <div class="w-48">
+                      <select
+                        v-model="attachment.referenceType"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select type</option>
+                        <option value="documentation">Documentation</option>
+                        <option value="email">Email</option>
+                        <option value="supporting">Supporting Document</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      @onclick="removeNewAttachment(index)"
+                      icon="trash"
+                      icon-position="center"
+                    >
+                    </Button>
+                  </div>
+                </div>
+                <div class="flex gap-3">
+                  <Button
+                    v-if="newAttachments.length < 5"
+                    variant="outline-primary"
+                    size="sm"
+                    @onclick="addNewAttachment"
+                    icon="plus"
+                  >
+                    Add Attachment
+                  </Button>
+                  <Button
+                    v-if="newAttachments.length > 0"
+                    variant="primary"
+                    size="sm"
+                    @onclick="addNewAttachments"
+                    :loading="isSubmitting"
+                  >
+                    Save Attachments
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Right Column -->
@@ -678,9 +973,7 @@ onMounted(() => {
             <!-- Approvers Status -->
             <div class="mb-8">
               <div class="border-b flex justify-between">
-                <h2
-                  class="text-xl font-semibold text-gray-800 mb-2"
-                >
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">
                   Approvers Status
                 </h2>
                 <div>
@@ -759,7 +1052,11 @@ onMounted(() => {
                         <!-- </span> -->
                         <!-- Resend button only for current pending approver (and not satisfied by group) -->
                         <button
-                          v-if="approver.respond === 0 && approver.transApproverId === currentApproverId && !isGroupSatisfied(approver.transApproverId)"
+                          v-if="
+                            approver.respond === 0 &&
+                            approver.transApproverId === currentApproverId &&
+                            !isGroupSatisfied(approver.transApproverId)
+                          "
                           @click="resendToApprover(approver.transApproverId)"
                           :disabled="isResending === approver.transApproverId"
                           class="flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
@@ -856,7 +1153,11 @@ onMounted(() => {
                           </span> -->
                           <!-- Resend button only for current pending proxy (and not satisfied by group) -->
                           <button
-                            v-if="proxy.respond === 0 && proxy.transApproverId === currentApproverId && !isGroupSatisfied(approver.transApproverId)"
+                            v-if="
+                              proxy.respond === 0 &&
+                              proxy.transApproverId === currentApproverId &&
+                              !isGroupSatisfied(approver.transApproverId)
+                            "
                             @click="resendToApprover(proxy.transApproverId)"
                             :disabled="isResending === proxy.transApproverId"
                             class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
@@ -906,7 +1207,10 @@ onMounted(() => {
                   </div>
                 </template>
               </div>
-              <div v-else class="text-gray-500 text-sm flex items-center justify-center h-24">
+              <div
+                v-else
+                class="text-gray-500 text-sm flex items-center justify-center h-24"
+              >
                 No approvers assigned yet.
               </div>
             </div>
@@ -973,4 +1277,3 @@ onMounted(() => {
     </main>
   </div>
 </template>
-

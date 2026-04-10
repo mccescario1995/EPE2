@@ -11,11 +11,20 @@ const formData = ref({
   policyid: null as number | { id: number; label: string } | null,
   corporate: null as { id: string; label: string } | null,
   details: "",
+  attachments: [] as { file: File; referenceType: string }[],
 });
 
 // Policy options - will be fetched from API
 const policyOptions = ref<{ id: number; label: string }[]>([]);
 const isLoadingPolicies = ref(false);
+
+// Reference type options for attachments
+const referenceTypeOptions = [
+  { id: "documentation", label: "Documentation" },
+  { id: "email", label: "Email" },
+  { id: "supporting", label: "Supporting Document" },
+  { id: "other", label: "Other" },
+];
 
 // Approvers for selected policy
 const approvers = ref<
@@ -66,6 +75,7 @@ const getProxies = (mainId: number): any[] => {
 const errors = ref({
   policyid: "",
   details: "",
+  attachments: "",
 });
 
 // Loading state
@@ -172,7 +182,7 @@ watch(
 // Validate form
 const validateForm = () => {
   let isValid = true;
-  errors.value = { policyid: "", details: "" };
+  errors.value = { policyid: "", details: "", attachments: "" };
 
   if (!formData.value.policyid) {
     errors.value.policyid = "Please select a policy";
@@ -184,14 +194,34 @@ const validateForm = () => {
     isValid = false;
   }
 
+  if (formData.value.attachments.length > 5) {
+    errors.value.attachments = "Maximum 5 attachments allowed.";
+    isValid = false;
+  }
+
+  for (const attachment of formData.value.attachments) {
+    if (!attachment.referenceType) {
+      errors.value.attachments = "Please select a reference type for all attachments.";
+      isValid = false;
+      break;
+    }
+    if (attachment.file.size > 10 * 1024 * 1024) {
+      errors.value.attachments = "Each file must be less than 10MB.";
+      isValid = false;
+      break;
+    }
+  }
+
   return isValid;
 };
 
 // Computed property to check if form is valid
 const isFormValid = computed(() => {
-  return !!formData.value.policyid && 
-         !!formData.value.details && 
-         formData.value.details.trim().length >= 10;
+  return !!formData.value.policyid &&
+         !!formData.value.details &&
+         formData.value.details.trim().length >= 10 &&
+         formData.value.attachments.length <= 5 &&
+         formData.value.attachments.every(att => att.referenceType && att.file.size <= 10 * 1024 * 1024);
 });
 
 // Get policy ID from form data (handles both object and number)
@@ -233,25 +263,24 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true;
   try {
-    const payload = {
-      policyid: getPolicyId(),
-      corporate: formData.value.corporate?.id || null,
-      details: formData.value.details,
-      status: "O", // Open status
-      requestorid: userId.emplId.toString(),
-      createdby: userId.userId,
-      workstation: parseWorkstation(),
-    };
+    const formDataToSend = new FormData();
+    formDataToSend.append("policyid", getPolicyId().toString());
+    formDataToSend.append("details", formData.value.details);
+    formDataToSend.append("requestorid", userId.emplId);
+    formDataToSend.append("createdby", userId.userId.toString());
+
+    formData.value.attachments.forEach((attachment, index) => {
+      formDataToSend.append(`attachments[${index}].file`, attachment.file);
+      formDataToSend.append(`attachments[${index}].referenceType`, attachment.referenceType);
+    });
 
     const response = await apiFetch("/api/exception/create", {
       method: "POST",
-      body: JSON.stringify(payload),
-      headers: {
-        "Content-Type": "application/json",
-      },
+      body: formDataToSend,
+      // No Content-Type header - let browser set it for FormData
     });
 
-    if (response) {
+    if (response.success) {
       showToast({
         type: "success",
         title: "Success",
@@ -284,6 +313,26 @@ const handleSubmit = async () => {
 // Handle cancel
 const handleCancel = () => {
   router.push("/exemptions");
+};
+
+// Add attachment
+const addAttachment = () => {
+  if (formData.value.attachments.length < 5) {
+    formData.value.attachments.push({ file: null as any, referenceType: "" });
+  }
+};
+
+// Remove attachment
+const removeAttachment = (index: number) => {
+  formData.value.attachments.splice(index, 1);
+};
+
+// Handle file selection
+const handleFileChange = (index: number, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files[0]) {
+    formData.value.attachments[index].file = target.files[0];
+  }
 };
 
 // Fetch policies on mount
@@ -361,6 +410,55 @@ onMounted(() => {
               :error="errors.details"
               :maxCharCount="1000"
             />
+          </div>
+
+          <!-- Attachments -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Attachments (Optional - Max 5 files, 10MB each)
+            </label>
+            <div v-for="(attachment, index) in formData.attachments" :key="index" class="mb-4 p-4 border border-gray-200 rounded-lg">
+              <div class="flex items-center gap-4">
+                <div class="flex-1">
+                  <input
+                    type="file"
+                    @change="(e) => handleFileChange(index, e)"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
+                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  <p v-if="attachment.file" class="mt-1 text-xs text-gray-500">
+                    Selected: {{ attachment.file.name }} ({{ (attachment.file.size / 1024 / 1024).toFixed(2) }} MB)
+                  </p>
+                </div>
+                <div class="w-48">
+                  <Dropdown
+                    v-model="attachment.referenceType"
+                    :initialItems="referenceTypeOptions"
+                    placeholder="Select type"
+                  />
+                </div>
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  @onclick="removeAttachment(index)"
+                  icon="trash"
+                >
+                  Remove
+                </Button>
+              </div>
+            </div>
+            <Button
+              v-if="formData.attachments.length < 5"
+              variant="outline-primary"
+              size="sm"
+              @onclick="addAttachment"
+              icon="plus"
+            >
+              Add Attachment
+            </Button>
+            <p v-if="errors.attachments" class="mt-1 text-xs text-red-500">
+              {{ errors.attachments }}
+            </p>
           </div>
 
           <!-- Approvers List -->

@@ -82,7 +82,6 @@ const fetchExemptionRequests = async () => {
       parseJson: true,
     });
     exemptionData.value = responseExemptions.items;
-    console.log("Fetched exemption requests:", exemptionData.value);
   } catch (error) {
     console.error("Error fetching exemption requests:", error);
   } finally {
@@ -97,6 +96,7 @@ const handleCreate = () => {
 
 watchEffect(() => {
   fetchExemptionRequests();
+
 });
 </script>
 
@@ -183,12 +183,15 @@ watchEffect(() => {
               tooltip: 'Edit Request',
               handler: editProduct,
               iconClass: 'text-blue-500',
+              visible: (row) => row.requesterId === userId.EmplId || row.status !== 'C', // Show if user is requester or request is not Completed
             },
             {
               label: IconDelete,
-              tooltip: 'Delete Request',
+              // tooltip: 'Delete Request',
+              tooltip: userId.EmplId,
               handler: confirmDelete,
               iconClass: 'text-red-500',
+              visible: (row) => row.requesterId === userId.EmplId && row.status !== 'C', // Show only for user's own requests that are not Completed
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
           ]"

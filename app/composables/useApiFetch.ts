@@ -40,6 +40,10 @@ export async function apiFetch<T = any>(
     ? config.public.liveApi
     : config.public.localApi;
 
+  // const baseURL = import.meta.env.PROD
+  // ? config.public.apiBase
+  // : config.public.apiBase;
+
   /* ------------------------------------------------------------------
    * 2. Build headers safely
    * ------------------------------------------------------------------ */

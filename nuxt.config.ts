@@ -27,8 +27,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      liveApi: process.env.NUXT_PUBLIC_LIVE_API,
-      localApi: process.env.NUXT_PUBLIC_LOCAL_API,
+      apiBase: process.env.NUXT_PUBLIC_API,
     },
   },
   app: {
