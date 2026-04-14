@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { parse } from "path";
-
 const router = useRouter();
 const route = useRoute();
 const { showToast } = useToast();
