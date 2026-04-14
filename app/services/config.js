@@ -1,8 +1,6 @@
 // config.js
 
 const config = useRuntimeConfig()
-const isProd = process.env.NODE_ENV === 'production';
+// const isProd = process.env.NODE_ENV === 'production';
 
-export const API_BASE_URL = isProd
-    ? config.public.liveApi
-    : config.public.localApi;
+export const API_BASE_URL = config.public.apiBase;

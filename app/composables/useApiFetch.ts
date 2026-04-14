@@ -33,16 +33,12 @@ export async function apiFetch<T = any>(
   const auth = useAuth();
   const config = useRuntimeConfig();
 
-  /* ------------------------------------------------------------------
-   * 1. Resolve Base URL (SSR safe)
-   * ------------------------------------------------------------------ */
-  const baseURL = import.meta.env.PROD
-    ? config.public.liveApi
-    : config.public.localApi;
-
-  // const baseURL = import.meta.env.PROD
-  // ? config.public.apiBase
-  // : config.public.apiBase;
+/* ------------------------------------------------------------------
+ * 1. Resolve Base URL (SSR safe)
+ * ------------------------------------------------------------------ */
+const baseURL = import.meta.env.PROD
+  ? config.public.apiBase
+  : config.public.apiBase;
 
   /* ------------------------------------------------------------------
    * 2. Build headers safely

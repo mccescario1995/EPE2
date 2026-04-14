@@ -27,7 +27,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API,
+      apiBase: process.env.NUXT_PUBLIC_API || 'https://apps.fastlogistics.com.ph/epe2apidev',
     },
   },
   app: {
@@ -39,6 +39,6 @@ export default defineNuxtConfig({
       ],
       title: "TBS",
     }, */
-    baseURL: "/epe/",
+    baseURL: "/epe2dev/",
   },
 });
