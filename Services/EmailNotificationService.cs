@@ -49,7 +49,7 @@ public class EmailNotificationService
         {
             var trackUrl = "https://apps.fastlogistics.com.ph/epe/exemptions/approve?id=" + requestId;
 
-            toEmail = "mccescario@fastgroup.biz"; // for testing
+            //toEmail = "mccescario@fastgroup.biz"; // for testing
 
             var emailBody = $@"
                 <html>
@@ -209,7 +209,7 @@ public class EmailNotificationService
         {
             var trackUrl = $"https://apps.fastlogistics.com.ph/epe/exemptions/view?id={requestId}";
 
-            toEmail = "mccescario@fastgroup.biz"; // testing
+            //toEmail = "mccescario@fastgroup.biz"; // testing
 
             var theme = GetEmailTheme(newStatus);
 
@@ -389,7 +389,7 @@ public class EmailNotificationService
         {
             var trackUrl = "https://apps.fastlogistics.com.ph/epe/exemptions/view?id=" + requestId;
 
-            toEmail = "mccescario@fastgroup.biz"; // for testing
+            //toEmail = "mccescario@fastgroup.biz"; // for testing
 
             var emailBody = $@"
                 <html>

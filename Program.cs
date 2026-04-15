@@ -27,6 +27,7 @@ builder.Services.AddCors(options =>
                 "http://localhost:3000",
                 "http://localhost:80",
                 "http://localhost",
+                "http://localhost/epe2api",
                 "http://192.168.136.64",
                 "https://apps.fastlogistics.com.ph/epe2dev"
                 )
@@ -74,6 +75,7 @@ app.UseCors("Policy");
 //    app.UseSwagger();
 //    app.UseSwaggerUI();
 //}
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
