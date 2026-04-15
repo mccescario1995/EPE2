@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const router = useRouter();
 
-import { IconView, IconEdit, IconDelete } from "#components";
+import { IconView, IconEdit, IconDelete, IconApproval } from "#components";
 
 const userStore = useUserStore();
 
@@ -18,6 +18,9 @@ const viewProduct = (row: any) => {
 };
 const editProduct = (row: any) => {
   router.push(`/exemptions/edit?id=${row.transactionId}`);
+};
+const approveRequest = (row: any) => {
+  router.push(`/exemptions/approve?id=${row.transactionId}`);
 };
 
 const confirmDelete = (row: any) => {
@@ -79,6 +82,10 @@ const fetchExemptionRequests = async () => {
   try {
     const responseExemptions = await apiFetch("/api/exception", {
       method: "POST",
+      body: JSON.stringify({ UserId: parseInt(userId.emplId) }),
+      headers: {
+        "Content-Type": "application/json",
+      },
       parseJson: true,
     });
     exemptionData.value = responseExemptions.items;
@@ -96,7 +103,6 @@ const handleCreate = () => {
 
 watchEffect(() => {
   fetchExemptionRequests();
-
 });
 </script>
 
@@ -115,7 +121,7 @@ watchEffect(() => {
             customClass="rounded-full"
             @onclick="$router.back()"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900">My Requests</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900">All Requests</h1>
         </div>
 
         <Button
@@ -179,19 +185,26 @@ watchEffect(() => {
               iconClass: 'text-indigo-500',
             },
             {
+              label: IconApproval,
+              tooltip: 'Approve Request',
+              handler: approveRequest,
+              iconClass: 'text-teal-500',
+              visible: (row) => row.canApprove && row.status !== 'C', // This will only be visible to the approver not he requester and for non-completed requests
+            },
+            {
               label: IconEdit,
               tooltip: 'Edit Request',
               handler: editProduct,
               iconClass: 'text-blue-500',
-              visible: (row) => row.requesterId === userId.EmplId || row.status !== 'C', // Show if user is requester or request is not Completed
+              visible: (row) => row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
+              disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
             {
               label: IconDelete,
-              // tooltip: 'Delete Request',
-              tooltip: userId.EmplId,
+              tooltip: 'Delete Request',
               handler: confirmDelete,
               iconClass: 'text-red-500',
-              visible: (row) => row.requesterId === userId.EmplId && row.status !== 'C', // Show only for user's own requests that are not Completed
+              visible: (row) => row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
           ]"

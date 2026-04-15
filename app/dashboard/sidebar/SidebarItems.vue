@@ -92,7 +92,7 @@ onMounted(async () => {
         {
           id: "E1",
           title: "All",
-          route: "/exemptions/",
+          route: "/exemptions/all",
         },
         // {
         //   id: "E2",

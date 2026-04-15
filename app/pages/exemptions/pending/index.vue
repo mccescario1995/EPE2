@@ -121,7 +121,7 @@ watchEffect(() => {
             customClass="rounded-full"
             @onclick="$router.back()"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900">All Requests</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900">Pending Requests</h1>
         </div>
 
         <Button
