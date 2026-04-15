@@ -380,22 +380,6 @@ onMounted(() => {
             </p>
           </div>
 
-          <!-- Corporate Selection -->
-          <!-- <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Corporate
-            </label>
-            <Dropdown
-              v-model="formData.corporate"
-              :initialItems="corporateOptions"
-              placeholder="Select corporate (optional)"
-              :allowAdd="false"
-            />
-            <p class="mt-1 text-xs text-gray-500">
-              Optional - Leave empty if not applicable
-            </p>
-          </div> -->
-
           <!-- Details -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -434,7 +418,7 @@ onMounted(() => {
                   <Dropdown
                     v-model="attachment.referenceType"
                     :initialItems="referenceTypeOptions"
-                    placeholder="Select type"
+                    placeholder="Select Reference Type"
                   />
                 </div>
                 <Button
@@ -442,8 +426,8 @@ onMounted(() => {
                   size="sm"
                   @onclick="removeAttachment(index)"
                   icon="trash"
+                  icon-position="center"
                 >
-                  Remove
                 </Button>
               </div>
             </div>
@@ -452,7 +436,7 @@ onMounted(() => {
               variant="outline-primary"
               size="sm"
               @onclick="addAttachment"
-              icon="plus"
+              icon="add"
             >
               Add Attachment
             </Button>

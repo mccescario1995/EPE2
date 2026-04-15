@@ -80,6 +80,7 @@
 
 <script setup>
 import { defineAsyncComponent } from "vue";
+import Trash from "./icon/Trash.vue";
 
 const props = defineProps({
   variant: {
@@ -201,7 +202,7 @@ const getIconComponent = (iconName) => {
     add: "AddIcon", // Added AddIcon mapping
     edit: "EditIcon", // Added EditIcon mapping
     view: "ViewIcon", // Added ViewIcon mapping
-    save: "SaveIcon" // Added SaveIcon mapping
+    save: "SaveIcon", // Added SaveIcon mapping
   };
   return icons[iconName] || null;
 };

@@ -87,11 +87,13 @@
         {{ errorMessage }}
       </p>
       <!-- Character counter -->
+      <!-- Show character counter if either maxCharCount or minCharCount is provided -->
       <div
-        v-if="maxCharCount"
+        v-if="maxCharCount || minCharCount"
         class="mt-1 text-xs text-gray-500 flex justify-end"
       >
-        {{ charCount }} / {{ maxCharCount }}
+        {{ charCounterText }}
+        <!-- Updated to use computed property for character counter text -->
       </div>
     </div>
   </div>
@@ -105,6 +107,7 @@ interface Props {
   label?: string;
   type?: string;
   maxCharCount?: number;
+  minCharCount?: number; // added minCharCount prop for validation of minimum characters in textarea
   rowCount?: number;
   isTextarea?: boolean;
   id?: string;
@@ -153,7 +156,7 @@ watch(
   (newVal) => {
     innerValue.value = newVal;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const handleInput = (event: Event) => {
@@ -181,6 +184,17 @@ const validateInput = () => {
       }
     }
   }
+  // Additional validation for minimum character count in textarea
+  if (
+    props.isTextarea &&
+    props.minCharCount &&
+    charCount.value < props.minCharCount
+  ) {
+    // Validation for minimum character count in textarea
+    errorMessage.value = `Minimum ${props.minCharCount} characters required.`;
+    emit("error", errorMessage.value);
+    return false;
+  }
   errorMessage.value = "";
   emit("error", "");
   return true;
@@ -188,5 +202,17 @@ const validateInput = () => {
 
 const charCount = computed(() => {
   return innerValue.value ? innerValue.value.toString().length : 0;
+});
+
+//Added Computed property to generate character counter text based on provided props
+const charCounterText = computed(() => {
+  if (props.maxCharCount && props.minCharCount) {
+    return `${charCount.value} / ${props.minCharCount}-${props.maxCharCount}`;
+  } else if (props.maxCharCount) {
+    return `${charCount.value} / ${props.maxCharCount}`;
+  } else if (props.minCharCount) {
+    return `${charCount.value} (min: ${props.minCharCount})`;
+  }
+  return "";
 });
 </script>
