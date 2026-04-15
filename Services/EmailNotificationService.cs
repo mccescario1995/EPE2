@@ -43,7 +43,7 @@ public class EmailNotificationService
         }
     }
 
-    public async Task SendApprovalRequestEmailAsync(string toEmail, long requestId,string requestNumber, string requestorName, string requestDetails, int userId)
+    public async Task SendApprovalRequestEmailAsync(string toEmail, long requestId, string requestNumber, string requestorName, string requestDetails, int userId)
     {
         try
         {
@@ -53,37 +53,91 @@ public class EmailNotificationService
 
             var emailBody = $@"
                 <html>
-                <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
-                    <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-                        <h2 style='color: #2c3e50;'>New Excecutive Process Exemption Request for Approval</h2>
-                        <p>Dear Approver,</p>
+                <body style='margin:0; padding:0;'>
+                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f5f5f5;'>
+                        <tr>
+                            <td align='center'>
+                
+                                <table role='presentation' width='600' cellpadding='0' cellspacing='0' border='0'
+                                    style='background-color:#ffffff; margin:20px auto; padding:20px; font-family:Arial, Helvetica, sans-serif; color:#333; width:100%; max-width:600px;'>
 
-                        <p>A new excecutive process exemption request has been submitted and requires your approval.</p>
+                                    <tr>
+                                        <td style='padding-bottom:30px;'>Dear Ma'am/Sir,</td>
+                                    </tr>
 
-                        <div style='margin: 20px 0; padding: 15px; background-color: #f4f6f6; border-left: 5px solid #3498db;'>
-                            <p style='margin: 5px 0;'><strong>Transaction Number:</strong> <span style='color: #2f6b4a;'>{requestNumber}</span></p>
-                            <p style='margin: 5px 0;'><strong>Requested By:</strong> {requestorName}</p>
-                            <p style='margin: 5px 0;'><strong>Transaction Details:</strong> {requestDetails}</p>
-                        </div>
+                                    <tr>
+                                        <td style='padding-bottom:15px;'>
+                                            A new Executive Process Exemption Request requires your approval.
+                                        </td>
+                                    </tr>
 
-                        <p>Please review and take action on this request at your earliest convenience.</p>
+                                    <!-- Details Box -->
+                                    <tr>
+                                        <td style='padding:15px; background-color:#f4f6f6; border-left:5px solid #2f75b5;'>
+                                            <p><strong>Transaction Number:</strong> <span style='color:#2f75b5;'>{{requestNumber}}</span></p>
+                                            <p><strong>Requested By:</strong> {{requestorName}}</p>
+                                            <p><strong>Transaction Details:</strong> {{requestDetails}}</p>
+                                        </td>
+                                    </tr>
 
-                        <p style='margin: 20px 0;'>
-                            <a href='{trackUrl}' 
-                            style='display: inline-block; padding: 12px 30px; background-color: #3498db; color: white; 
-                                    text-decoration: none; border-radius: 5px; font-weight: bold;'>
-                                Review Request
-                            </a>
-                        </p>
+                                    <tr><td height='20'></td></tr>
 
-                        <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;' />
+                                    <tr>
+                                        <td>Please review and take action at your earliest convenience.</td>
+                                    </tr>
 
-                        <p style='color: #7f8c8d; font-size: 12px;'>
-                            Best regards,<br>
-                            EPE<br>
-                            <a href='https://apps.fastlogistics.com.ph/epe' style='color: #7f8c8d;'>https://apps.fastlogistics.com.ph/epe</a>
-                        </p>
-                    </div>
+                                    <tr><td height='20'></td></tr>
+
+                                    <!-- Button -->
+                                    <tr>
+                                        <td>
+
+                                            <!--[if mso]>
+                                            <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' 
+                                                href='{{trackUrl}}' 
+                                                style='height:45px;v-text-anchor:middle;width:220px;' 
+                                                arcsize='10%' stroke='f' fillcolor='#2f75b5'>
+                                                <center style='color:#ffffff;font-size:14px;font-weight:bold;'>
+                                                    Review Request
+                                                </center>
+                                            </v:roundrect>
+                                            <![endif]-->
+
+                                            <!--[if !mso]><!-- -->
+                                            <a href='{{trackUrl}}' 
+                                                style='display:inline-block; background-color:#2f75b5; color:#fff;
+                                                padding:12px 30px; text-decoration:none; border-radius:5px; font-weight:bold;'>
+                                                Review Request
+                                            </a>
+                                            <!--<![endif]-->
+
+                                        </td>
+                                    </tr>
+
+                                    <!-- Fallback -->
+                                    <tr>
+                                        <td style='padding-top:10px; font-size:12px;'>
+                                            If the button doesn't work,
+                                            <a href='{{trackUrl}}' style='color:#2f75b5;'>click here</a>.
+                                        </td>
+                                    </tr>
+
+                                    <tr><td height='30'></td></tr>
+
+                                    <!-- Signature -->
+                                    <tr>
+                                        <td style='font-family:""Courier New""; font-size:12px; color:#7f8c8d;'>
+                                            --<br>
+                                            Thank you,<br><br>
+                                            M.I.R.A.<br>
+                                            <i>FSC - Information Technology</i>
+                                        </td>
+                                    </tr>
+
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
                 </body>
                 </html>";
 
@@ -138,48 +192,143 @@ public class EmailNotificationService
         }
     }
 
+    private (string Primary, string Border, string LightBg, string Title) GetEmailTheme(string status)
+    {
+        return status.ToLower() switch
+        {
+            "Approved" => ("#16A34A", "#16A34A", "#ECFDF5", "Approved"),
+            "Disapproved" => ("#DC2626", "#DC2626", "#FEF2F2", "Disapproved"),
+            "Pending" => ("#F59E0B", "#F59E0B", "#FFFBEB", "Pending"),
+            _ => ("#2563EB", "#2563EB", "#F3F4F6", "Submitted")
+        };
+    }
+
     public async Task SendStatusChangedEmailAsync(string toEmail, long requestId, string requestNumber, string oldStatus, string newStatus, string changedBy, int userId)
     {
         try
         {
-            var trackUrl = "https://apps.fastlogistics.com.ph/epe/exemptions/view?id=" + requestId;
+            var trackUrl = $"https://apps.fastlogistics.com.ph/epe/exemptions/view?id={requestId}";
 
-            toEmail = "mccescario@fastgroup.biz"; // for testing
+            toEmail = "mccescario@fastgroup.biz"; // testing
+
+            var theme = GetEmailTheme(newStatus);
 
             var emailBody = $@"
                 <html>
-                <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
-                    <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-                        <h2 style='color: #2c3e50;'>Executive Process Exemption Request Status Updated</h2>
-                        <p>Dear User,</p>
+                <body style='margin:0; padding:0; background-color:#F3F4F6;'>
+                <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0'>
+                <tr>
+                <td align='center'>
 
-                        <p>The status of your exemption request has been updated.</p>
+                <table role='presentation' width='600' cellpadding='0' cellspacing='0' border='0'
+                    style='background-color:#ffffff; margin:20px auto; padding:20px;
+                    font-family:Arial, Helvetica, sans-serif; color:#1F2937; width:100%; max-width:600px;'>
 
-                        <div style='margin: 20px 0; padding: 15px; background-color: #f4f6f6; border-left: 5px solid #e74c3c;'>
-                            <p style='margin: 5px 0;'><strong>Transaction Number:</strong> <span style='color: #2f6b4a;'>{requestNumber}</span></p>
-                            <p style='margin: 5px 0;'><strong>Previous Status:</strong> {oldStatus}</p>
-                            <p style='margin: 5px 0;'><strong>New Status:</strong> <span style='color: #27ae60; font-weight: bold;'>{newStatus}</span></p>
-                            <p style='margin: 5px 0;'><strong>Updated By:</strong> {changedBy}</p>
-                        </div>
+                    <!-- HEADER -->
+                    <tr>
+                        <td style='padding-bottom:20px; font-size:14px;'>
+                            Dear Ma'am/Sir,
+                        </td>
+                    </tr>
 
-                        <p>You can track the progress of your request anytime using the button below:</p>
+                    <tr>
+                        <td style='padding-bottom:20px; font-size:14px;'>
+                            Your exemption request status has been updated.
+                        </td>
+                    </tr>
 
-                        <p style='margin: 20px 0;'>
-                            <a href='{trackUrl}' 
-                            style='display: inline-block; padding: 12px 30px; background-color: #e74c3c; color: white; 
-                                    text-decoration: none; border-radius: 5px; font-weight: bold;'>
+                    <!-- STATUS BANNER -->
+                    <tr>
+                        <td style='padding:12px 15px; background-color:{theme.LightBg};
+                            border-left:5px solid {theme.Border};
+                            font-size:16px; font-weight:bold;'>
+                            Status Updated:
+                            <span style='color:{theme.Primary};'>{newStatus}</span>
+                        </td>
+                    </tr>
+
+                    <tr><td height='20'></td></tr>
+
+                    <!-- TRANSACTION BOX -->
+                    <tr>
+                        <td style='padding:15px; background-color:#F9FAFB;
+                            border-left:5px solid #2563EB;
+                            font-size:16px; font-weight:bold;'>
+
+                            Transaction Number:
+                            <span style='color:#2563EB;'>{requestNumber}</span>
+
+                        </td>
+                    </tr>
+
+                    <tr><td height='20'></td></tr>
+
+                    <!-- INFO -->
+                    <tr>
+                        <td style='font-size:14px; line-height:1.5;'>
+                            This request has been changed from
+                            <b>{oldStatus}</b> to <b>{newStatus}</b> by {changedBy}.
+                            You may track the latest progress using the button below.
+                        </td>
+                    </tr>
+
+                    <tr><td height='25'></td></tr>
+
+                    <!-- BUTTON -->
+                    <tr>
+                        <td>
+
+                            <!--[if mso]>
+                            <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml'
+                                href='{trackUrl}'
+                                style='height:45px;v-text-anchor:middle;width:220px;'
+                                arcsize='10%' stroke='f' fillcolor='{theme.Primary}'>
+                                <center style='color:#ffffff;font-size:14px;font-weight:bold;'>
+                                    View Request Status
+                                </center>
+                            </v:roundrect>
+                            <![endif]-->
+
+                            <!--[if !mso]><!-- -->
+                            <a href='{trackUrl}'
+                                style='display:inline-block;
+                                background-color:{theme.Primary};
+                                color:#fff;
+                                padding:12px 30px;
+                                text-decoration:none;
+                                border-radius:5px;
+                                font-weight:bold;'>
                                 View Request Status
                             </a>
-                        </p>
+                            <!--<![endif]-->
 
-                        <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;' />
+                        </td>
+                    </tr>
 
-                        <p style='color: #7f8c8d; font-size: 12px;'>
-                            Best regards,<br>
-                            EPE System<br>
-                            <a href='https://apps.fastlogistics.com.ph/epe' style='color: #7f8c8d;'>https://apps.fastlogistics.com.ph/epe</a>
-                        </p>
-                    </div>
+                    <tr>
+                        <td style='padding-top:10px; font-size:12px; color:#6B7280;'>
+                            If the button doesn't work,
+                            <a href='{trackUrl}' style='color:{theme.Primary};'>click here</a>.
+                        </td>
+                    </tr>
+
+                    <tr><td height='30'></td></tr>
+
+                    <!-- FOOTER -->
+                    <tr>
+                        <td style='font-family:""Courier New""; font-size:12px; color:#6B7280;'>
+                            --<br>
+                            Thank you,<br><br>
+                            M.I.R.A.<br>
+                            <i>FSC - Information Technology</i>
+                        </td>
+                    </tr>
+
+                </table>
+
+                </td>
+                </tr>
+                </table>
                 </body>
                 </html>";
 
@@ -234,7 +383,7 @@ public class EmailNotificationService
         }
     }
 
-    public async Task SendRequestCreatedEmailAsync(string toEmail,long requestId, string requestNumber, string requestDetails, int userId)
+    public async Task SendRequestCreatedEmailAsync(string toEmail, long requestId, string requestNumber, string requestDetails, int userId)
     {
         try
         {
@@ -244,36 +393,91 @@ public class EmailNotificationService
 
             var emailBody = $@"
                 <html>
-                <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
-                    <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-                        <h2 style='color: #2c3e50;'>Exemption Request Submitted</h2>
-                        <p>Dear User,</p>
+                <body style='margin:0; padding:0;'>
+                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f5f5f5;'>
+                        <tr>
+                            <td align='center'>
 
-                        <p>Your exemption request has been successfully submitted.</p>
-                        <p>Please keep the transaction number below for your records:</p>
+                                <table role='presentation' width='600' cellpadding='0' cellspacing='0' border='0'
+                                    style='background-color:#ffffff; margin:20px auto; padding:20px; font-family:Arial, Helvetica, sans-serif; color:#333; width:100%; max-width:600px;'>
 
-                        <p style='margin: 20px 0; padding: 15px; background-color: #f4f6f6; border-left: 5px solid #2f6b4a; font-size: 18px; font-weight: bold;'>
-                            Transaction Number: <span style='color: #2f6b4a;'>{requestNumber}</span>
-                        </p>
+                                    <tr>
+                                        <td style='padding-bottom:30px;'>Dear Ma'am/Sir,</td>
+                                    </tr>
 
-                        <p>Our team will review your request shortly. You can track the progress anytime using the button below:</p>
+                                    <tr>
+                                        <td style='padding-bottom:15px;'>
+                                            The status of your exemption request has been updated.
+                                        </td>
+                                    </tr>
 
-                        <p style='margin: 20px 0;'>
-                            <a href='{trackUrl}' 
-                            style='display: inline-block; padding: 12px 30px; background-color: #2f6b4a; color: white; 
-                                    text-decoration: none; border-radius: 5px; font-weight: bold;'>
-                                View Request Status
-                            </a>
-                        </p>
+                                    <!-- Status Box -->
+                                    <tr>
+                                        <td style='padding:15px; background-color:#f4f6f6; border-left:5px solid #2f75b5;'>
+                                            <p><strong>Transaction Number:</strong> <span style='color:#2f75b5;'>{{requestNumber}}</span></p>
+                                            <p><strong>Previous Status:</strong> {{oldStatus}}</p>
+                                            <p><strong>New Status:</strong> <strong style='color:#27ae60;'>{{newStatus}}</strong></p>
+                                            <p><strong>Updated By:</strong> {{changedBy}}</p>
+                                        </td>
+                                    </tr>
 
-                        <hr style='border: none; border-top: 1px solid #ddd; margin: 20px 0;' />
+                                    <tr><td height='20'></td></tr>
 
-                        <p style='color: #7f8c8d; font-size: 12px;'>
-                            Best regards,<br>
-                            EPE System<br>
-                            <a href='https://apps.fastlogistics.com.ph/epe' style='color: #7f8c8d;'>https://apps.fastlogistics.com.ph/epe</a>
-                        </p>
-                    </div>
+                                    <tr>
+                                        <td>You can track your request using the button below:</td>
+                                    </tr>
+
+                                    <tr><td height='20'></td></tr>
+
+                                    <!-- Button -->
+                                    <tr>
+                                        <td>
+
+                                            <!--[if mso]>
+                                            <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' 
+                                                href='{{trackUrl}}' 
+                                                style='height:45px;v-text-anchor:middle;width:220px;' 
+                                                arcsize='10%' stroke='f' fillcolor='#2f75b5'>
+                                                <center style='color:#ffffff;font-size:14px;font-weight:bold;'>
+                                                    View Request Status
+                                                </center>
+                                            </v:roundrect>
+                                            <![endif]-->
+
+                                            <!--[if !mso]><!-- -->
+                                            <a href='{{trackUrl}}' 
+                                                style='display:inline-block; background-color:#2f75b5; color:#fff;
+                                                padding:12px 30px; text-decoration:none; border-radius:5px; font-weight:bold;'>
+                                                View Request Status
+                                            </a>
+                                            <!--<![endif]-->
+
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style='padding-top:10px; font-size:12px;'>
+                                            If the button doesn't work,
+                                            <a href='{{trackUrl}}' style='color:#2f75b5;'>click here</a>.
+                                        </td>
+                                    </tr>
+
+                                    <tr><td height='30'></td></tr>
+
+                                    <tr>
+                                        <td style='font-family:""Courier New""; font-size:12px; color:#7f8c8d;'>
+                                            --<br>
+                                            Thank you,<br><br>
+                                            M.I.R.A.<br>
+                                            <i>FSC - Information Technology</i>
+                                        </td>
+                                    </tr>
+
+                                </table>
+
+                            </td>
+                        </tr>
+                    </table>
                 </body>
                 </html>";
 
@@ -328,6 +532,7 @@ public class EmailNotificationService
         }
     }
 
+    //No Use yet, for future use when messaging feature is implemented
     public async Task SendNewMessageEmailAsync(string toEmail, string requestNumber, string messagePreview, string postedBy)
     {
         try
