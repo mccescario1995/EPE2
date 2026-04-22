@@ -20,6 +20,8 @@
     "gridstack": "^12.3.3",
     "lottie-web": "^5.13.0",
     "nuxt": "^4.2.0",
+    "nuxt-charts": "^2.1.4",
+    "nuxt-echarts": "^1.0.1",
     "nuxt-google-auth": "^0.1.1",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",

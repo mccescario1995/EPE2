@@ -13,7 +13,7 @@ export default defineNuxtConfig({
   nitro: {
     preset: "static",
   },
-  modules: ["@pinia/nuxt"],
+  modules: ["@pinia/nuxt", "nuxt-charts"],
   css: ["~/assets/css/main.css"],
   plugins: ["~/plugins/pinia-persisted-state.ts"],
   build: {

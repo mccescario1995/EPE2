@@ -562,7 +562,8 @@ const deleteAttachment = async (attachId: number) => {
         message: "Attachment deleted successfully!",
         duration: 3000,
       });
-      await fetchAttachments();
+      await handleBack();
+      // await fetchAttachments();
     } else {
       showToast({
         type: "error",
@@ -612,7 +613,8 @@ const addNewAttachments = async () => {
         duration: 3000,
       });
       newAttachments.value = [];
-      await fetchAttachments();
+      await handleBack();
+      // await fetchAttachments();
     } else {
       showToast({
         type: "error",
@@ -1036,18 +1038,7 @@ onMounted(() => {
                           {{ getApproverStatusDisplay(approver.respond) }}
                         </span>
                         <!-- Decision badge for decided approvers -->
-                        <!-- <span
-                          v-if="approver.respond === 1"
-                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-200 text-green-800"
-                        >
-                          Approved
-                        </span> -->
-                        <!-- <span
-                          v-if="approver.respond === 2"
-                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-200 text-red-800"
-                        >
-                          Disapproved -->
-                        <!-- </span> -->
+                        
                         <!-- Resend button only for current pending approver (and not satisfied by group) -->
                         <button
                           v-if="
@@ -1137,18 +1128,7 @@ onMounted(() => {
                             {{ getApproverStatusDisplay(proxy.respond) }}
                           </span>
                           <!-- Decision badge for decided proxy approvers -->
-                          <!-- <span
-                            v-if="proxy.respond === 1"
-                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-200 text-green-800"
-                          >
-                            Approved
-                          </span>
-                          <span
-                            v-if="proxy.respond === 2"
-                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-200 text-red-800"
-                          >
-                            Disapproved
-                          </span> -->
+                          
                           <!-- Resend button only for current pending proxy (and not satisfied by group) -->
                           <button
                             v-if="

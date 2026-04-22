@@ -144,16 +144,18 @@ const fetchApprovers = async (policyId: number) => {
       return;
     }
 
-    approvers.value = items.map((a: any) => ({
-      id: a.id,
-      approvername: a.approvername,
-      approveremail: a.approveremail,
-      approvertype: a.approvertype,
-      sort: a.sort,
-      linesequence: a.linesequence,
-      isMainApprover: a.isMainApprover,
-      approverRole: a.approverRole,
-    }));
+    approvers.value = items
+      .filter((a: any) => a.approvername && a.approveremail && a.approvertype) // Filter out approvers with null name, email, or type
+      .map((a: any) => ({
+        id: a.id,
+        approvername: a.approvername,
+        approveremail: a.approveremail,
+        approvertype: a.approvertype,
+        sort: a.sort,
+        linesequence: a.linesequence,
+        isMainApprover: a.isMainApprover,
+        approverRole: a.approverRole,
+      }));
 
   } catch (error) {
     console.error("Error fetching approvers:", error);
@@ -200,6 +202,11 @@ const validateForm = () => {
   }
 
   for (const attachment of formData.value.attachments) {
+    if (!attachment.file) {
+      errors.value.attachments = "Please select a file for all attachments.";
+      isValid = false;
+      break;
+    }
     if (!attachment.referenceType) {
       errors.value.attachments = "Please select a reference type for all attachments.";
       isValid = false;
@@ -221,7 +228,7 @@ const isFormValid = computed(() => {
          !!formData.value.details &&
          formData.value.details.trim().length >= 10 &&
          formData.value.attachments.length <= 5 &&
-         formData.value.attachments.every(att => att.referenceType && att.file.size <= 10 * 1024 * 1024);
+         formData.value.attachments.every(att => att.file && att.referenceType && att.file.size <= 10 * 1024 * 1024);
 });
 
 // Get policy ID from form data (handles both object and number)
@@ -263,15 +270,30 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true;
   try {
+    // Diagnostic logging
+    console.log("Submitting exemption request with data:", {
+      policyId: getPolicyId(),
+      details: formData.value.details,
+      requestorId: userId.emplId,
+      createdBy: userId.userId,
+      attachments: formData.value.attachments.map(a => ({
+        fileName: a.file?.name,
+        fileSize: a.file?.size,
+        referenceType: a.referenceType
+      }))
+    });
+
+    const workstation = parseWorkstation();
     const formDataToSend = new FormData();
     formDataToSend.append("policyid", getPolicyId().toString());
     formDataToSend.append("details", formData.value.details);
     formDataToSend.append("requestorid", userId.emplId);
     formDataToSend.append("createdby", userId.userId.toString());
+    formDataToSend.append("computerhost", workstation);
 
     formData.value.attachments.forEach((attachment, index) => {
       formDataToSend.append(`attachments[${index}].file`, attachment.file);
-      formDataToSend.append(`attachments[${index}].referenceType`, attachment.referenceType);
+      formDataToSend.append(`attachments[${index}].referenceType`, typeof attachment.referenceType === 'object' ? attachment.referenceType.id : attachment.referenceType);
     });
 
     const response = await apiFetch("/api/exception/create", {
@@ -393,6 +415,7 @@ onMounted(() => {
               placeholder="Explain the reason for your exemption request..."
               :error="errors.details"
               :maxCharCount="1000"
+              :minCharCount="10"
             />
           </div>
 

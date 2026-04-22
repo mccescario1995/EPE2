@@ -657,7 +657,7 @@ const resendToApprover = async (transApproverId: number) => {
                             approver.respond === 0 &&
                             approver.transApproverId === currentApproverId &&
                             !isGroupSatisfied(approver.transApproverId) &&
-                            approver.employeeId === userId.emplId
+                            approver.employeeId === userId.emplId // Only show resend button to the pending approver themselves (and not if group is already satisfied by another proxy)
                           "
                           @click="resendToApprover(approver.transApproverId)"
                           :disabled="isResending === approver.transApproverId"
@@ -685,22 +685,6 @@ const resendToApprover = async (transApproverId: number) => {
                               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                             ></path>
                           </svg>
-                          <!-- <svg
-                            v-else
-                            class="h-3 w-3 mr-1"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                            />
-                          </svg> -->
-
                           <svg
                             v-else
                             class="h-3 w-3 mr-1"
@@ -721,13 +705,6 @@ const resendToApprover = async (transApproverId: number) => {
                         </button>
                       </div>
                     </div>
-                    <!-- <div v-if="approver.responddate" class="mt-2">
-                      <p class="text-xs text-gray-500">Response Date: <span class="text-gray-700">{{ formatDate(approver.responddate) }}</span></p>
-                    </div>
-                    <div v-if="approver.remarks" class="mt-2">
-                      <p class="text-xs text-gray-500">Remarks:</p>
-                      <p class="text-gray-700 text-sm">{{ approver.remarks }}</p>
-                    </div> -->
 
                     <div
                       v-if="getProxies(approver.transApproverId).length > 0"
