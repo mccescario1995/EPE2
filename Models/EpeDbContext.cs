@@ -52,7 +52,7 @@ public partial class EpeDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("data source=core.private.fast.com.ph;initial catalog=EPEDB_DEV;user id=epeuserdev;password=epepassworddev;MultipleActiveResultSets=True;TrustServerCertificate=true");
+        => optionsBuilder.UseSqlServer("data source=core.private.fast.com.ph;initial catalog=EPEDB_DEV;user id=epeuserdev;password=epepassworddev;MultipleActiveResultSets=False;TrustServerCertificate=true");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

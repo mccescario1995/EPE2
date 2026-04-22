@@ -517,7 +517,7 @@ namespace EPEAPI.Controllers
                     {
                         string approverEmail = approver.Approveremail ?? "";
                         string approverName = approver.Approvername ?? "";
-                        int approverId = int.Parse(approver.Approverid);
+                        //int approverId = int.Parse(approver.Approverid);
 
                         // If approver type is IM (Immediate Manager), get the requester's immediate head
                         if (approver.Approvertype == "IM" && userDetails != null)
@@ -602,7 +602,7 @@ namespace EPEAPI.Controllers
             catch (Exception e)
             {
                 await transaction.RollbackAsync();
-                return StatusCode(500, "Error" + e.Message);
+                return StatusCode(500, "Error " + e.Message);
             }
 
         }
@@ -659,6 +659,12 @@ namespace EPEAPI.Controllers
                 }
 
                 // Soft delete - mark as deleted
+                //existingItem.ExecuteUpdateAsync(s => s
+                //    .SetProperty(h => h.Isdelete, 1)
+                //    .SetProperty(h => h.Modifiedby, request.UserId)
+                //    .SetProperty(h => h.Modifieddate, DateTime.UtcNow)
+                //);
+
                 existingItem.Isdelete = 1;
                 existingItem.Modifiedby = request.UserId;
                 existingItem.Modifieddate = DateTime.UtcNow;
@@ -704,7 +710,7 @@ namespace EPEAPI.Controllers
                     .Where(e => e.EmplId == transactionHeader.Requestorid)
                     .FirstOrDefaultAsync();
 
-                // ✅ Update approver directly — bypasses change tracker
+                // Update approver directly — bypasses change tracker
                 await _context.EpeTransactionapprovers
                     .Where(a => a.Transapproverid == request.TransApproverId)
                     .ExecuteUpdateAsync(b => b
