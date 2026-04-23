@@ -613,6 +613,7 @@ namespace EPEAPI.Controllers
                                   {
                                       var approverUser = await _context.CoreVUsers
                                           .FirstOrDefaultAsync(u => u.EmplId == approver.Approverid);
+
                                     _logger.LogWarning("Approve User: "+ approverUser);
 
                                       if (approverUser != null)
@@ -630,14 +631,21 @@ namespace EPEAPI.Controllers
                                           approverUserId = imUser.UserId;
                                       }
                                   }
+                                
+                                var transApproverRecord = await _context.EpeTransactionapprovers
+                                  .Where(a => a.Transactionid == transactionHeader.Transactionid
+                                           && a.Approverid == approver.Approverid.ToString()
+                                           && a.Isdelete == 0)
+                                  .FirstOrDefaultAsync();
 
-                                  await _emailService.SendApprovalRequestEmailAsync(
+                                await _emailService.SendApprovalRequestEmailAsync(
                                       approverEmail,
                                       transactionHeader.Transactionid,
                                       transactionHeader.Transactionnumber,
                                       userDetails?.Employeename ?? requesterId,
                                       request.Details ?? "No details provided",
-                                      approverUserId
+                                      approverUserId,
+                                      transApproverRecord?.Transapproverid ?? 0
                                   );
                               }
                             catch (Exception ex)
@@ -800,6 +808,7 @@ namespace EPEAPI.Controllers
                             try
                             {
                                 var approverUserId = 0;
+
                                 // Get the approver's user ID from CoreVUsers using Approverid as EmplId
                                 if (!string.IsNullOrEmpty(approver.Approverid))
                                 {
@@ -823,13 +832,20 @@ namespace EPEAPI.Controllers
                                     }
                                 }
 
+                                var transApproverRecord = await _context.EpeTransactionapprovers
+                                  .Where(a => a.Transactionid == draft.Transactionid
+                                           && a.Approverid == approver.Approverid.ToString()
+                                           && a.Isdelete == 0)
+                                  .FirstOrDefaultAsync();
+
                                 await _emailService.SendApprovalRequestEmailAsync(
                                     approverEmail,
                                     draft.Transactionid,
                                     draft.Transactionnumber,
-                                    userDetails?.Employeename ?? draft.Requestorid,
+                                    userDetails?.Employeename ,
                                     draft.Details ?? "No details provided",
-                                    approverUserId
+                                    approverUserId,
+                                    transApproverRecord?.Transapproverid ?? 0
                                 );
                             }
                             catch (Exception ex)
@@ -1058,17 +1074,25 @@ namespace EPEAPI.Controllers
                         {
                             string approverEmail = "";
 
+                            var policyApprover = await _context.EpePolicyapprovers
+                                    .Where(e => e.Id == int.Parse(nextApprover.Approverid))
+                                    .FirstOrDefaultAsync();
+
                             if (nextApprover.Approvertype == "IM" && requester != null)
                             {
                                 approverEmail = requester.ImmediateEmail ?? "";
                             }
                             else
                             {
-                                var policyApprover = await _context.EpePolicyapprovers
-                                    .Where(e => e.Id == int.Parse(nextApprover.Approverid))
-                                    .FirstOrDefaultAsync();
+                                
                                 approverEmail = policyApprover?.Approveremail ?? "";
-                            }
+                            }                         
+
+                            var transApproverRecord = await _context.EpeTransactionapprovers
+                                .Where(a => a.Transactionid == transactionHeader.Transactionid
+                                         && a.Approverid == policyApprover.Id.ToString()
+                                         && a.Isdelete == 0)
+                                .FirstOrDefaultAsync();
 
                             if (!string.IsNullOrEmpty(approverEmail))
                             {
@@ -1080,7 +1104,8 @@ namespace EPEAPI.Controllers
                                         transactionHeader.Transactionnumber,
                                         requester?.Employeename ?? transactionHeader.Requestorid,
                                         transactionHeader.Details ?? "No details provided",
-                                        int.Parse(requester?.EmplId)
+                                        int.Parse(requester?.EmplId),
+                                        transApproverRecord?.Transapproverid ?? 0
                                     );
                                 }
                                 catch (Exception ex)
@@ -1146,7 +1171,7 @@ namespace EPEAPI.Controllers
                             .SetProperty(a => a.Remarks, "Auto-disapproved: sequence disapproved")
                         );
 
-                    // ✅ Any disapproval closes immediately
+                    //  Any disapproval closes immediately
                     await _context.EpeTransactionheaders
                         .Where(h => h.Transactionid == request.TransactionId)
                         .ExecuteUpdateAsync(b => b
@@ -1355,8 +1380,8 @@ namespace EPEAPI.Controllers
                 }
 
                 // Get the transaction header
-                var transactionHeader = await _context.EpeTransactionheaders
-                    .Where(u => u.Transactionid == approver.Transactionid && u.Isdelete == 0)
+                var transactionHeader = await _context.EpeVTransactionHeaders
+                    .Where(u => u.TransactionId == approver.Transactionid && u.IsDelete == 0)
                     .FirstOrDefaultAsync();
 
                 if (transactionHeader == null)
@@ -1366,7 +1391,7 @@ namespace EPEAPI.Controllers
 
                 // Get requester details
                 var requester = await _context.CoreVEmployeeDetails
-                    .Where(e => e.EmplId == transactionHeader.Requestorid)
+                    .Where(e => e.EmplId == transactionHeader.RequesterId)
                     .FirstOrDefaultAsync();
 
                 // Determine approver email and name
@@ -1398,13 +1423,23 @@ namespace EPEAPI.Controllers
                 // Send the approval request email
                 try
                 {
+
+                    var transApproverRecord = await _context.EpeTransactionapprovers
+                                  .Where(a => a.Transactionid == transactionHeader.TransactionId
+                                           && a.Approverid == approver.Approverid.ToString()
+                                           && a.Isdelete == 0)
+                                  .FirstOrDefaultAsync();
+                    //var emplId = requester?.EmplId ?? "";
+                    //var requesterName = await _context.CoreVUsers.Where(u => u.);
+
                     await _emailService.SendApprovalRequestEmailAsync(
                         approverEmail,
-                        transactionHeader.Transactionid,
-                        transactionHeader.Transactionnumber,
-                        transactionHeader.Requestorid,
+                        transactionHeader.TransactionId,
+                        transactionHeader.TransactionNumber,
+                        requester.Employeename2,
                         transactionHeader.Details ?? "No details provided",
-                        int.Parse(requester?.EmplId)
+                        int.Parse(requester?.EmplId),
+                        transApproverRecord?.Transapproverid ?? 0
                     );
                 }
                 catch (Exception ex)

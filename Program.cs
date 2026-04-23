@@ -58,6 +58,9 @@ builder.Services.AddSession(options =>
 //Token manager(optional now)
 builder.Services.AddScoped<ITokenManager, TokenManager>();
 
+// In Program.cs
+builder.Services.AddScoped<EmailApprovalTokenService>();
+
 // Email Notification Service
 builder.Services.AddHttpClient<EmailNotificationService>();
 builder.Services.AddScoped<EmailNotificationService>();

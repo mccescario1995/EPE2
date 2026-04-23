@@ -10,12 +10,14 @@ public class EmailNotificationService
     private readonly HttpClient _httpClient;
     private readonly ILogger<EmailNotificationService> _logger;
     private readonly EpeDbContext _context;
+    private readonly EmailApprovalTokenService _tokenService;
 
-    public EmailNotificationService(HttpClient httpClient, ILogger<EmailNotificationService> logger, EpeDbContext context)
+    public EmailNotificationService(HttpClient httpClient, ILogger<EmailNotificationService> logger, EpeDbContext context, EmailApprovalTokenService tokenService)
     {
         _httpClient = httpClient;
         _logger = logger;
         _context = context;
+        _tokenService = tokenService;
     }
 
     private async Task CreateWebNotificationAsync(int userId, string title, string message, string type = "info", string? relatedUrl = null)
@@ -43,103 +45,195 @@ public class EmailNotificationService
         }
     }
 
-    public async Task SendApprovalRequestEmailAsync(string toEmail, long requestId, string requestNumber, string requestorName, string requestDetails, int userId)
+    public async Task SendApprovalRequestEmailAsync(string toEmail, long requestId, string requestNumber, string requestorName, string requestDetails, int userId, long transApproverId)
     {
+        
         try
         {
+            // Generate one-time tokens
+            var (approveToken, disapproveToken) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
+
+            //var apiBase = "https://apps.fastlogistics.com.ph/epe2apidev"; // Change to production API base URL when deploying
+            var apiBase = "http://localhost:5000";
+            var approveUrl = $"{apiBase}/api/emailapproval/act?token={approveToken}";
+            var disapproveUrl = $"{apiBase}/api/emailapproval/act?token={disapproveToken}";
+            var viewUrl = $"https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/approve?id={requestId}";
             var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/exemptions/approve?id=" + requestId;
 
             toEmail = "mccescario@fastgroup.biz"; // for testing
 
+            //var emailBody = $@"
+            //    <html>
+            //    <body style='margin:0; padding:0;'>
+            //        <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f5f5f5;'>
+            //            <tr>
+            //                <td align='center'>
+
+            //                    <table role='presentation' width='600' cellpadding='0' cellspacing='0' border='0'
+            //                        style='background-color:#ffffff; margin:20px auto; padding:20px; font-family:Arial, Helvetica, sans-serif; color:#333; width:100%; max-width:600px;'>
+
+            //                        <tr>
+            //                            <td style='padding-bottom:30px;'>Dear Ma'am/Sir,</td>
+            //                        </tr>
+
+            //                        <tr>
+            //                            <td style='padding-bottom:15px;'>
+            //                                A new Executive Process Exemption Request requires your approval.
+            //                            </td>
+            //                        </tr>
+
+            //                        <!-- Details Box -->
+            //                        <tr>
+            //                            <td style='padding:15px; background-color:#f4f6f6; border-left:5px solid #2f75b5;'>
+            //                                <p><strong>Transaction Number:</strong> <span style='color:#2f75b5;'>{requestNumber}</span></p>
+            //                                <p><strong>Requested By:</strong> {requestorName}</p>
+            //                                <p><strong>Transaction Details:</strong> {requestDetails}</p>
+            //                            </td>
+            //                        </tr>
+
+            //                        <tr><td height='20'></td></tr>
+
+            //                        <tr>
+            //                            <td>Please review and take action at your earliest convenience.</td>
+            //                        </tr>
+
+            //                        <tr><td height='20'></td></tr>
+
+            //                        <!-- Button -->
+            //                        <tr>
+            //                            <td>
+
+            //                                <!--[if mso]>
+            //                                <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' 
+            //                                    href='{trackUrl}' 
+            //                                    style='height:45px;v-text-anchor:middle;width:220px;' 
+            //                                    arcsize='10%' stroke='f' fillcolor='#2f75b5'>
+            //                                    <center style='color:#ffffff;font-size:14px;font-weight:bold;'>
+            //                                        Review Request
+            //                                    </center>
+            //                                </v:roundrect>
+            //                                <![endif]-->
+
+            //                                <!--[if !mso]><!-- -->
+            //                                <a href='{trackUrl}' 
+            //                                    style='display:inline-block; background-color:#2f75b5; color:#fff;
+            //                                    padding:12px 30px; text-decoration:none; border-radius:5px; font-weight:bold;'>
+            //                                    Review Request
+            //                                </a>
+            //                                <!--<![endif]-->
+
+            //                            </td>
+            //                        </tr>
+
+            //                        <!-- Fallback -->
+            //                        <tr>
+            //                            <td style='padding-top:10px; font-size:12px;'>
+            //                                If the button doesn't work,
+            //                                <a href='{trackUrl}' style='color:#2f75b5;'>click here</a>.
+            //                            </td>
+            //                        </tr>
+
+            //                        <tr><td height='30'></td></tr>
+
+            //                        <!-- Signature -->
+            //                        <tr>
+            //                            <td style='font-family:Courier New; font-size:12px; color:#7f8c8d;'>
+            //                                --<br>
+            //                                Thank you,<br><br>
+            //                                M.I.R.A.<br>
+            //                                <i>FSC - Information Technology</i>
+            //                            </td>
+            //                        </tr>
+
+            //                    </table>
+            //                </td>
+            //            </tr>
+            //        </table>
+            //    </body>
+            //    </html>";
             var emailBody = $@"
-                <html>
-                <body style='margin:0; padding:0;'>
-                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f5f5f5;'>
-                        <tr>
-                            <td align='center'>
-                                
-                                <table role='presentation' width='600' cellpadding='0' cellspacing='0' border='0'
-                                    style='background-color:#ffffff; margin:20px auto; padding:20px; font-family:Arial, Helvetica, sans-serif; color:#333; width:100%; max-width:600px;'>
+                    <html>
+                    <body style='margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;'>
+                      <table width='100%' cellpadding='0' cellspacing='0' style='background:#f5f5f5;'>
+                        <tr><td align='center'>
+                          <table width='600' cellpadding='0' cellspacing='0'
+                            style='background:#fff;margin:20px auto;padding:30px;max-width:600px;'>
 
-                                    <tr>
-                                        <td style='padding-bottom:30px;'>Dear Ma'am/Sir,</td>
-                                    </tr>
+                            <tr><td style='padding-bottom:20px;'>Dear Ma'am/Sir,</td></tr>
+                            <tr><td style='padding-bottom:15px;'>
+                              A new Executive Process Exemption Request requires your approval.
+                            </td></tr>
 
-                                    <tr>
-                                        <td style='padding-bottom:15px;'>
-                                            A new Executive Process Exemption Request requires your approval.
-                                        </td>
-                                    </tr>
+                            <!-- Details box -->
+                            <tr><td style='padding:15px;background:#f4f6f6;border-left:5px solid #2f75b5;margin-bottom:20px;'>
+                              <p><strong>Transaction #:</strong> <span style='color:#2f75b5;'>{requestNumber}</span></p>
+                              <p><strong>Requested By:</strong> {requestorName}</p>
+                              <p><strong>Details:</strong> {requestDetails}</p>
+                              <p><strong>Expires:</strong> 72 hours from receipt</p>
+                            </td></tr>
 
-                                    <!-- Details Box -->
-                                    <tr>
-                                        <td style='padding:15px; background-color:#f4f6f6; border-left:5px solid #2f75b5;'>
-                                            <p><strong>Transaction Number:</strong> <span style='color:#2f75b5;'>{requestNumber}</span></p>
-                                            <p><strong>Requested By:</strong> {requestorName}</p>
-                                            <p><strong>Transaction Details:</strong> {requestDetails}</p>
-                                        </td>
-                                    </tr>
+                            <tr><td height='25'></td></tr>
 
-                                    <tr><td height='20'></td></tr>
+                            <!-- ONE-CLICK ACTION BUTTONS -->
+                            <tr><td>
+                              <p style='font-weight:bold;margin-bottom:12px;'>Take action directly from this email:</p>
+                              <table cellpadding='0' cellspacing='0'>
+                                <tr>
+                                  <td style='padding-right:10px;'>
+                                    <!--[if mso]>
+                                    <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' href='{approveUrl}'
+                                      style='height:44px;v-text-anchor:middle;width:140px;' arcsize='10%' fillcolor='#16a34a' stroke='f'>
+                                      <center style='color:#fff;font-size:14px;font-weight:bold;'>Approve</center>
+                                    </v:roundrect>
+                                    <![endif]-->
+                                    <!--[if !mso]><!-->
+                                    <a href='{approveUrl}'
+                                      style='display:inline-block;background:#16a34a;color:#fff;padding:12px 28px;
+                                             text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;'>
+                                      Approve
+                                    </a>
+                                    <!--<![endif]-->
+                                  </td>
+                                  <td style='padding-right:10px;'>
+                                    <!--[if mso]>
+                                    <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' href='{disapproveUrl}'
+                                      style='height:44px;v-text-anchor:middle;width:140px;' arcsize='10%' fillcolor='#dc2626' stroke='f'>
+                                      <center style='color:#fff;font-size:14px;font-weight:bold;'>Disapprove</center>
+                                    </v:roundrect>
+                                    <![endif]-->
+                                    <!--[if !mso]><!-->
+                                    <a href='{disapproveUrl}'
+                                      style='display:inline-block;background:#dc2626;color:#fff;padding:12px 28px;
+                                             text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;'>
+                                      Disapprove
+                                    </a>
+                                    <!--<![endif]-->
+                                  </td>
+                                  <td>
+                                    <a href='{viewUrl}'
+                                      style='display:inline-block;background:#2f75b5;color:#fff;padding:12px 28px;
+                                             text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;'>
+                                      View Details
+                                    </a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td></tr>
 
-                                    <tr>
-                                        <td>Please review and take action at your earliest convenience.</td>
-                                    </tr>
+                            <tr><td height='15'></td></tr>
+                            <tr><td style='font-size:12px;color:#6b7280;'>
+                              These buttons will expire in 72 hours. After expiration, you may use the View Details button to respond, which will allow you to submit remarks.
+                            </td></tr>
 
-                                    <tr><td height='20'></td></tr>
-
-                                    <!-- Button -->
-                                    <tr>
-                                        <td>
-
-                                            <!--[if mso]>
-                                            <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' 
-                                                href='{trackUrl}' 
-                                                style='height:45px;v-text-anchor:middle;width:220px;' 
-                                                arcsize='10%' stroke='f' fillcolor='#2f75b5'>
-                                                <center style='color:#ffffff;font-size:14px;font-weight:bold;'>
-                                                    Review Request
-                                                </center>
-                                            </v:roundrect>
-                                            <![endif]-->
-
-                                            <!--[if !mso]><!-- -->
-                                            <a href='{trackUrl}' 
-                                                style='display:inline-block; background-color:#2f75b5; color:#fff;
-                                                padding:12px 30px; text-decoration:none; border-radius:5px; font-weight:bold;'>
-                                                Review Request
-                                            </a>
-                                            <!--<![endif]-->
-
-                                        </td>
-                                    </tr>
-
-                                    <!-- Fallback -->
-                                    <tr>
-                                        <td style='padding-top:10px; font-size:12px;'>
-                                            If the button doesn't work,
-                                            <a href='{trackUrl}' style='color:#2f75b5;'>click here</a>.
-                                        </td>
-                                    </tr>
-
-                                    <tr><td height='30'></td></tr>
-
-                                    <!-- Signature -->
-                                    <tr>
-                                        <td style='font-family:Courier New; font-size:12px; color:#7f8c8d;'>
-                                            --<br>
-                                            Thank you,<br><br>
-                                            M.I.R.A.<br>
-                                            <i>FSC - Information Technology</i>
-                                        </td>
-                                    </tr>
-
-                                </table>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-                </html>";
+                            <tr><td height='30'></td></tr>
+                            <tr><td style='font-family:Courier New;font-size:12px;color:#7f8c8d;'>
+                              --<br>Thank you,<br><br>M.I.R.A.<br><i>FSC - Information Technology</i>
+                            </td></tr>
+                          </table>
+                        </td></tr>
+                      </table>
+                    </body>
+                    </html>";
 
             var requestBody = new
             {

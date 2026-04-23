@@ -49,6 +49,7 @@ public partial class EpeDbContext : DbContext
 
     public virtual DbSet<Token> Tokens { get; set; }
     public virtual DbSet<EpeNotification> EpeNotifications { get; set; }
+    public virtual DbSet<EpeEmailApprovalToken> EpeEmailApprovalTokens { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -1020,6 +1021,23 @@ public partial class EpeDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnName("createddate");
+        });
+
+        modelBuilder.Entity<EpeEmailApprovalToken>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("epe_emailapprovaltoken");
+            entity.HasIndex(e => e.Token).IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Token).HasMaxLength(100).IsUnicode(false).HasColumnName("token");
+            entity.Property(e => e.TransactionId).HasColumnName("transactionid");
+            entity.Property(e => e.TransApproverId).HasColumnName("transapproverid");
+            entity.Property(e => e.Action).HasMaxLength(20).IsUnicode(false).HasColumnName("action");
+            entity.Property(e => e.IsUsed).HasColumnName("isused");
+            entity.Property(e => e.ExpiresAt).HasColumnType("datetime").HasColumnName("expiresat");
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime").HasColumnName("createdat")
+                .HasDefaultValueSql("(getdate())");
         });
 
         OnModelCreatingPartial(modelBuilder);
