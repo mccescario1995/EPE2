@@ -235,7 +235,7 @@ onMounted(async () => {
               <!-- <VChart :option="chartTrend" /> -->
               <BarChart
                 :height="200"
-                :stacked="true"
+                :stacked="false"
                 :y-axis="['approved', 'disapproved', 'pending']"
                 v-bind="approvalChartOptions"
               />
@@ -255,7 +255,7 @@ onMounted(async () => {
               :style="`height:${Math.max(220, policyOverrides.length * 44)}px`"
             >
               <div class="mt-6">
-                <table class="w-full text-sm table-auto">
+                <table class="w-full table-auto">
                   <thead>
                     <tr class="border-b text-left">
                       <th>Rank</th>

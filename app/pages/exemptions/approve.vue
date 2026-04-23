@@ -127,7 +127,7 @@ const fetchPolicyName = async (policyId: number) => {
 // Format date
 const formatDate = (date: string | Date | null) => {
   if (!date) return "N/A";
-  return new Date(date).toLocaleDateString("en-US", {
+  return new Date(date).toLocaleDateString("en-PH", {
     year: "numeric",
     month: "long",
     day: "numeric",

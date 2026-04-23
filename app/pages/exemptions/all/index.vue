@@ -17,7 +17,7 @@ const viewProduct = (row: any) => {
   router.push(`/exemptions/view?id=${row.transactionId}`);
 };
 const editProduct = (row: any) => {
-  router.push(`/exemptions/edit?id=${row.transactionId}`);
+    router.push(`/exemptions/edit?id=${row.transactionId}`);
 };
 const approveRequest = (row: any) => {
   router.push(`/exemptions/approve?id=${row.transactionId}`);
@@ -154,11 +154,13 @@ watchEffect(() => {
               O: 'Open',
               P: 'Open',
               C: 'Closed',
+              D: 'Draft',
             },
             finalDecision: {
               Pending: 'Pending',
               Approved: 'Approved',
               Disapproved: 'Disapproved',
+              Draft: 'Draft',
             },
           }"
           :field-colors="{
@@ -166,11 +168,13 @@ watchEffect(() => {
               O: 'bg-blue-100 text-blue-800 border border-blue-900',
               P: 'bg-blue-100 text-blue-800 border border-blue-900',
               C: 'bg-gray-200 text-gray-800 border border-gray-900',
+              D: 'bg-gray-100 text-gray-800 border border-gray-900',
             },
             finalDecision: {
               Pending: 'bg-yellow-100 text-yellow-800',
               Approved: 'bg-green-100 text-green-800',
               Disapproved: 'bg-red-100 text-red-800',
+              Draft: 'bg-gray-100 text-gray-800 border border-gray-900',
             },
           }"
           :date-fields="['createdDate']"
@@ -193,10 +197,11 @@ watchEffect(() => {
             },
             {
               label: IconEdit,
-              tooltip: 'Edit Request',
+              tooltip: (row) => row.status == 'D' ? 'Edit Draft' : 'Edit Request',
               handler: editProduct,
               iconClass: 'text-blue-500',
-              visible: (row) => row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
+              visible: (row) =>
+                row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
             {
@@ -204,7 +209,8 @@ watchEffect(() => {
               tooltip: 'Delete Request',
               handler: confirmDelete,
               iconClass: 'text-red-500',
-              visible: (row) => row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
+              visible: (row) =>
+                row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
           ]"

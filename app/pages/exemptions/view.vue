@@ -14,9 +14,9 @@ const userId = userStore.profile;
 
 const requesterId = computed(() => exemptionData.value?.requesterId);
 
-const exemptStatus = computed(() =>  exemptionData.value?.status);
+const exemptStatus = computed(() => exemptionData.value?.status);
 
-const config = useRuntimeConfig()
+const config = useRuntimeConfig();
 
 // Get ID from route query
 const exemptionId = computed(() => {
@@ -48,7 +48,7 @@ const fetchExemptionDetails = async () => {
 
     if (response) {
       exemptionData.value = response.item;
-      approversData.value = response.approvers || [];      
+      approversData.value = response.approvers || [];
 
       // If there's a policy ID, fetch the policy name
       if (response.item.policyid) {
@@ -137,6 +137,7 @@ const getStatusDisplay = (status: string) => {
     O: "Open",
     P: "Open", // Approval in progress (one or more approved, waiting for all)
     C: "Closed",
+    D: "Draft",
   };
   return statusMap[status] || status;
 };
@@ -147,6 +148,7 @@ const getFinalDecisionDisplay = (decision: string) => {
     Pending: "Pending",
     Approved: "Approved",
     Disapproved: "Disapproved",
+    Draft: "Draft",
   };
   return decisionMap[decision] || decision;
 };
@@ -157,6 +159,7 @@ const getApproverStatusDisplay = (respond: number) => {
     0: "Pending",
     1: "Approved",
     2: "Disapproved",
+    3: "Draft",
   };
   return statusMap[respond] || "Pending";
 };
@@ -167,6 +170,7 @@ const getApproverStatusColor = (respond: number) => {
     0: "bg-yellow-100 text-yellow-800 border border-yellow-900",
     1: "bg-green-100 text-green-800 border border-green-900",
     2: "bg-red-100 text-red-800 border border-red-900",
+    3: "bg-gray-100 text-gray-800 border border-gray-900",
   };
   return colorMap[respond] || "bg-gray-100 text-gray-800";
 };
@@ -333,7 +337,7 @@ const resendToApprover = async (transApproverId: number) => {
           <h1 class="text-2xl ps-5 font-bold text-gray-900">Request Details</h1>
         </div>
         <Button
-          v-if="requesterId === userId.emplId && exemptStatus === 'O'" 
+          v-if="requesterId === userId.emplId && exemptStatus === 'O'"
           variant="primary"
           size="md"
           icon="edit"
@@ -440,7 +444,7 @@ const resendToApprover = async (transApproverId: number) => {
                     </label>
                     <p class="text-gray-900">
                       <!-- {{ formatDate(exemptionData.createdDate) }} -->
-                      {{ formatDate(exemptionData.createdDate) }}
+                      {{ formatDate(exemptionData.modifiedDate) }}
                     </p>
                   </div>
                 </div>
@@ -618,13 +622,9 @@ const resendToApprover = async (transApproverId: number) => {
                             >
                               Remarks:
                             </label>
-                            <div
-                              class="ml-3 w-auto"
-                            >
+                            <div class="ml-3 w-auto">
                               <p class="text-gray-900 whitespace-pre-wrap">
-                                {{
-                                  approver.remarks || "No remarks provided"
-                                }}
+                                {{ approver.remarks || "No remarks provided" }}
                               </p>
                             </div>
                           </div>
@@ -761,8 +761,8 @@ const resendToApprover = async (transApproverId: number) => {
                             v-if="
                               proxy.respond === 0 &&
                               proxy.transApproverId === currentApproverId &&
-                              !isGroupSatisfied(approver.transApproverId) 
-                              &&  proxy.employeeId === userId.emplId
+                              !isGroupSatisfied(approver.transApproverId) &&
+                              proxy.employeeId === userId.emplId
                             "
                             @click="resendToApprover(proxy.transApproverId)"
                             :disabled="isResending === proxy.transApproverId"

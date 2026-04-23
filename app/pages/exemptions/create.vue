@@ -11,8 +11,16 @@ const formData = ref({
   policyid: null as number | { id: number; label: string } | null,
   corporate: null as { id: string; label: string } | null,
   details: "",
-  attachments: [] as { file: File; referenceType: string }[],
+  attachments: [] as {
+    file: File | null;
+    referenceType: string | { id: string; label: string } | null;
+  }[],
 });
+
+// Draft state
+const isDraft = ref(false);
+const draftId = ref<number | null>(null);
+const isDraftMode = ref(false);
 
 // Policy options - will be fetched from API
 const policyOptions = ref<{ id: number; label: string }[]>([]);
@@ -28,7 +36,16 @@ const referenceTypeOptions = [
 
 // Approvers for selected policy
 const approvers = ref<
-  { id: number; approvername: string; approveremail: string; approvertype: string; sort: number; linesequence?: number; isMainApprover?: boolean; approverRole?: string }[]
+  {
+    id: number;
+    approvername: string;
+    approveremail: string;
+    approvertype: string;
+    sort: number;
+    linesequence?: number;
+    isMainApprover?: boolean;
+    approverRole?: string;
+  }[]
 >([]);
 const isLoadingApprovers = ref(false);
 
@@ -38,12 +55,12 @@ const isLoadingApprovers = ref(false);
 const groupedApprovers = computed(() => {
   const mainApprovers: any[] = [];
   const proxiesMap: Map<number, any[]> = new Map();
-  
-  approvers.value.forEach(approver => {
+
+  approvers.value.forEach((approver) => {
     // Determine if approver is Main (linesequence === 1) or Proxy (linesequence > 1)
     const isMain = approver.linesequence === 1;
-    const isIM = approver.approvertype === 'IM';
-    
+    const isIM = approver.approvertype === "IM";
+
     if (isMain && !isIM) {
       // This is a Main Approver (linesequence=1, not IM)
       mainApprovers.push(approver);
@@ -54,7 +71,9 @@ const groupedApprovers = computed(() => {
       // Don't add to proxiesMap - IM won't have proxies
     } else {
       // This is a Proxy (linesequence > 1) - group under main approver by matching sort
-      const mainApprover = mainApprovers.find(m => m.sort === approver.sort && m.approvertype !== 'IM');
+      const mainApprover = mainApprovers.find(
+        (m) => m.sort === approver.sort && m.approvertype !== "IM",
+      );
       if (mainApprover) {
         const proxies = proxiesMap.get(mainApprover.id) || [];
         proxies.push(approver);
@@ -62,7 +81,7 @@ const groupedApprovers = computed(() => {
       }
     }
   });
-  
+
   return { mainApprovers, proxiesMap };
 });
 
@@ -80,6 +99,7 @@ const errors = ref({
 
 // Loading state
 const isSubmitting = ref(false);
+const isSavingDraft = ref(false);
 
 // Fetch policies from API
 const fetchPolicies = async () => {
@@ -156,7 +176,6 @@ const fetchApprovers = async (policyId: number) => {
         isMainApprover: a.isMainApprover,
         approverRole: a.approverRole,
       }));
-
   } catch (error) {
     console.error("Error fetching approvers:", error);
     approvers.value = [];
@@ -182,17 +201,18 @@ watch(
 );
 
 // Validate form
-const validateForm = () => {
+const validateForm = (isDraft = false) => {
   let isValid = true;
   errors.value = { policyid: "", details: "", attachments: "" };
 
-  if (!formData.value.policyid) {
+  if (!isDraft && !formData.value.policyid) {
     errors.value.policyid = "Please select a policy";
     isValid = false;
   }
 
   if (!formData.value.details || formData.value.details.trim().length < 10) {
-    errors.value.details = "Please provide details (minimum 10 characters). Please explain the reason for your exemption request.";
+    errors.value.details =
+      "Please provide details (minimum 10 characters). Please explain the reason for your exemption request.";
     isValid = false;
   }
 
@@ -208,7 +228,8 @@ const validateForm = () => {
       break;
     }
     if (!attachment.referenceType) {
-      errors.value.attachments = "Please select a reference type for all attachments.";
+      errors.value.attachments =
+        "Please select a reference type for all attachments.";
       isValid = false;
       break;
     }
@@ -222,13 +243,31 @@ const validateForm = () => {
   return isValid;
 };
 
-// Computed property to check if form is valid
+// Computed property to check if form is valid for submission
 const isFormValid = computed(() => {
-  return !!formData.value.policyid &&
-         !!formData.value.details &&
-         formData.value.details.trim().length >= 10 &&
-         formData.value.attachments.length <= 5 &&
-         formData.value.attachments.every(att => att.file && att.referenceType && att.file.size <= 10 * 1024 * 1024);
+  return (
+    !!formData.value.policyid &&
+    !!formData.value.details &&
+    formData.value.details.trim().length >= 10 &&
+    formData.value.attachments.length <= 5 &&
+    formData.value.attachments.every(
+      (att) =>
+        att.file && att.referenceType && att.file.size <= 10 * 1024 * 1024,
+    )
+  );
+});
+
+// Computed property to check if form is valid for draft
+const isDraftValid = computed(() => {
+  return (
+    !!formData.value.details &&
+    formData.value.details.trim().length >= 10 &&
+    formData.value.attachments.length <= 5 &&
+    formData.value.attachments.every(
+      (att) =>
+        att.file && att.referenceType && att.file.size <= 10 * 1024 * 1024,
+    )
+  );
 });
 
 // Get policy ID from form data (handles both object and number)
@@ -240,26 +279,116 @@ const getPolicyId = () => {
 const parseWorkstation = (): string => {
   const ua = navigator.userAgent;
 
-  const os = ua.includes("Windows NT 10.0") ? "Windows 10/11"
-    : ua.includes("Windows NT 6.1") ? "Windows 7"
-    : ua.includes("Mac") ? "MacOS"
-    : ua.includes("Linux") ? "Linux"
-    : ua.includes("Android") ? "Android"
-    : ua.includes("iPhone") ? "iOS"
-    : "Unknown OS";
+  const os = ua.includes("Windows NT 10.0")
+    ? "Windows 10/11"
+    : ua.includes("Windows NT 6.1")
+      ? "Windows 7"
+      : ua.includes("Mac")
+        ? "MacOS"
+        : ua.includes("Linux")
+          ? "Linux"
+          : ua.includes("Android")
+            ? "Android"
+            : ua.includes("iPhone")
+              ? "iOS"
+              : "Unknown OS";
 
   const edgeMatch = ua.match(/Edg\/([\d]+)/);
   const chromeMatch = ua.match(/Chrome\/([\d]+)/);
   const firefoxMatch = ua.match(/Firefox\/([\d]+)/);
   const safariMatch = ua.match(/Version\/([\d]+)/);
 
-  const browser = edgeMatch ? `Edge ${edgeMatch[1]}`
-    : chromeMatch ? `Chrome ${chromeMatch[1]}`
-    : firefoxMatch ? `Firefox ${firefoxMatch[1]}`
-    : safariMatch ? `Safari ${safariMatch[1]}`
-    : "Unknown Browser";
+  const browser = edgeMatch
+    ? `Edge ${edgeMatch[1]}`
+    : chromeMatch
+      ? `Chrome ${chromeMatch[1]}`
+      : firefoxMatch
+        ? `Firefox ${firefoxMatch[1]}`
+        : safariMatch
+          ? `Safari ${safariMatch[1]}`
+          : "Unknown Browser";
 
-  return `${os} / ${browser}`.substring(0, 50); 
+  return `${os} / ${browser}`.substring(0, 50);
+};
+
+// Save or update draft
+const handleSaveDraft = async () => {
+  if (!validateForm(true)) {
+    return;
+  }
+
+  isSavingDraft.value = true;
+  try {
+    const workstation = parseWorkstation();
+    const formDataToSend = new FormData();
+    if (formData.value.policyid) {
+      formDataToSend.append("policyid", getPolicyId().toString());
+    }
+    formDataToSend.append("details", formData.value.details);
+    formDataToSend.append("requestorid", userId.emplId);
+    formDataToSend.append("createdby", userId.userId.toString());
+    formDataToSend.append("computerhost", workstation);
+
+    formData.value.attachments.forEach((attachment, index) => {
+      if (attachment.file) {
+        formDataToSend.append(`attachments[${index}].file`, attachment.file);
+      }
+      formDataToSend.append(
+        `attachments[${index}].referenceType`,
+        typeof attachment.referenceType === "object" && attachment.referenceType
+          ? (attachment.referenceType as any).id
+          : attachment.referenceType,
+      );
+    });
+
+    let response;
+    if (draftId.value) {
+      // Update existing draft
+      response = await apiFetch(
+        `/api/exception/update-draft/${draftId.value}`,
+        {
+          method: "PUT",
+          body: formDataToSend,
+        },
+      );
+    } else {
+      // Save new draft
+      response = await apiFetch("/api/exception/save-draft", {
+        method: "POST",
+        body: formDataToSend,
+      });
+    }
+
+    if (response) {
+      draftId.value = response.item.transactionId;
+      isDraft.value = true;
+      showToast({
+        type: "success",
+        title: "Success",
+        message: draftId.value
+          ? "Draft updated successfully!"
+          : "Draft saved successfully!",
+        duration: 5000,
+      });
+    } else {
+      showToast({
+        type: "error",
+        title: "Error",
+        message: response.message || "Failed to save draft",
+        duration: 5000,
+      });
+    }
+  } catch (error: any) {
+    console.error("Error saving draft:", error);
+    showToast({
+      type: "error",
+      title: "Error",
+      message: error.message || "An error occurred while saving the draft",
+      duration: 5000,
+    });
+  } finally {
+    isSavingDraft.value = false;
+  }
 };
 
 // Submit form
@@ -270,61 +399,101 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true;
   try {
-    // Diagnostic logging
-    console.log("Submitting exemption request with data:", {
-      policyId: getPolicyId(),
-      details: formData.value.details,
-      requestorId: userId.emplId,
-      createdBy: userId.userId,
-      attachments: formData.value.attachments.map(a => ({
-        fileName: a.file?.name,
-        fileSize: a.file?.size,
-        referenceType: a.referenceType
-      }))
-    });
+    if (draftId.value) {
+      // Submit existing draft
+      const response = await apiFetch(
+        `/api/exception/submit-draft/${draftId.value}`,
+        {
+          method: "POST",
+        },
+      );
 
-    const workstation = parseWorkstation();
-    const formDataToSend = new FormData();
-    formDataToSend.append("policyid", getPolicyId().toString());
-    formDataToSend.append("details", formData.value.details);
-    formDataToSend.append("requestorid", userId.emplId);
-    formDataToSend.append("createdby", userId.userId.toString());
-    formDataToSend.append("computerhost", workstation);
-
-    formData.value.attachments.forEach((attachment, index) => {
-      formDataToSend.append(`attachments[${index}].file`, attachment.file);
-      formDataToSend.append(`attachments[${index}].referenceType`, typeof attachment.referenceType === 'object' ? attachment.referenceType.id : attachment.referenceType);
-    });
-
-    const response = await apiFetch("/api/exception/create", {
-      method: "POST",
-      body: formDataToSend,
-      // No Content-Type header - let browser set it for FormData
-    });
-
-    if (response.success) {
-      showToast({
-        type: "success",
-        title: "Success",
-        message: "Exemption request created successfully!",
-        duration: 5000,
-      });
-      // Redirect to exemptions list after success
-      router.push("/exemptions");
+      if (response.success) {
+        showToast({
+          type: "success",
+          title: "Success",
+          message: "Draft submitted successfully!",
+          duration: 5000,
+        });
+        router.push("/exemptions");
+      } else {
+        showToast({
+          type: "error",
+          title: "Error",
+          message: response.message || "Failed to submit draft",
+          duration: 5000,
+        });
+      }
     } else {
-      showToast({
-        type: "error",
-        title: "Error",
-        message: response.message || "Failed to create exemption request",
-        duration: 5000,
+      // Create new request
+      // Diagnostic logging
+      console.log("Submitting exemption request with data:", {
+        policyId: getPolicyId(),
+        details: formData.value.details,
+        requestorId: userId.emplId,
+        createdBy: userId.userId,
+        attachments: formData.value.attachments.map((a) => ({
+          fileName: a.file?.name,
+          fileSize: a.file?.size,
+          referenceType: a.referenceType,
+        })),
       });
+
+      const workstation = parseWorkstation();
+      const formDataToSend = new FormData();
+      const policyId = getPolicyId();
+      if (policyId != null) {
+        formDataToSend.append("policyid", String(policyId!));
+      }
+      formDataToSend.append("details", formData.value.details);
+      formDataToSend.append("requestorid", userId.emplId);
+      formDataToSend.append("createdby", userId.userId.toString());
+      formDataToSend.append("computerhost", workstation);
+
+      formData.value.attachments.forEach((attachment, index) => {
+        if (attachment.file) {
+          formDataToSend.append(`attachments[${index}].file`, attachment.file);
+        }
+        formDataToSend.append(
+          `attachments[${index}].referenceType`,
+          typeof attachment.referenceType === "object" &&
+            attachment.referenceType
+            ? (attachment.referenceType as any).id
+            : attachment.referenceType,
+        );
+      });
+
+      const response = await apiFetch("/api/exception/create", {
+        method: "POST",
+        body: formDataToSend,
+        // No Content-Type header - let browser set it for FormData
+      });
+
+      if (response.success) {
+        showToast({
+          type: "success",
+          title: "Success",
+          message: "Exemption request created successfully!",
+          duration: 5000,
+        });
+        // Redirect to exemptions list after success
+        router.push("/exemptions");
+      } else {
+        showToast({
+          type: "error",
+          title: "Error",
+          message: response.message || "Failed to create exemption request",
+          duration: 5000,
+        });
+      }
     }
   } catch (error: any) {
-    console.error("Error creating exemption request:", error);
+    console.error("Error submitting request:", error);
     showToast({
       type: "error",
       title: "Error",
-      message: error.message || "An error occurred while creating the request",
+      message:
+        error.message || "An error occurred while submitting the request",
       duration: 5000,
     });
   } finally {
@@ -340,7 +509,7 @@ const handleCancel = () => {
 // Add attachment
 const addAttachment = () => {
   if (formData.value.attachments.length < 5) {
-    formData.value.attachments.push({ file: null as any, referenceType: "" });
+    formData.value.attachments.push({ file: null, referenceType: "" });
   }
 };
 
@@ -357,9 +526,48 @@ const handleFileChange = (index: number, event: Event) => {
   }
 };
 
-// Fetch policies on mount
-onMounted(() => {
+// Load draft if draftId is provided
+const loadDraft = async (id: number) => {
+  try {
+    const response = await apiFetch(`/api/exception/view/${id}`, {
+      method: "POST",
+      body: JSON.stringify({ UserId: userId.userId }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      parseJson: true,
+    });
+
+    if (response.success && response.item) {
+      const item = response.item;
+      if (item.status === "D") {
+        draftId.value = id;
+        isDraft.value = true;
+        isDraftMode.value = true;
+        formData.value.policyid = item.policyId
+          ? { id: item.policyId, label: item.policyName }
+          : null;
+        formData.value.details = item.details || "";
+        // Load attachments if any
+        // For now, assume attachments are handled separately
+      }
+    }
+  } catch (error) {
+    console.error("Error loading draft:", error);
+  }
+};
+
+// Fetch policies on mount and check for draft
+onMounted(async () => {
   fetchPolicies();
+  const query = new URLSearchParams(window.location.search);
+  const draftParam = query.get("draftId");
+  if (draftParam) {
+    const id = parseInt(draftParam);
+    if (id) {
+      await loadDraft(id);
+    }
+  }
 });
 </script>
 
@@ -378,7 +586,7 @@ onMounted(() => {
           @onclick="handleCancel"
         />
         <h1 class="text-3xl ps-5 font-bold text-gray-900">
-          Create Exemption Request
+          {{ draftId ? "Edit Draft" : "Create Exemption Request" }}
         </h1>
       </div>
     </header>
@@ -389,7 +597,8 @@ onMounted(() => {
           <!-- Policy Selection -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Policy To Override <span class="text-red-500">*</span>
+              Policy To Override
+              <span v-if="!isDraftMode" class="text-red-500">*</span>
             </label>
             <Dropdown
               v-model="formData.policyid"
@@ -405,7 +614,8 @@ onMounted(() => {
           <!-- Details -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Additional Comment/Detailed Info <span class="text-red-500">*</span>
+              Additional Comment/Detailed Info
+              <span class="text-red-500">*</span>
             </label>
             <BaseInput
               v-model="formData.details"
@@ -424,7 +634,11 @@ onMounted(() => {
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Attachments (Optional - Max 5 files, 10MB each)
             </label>
-            <div v-for="(attachment, index) in formData.attachments" :key="index" class="mb-4 p-4 border border-gray-200 rounded-lg">
+            <div
+              v-for="(attachment, index) in formData.attachments"
+              :key="index"
+              class="mb-4 p-4 border border-gray-200 rounded-lg"
+            >
               <div class="flex items-center gap-4">
                 <div class="flex-1">
                   <input
@@ -434,7 +648,10 @@ onMounted(() => {
                     class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
                   <p v-if="attachment.file" class="mt-1 text-xs text-gray-500">
-                    Selected: {{ attachment.file.name }} ({{ (attachment.file.size / 1024 / 1024).toFixed(2) }} MB)
+                    Selected: {{ attachment.file.name }} ({{
+                      (attachment.file.size / 1024 / 1024).toFixed(2)
+                    }}
+                    MB)
                   </p>
                 </div>
                 <div class="w-48">
@@ -503,7 +720,10 @@ onMounted(() => {
               v-else-if="approvers.length > 0"
               class="bg-gray-50 rounded-lg border border-gray-200 divide-y divide-gray-200"
             >
-              <template v-for="(approver, index) in groupedApprovers.mainApprovers" :key="approver.id">
+              <template
+                v-for="(approver, index) in groupedApprovers.mainApprovers"
+                :key="approver.id"
+              >
                 <!-- Main Approver (numbered) -->
                 <div class="p-3 flex items-center justify-between">
                   <div class="flex items-center">
@@ -522,26 +742,28 @@ onMounted(() => {
                     </div>
                   </div>
                   <div class="flex items-center gap-2">
-                    <span 
-                      v-if="approver.approverRole" 
+                    <span
+                      v-if="approver.approverRole"
                       class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
                       :class="{
-                        'bg-blue-100 text-blue-800': approver.linesequence === 1,
-                        'bg-orange-100 text-orange-800': approver.linesequence !== 1
+                        'bg-blue-100 text-blue-800':
+                          approver.linesequence === 1,
+                        'bg-orange-100 text-orange-800':
+                          approver.linesequence !== 1,
                       }"
                     >
                       {{ approver.approverRole }}
                     </span>
                   </div>
                 </div>
-                
+
                 <!-- Proxies (indented bullet points) -->
-                <div 
+                <div
                   v-if="getProxies(approver.id).length > 0"
                   class="bg-gray-100 pl-8 pr-3 py-2"
                 >
-                  <div 
-                    v-for="proxy in getProxies(approver.id)" 
+                  <div
+                    v-for="proxy in getProxies(approver.id)"
                     :key="proxy.id"
                     class="flex items-center py-1"
                   >
@@ -555,8 +777,8 @@ onMounted(() => {
                           {{ proxy.approveremail }}
                         </p>
                       </div>
-                      <span 
-                        v-if="proxy.approverRole" 
+                      <span
+                        v-if="proxy.approverRole"
                         class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800"
                       >
                         {{ proxy.approverRole }}
@@ -577,12 +799,21 @@ onMounted(() => {
           <!-- Action Buttons -->
           <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <Button
-              variant="outline-primary"
+              variant="outline-info"
               size="lg"
               @onclick="handleCancel"
-              :disabled="isSubmitting"
+              :disabled="isSubmitting || isSavingDraft"
             >
               Cancel
+            </Button>
+            <Button
+              variant="outline-primary"
+              size="lg"
+              @onclick="handleSaveDraft"
+              :loading="isSavingDraft"
+              :disabled="!isDraftValid"
+            >
+              {{ draftId ? "Update Draft" : "Save as Draft" }}
             </Button>
             <Button
               variant="primary"

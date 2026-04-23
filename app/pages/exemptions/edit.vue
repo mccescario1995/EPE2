@@ -240,7 +240,9 @@ const validateForm = () => {
     details: "",
   };
 
-  if (!formData.value.policyId) {
+  const isDraft = exemptionDetails.value?.status === "D";
+
+  if (!isDraft && !formData.value.policyId) {
     errors.value.policyId = "Please select a policy";
     isValid = false;
   }
@@ -265,8 +267,7 @@ const validateForm = () => {
 
 // Get policy ID from form data (handles both object and number)
 const getPolicyId = () => {
-  const policyId = formData.value.policyId;
-  return policyId && typeof policyId === "object" ? policyId : policyId;
+  return policyValue.value?.id ?? formData.value.policyId;
 };
 
 // Check if there are unsaved changes
@@ -312,15 +313,18 @@ const handleSubmit = async () => {
       modifiedby: userId.userId,
     };
 
-    const response = await apiFetch(`/api/exception/${exemptionId.value}`, {
-      method: "PUT",
-      body: JSON.stringify(payload),
-      headers: {
-        "Content-Type": "application/json",
+    const response = await apiFetch(
+      `/api/exception/update/${exemptionId.value}`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
-    if (response && response.success) {
+    if (response) {
       showToast({
         type: "success",
         title: "Success",
@@ -350,10 +354,108 @@ const handleSubmit = async () => {
   }
 };
 
+// Submit draft
+const handleSubmitDraft = async () => {
+  if (!validateForm()) return;
+
+  isSubmitting.value = true;
+  try {
+    const response = await apiFetch(
+      `/api/exception/submit-draft/${exemptionId.value}`,
+      {
+        method: "POST",
+      },
+    );
+
+    if (response) {
+      showToast({
+        type: "success",
+        title: "Success",
+        message: "Draft submitted successfully!",
+        duration: 5000,
+      });
+      // Redirect to exemptions list after success
+      router.push("/exemptions");
+    } else {
+      showToast({
+        type: "error",
+        title: "Error",
+        message: response?.message || "Failed to submit draft",
+        duration: 5000,
+      });
+    }
+  } catch (error: any) {
+    console.error("Error submitting draft:", error);
+    showToast({
+      type: "error",
+      title: "Error",
+      message: error.message || "An error occurred while submitting the draft",
+      duration: 5000,
+    });
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+// Submit form
+const handleUpdateDraft = async () => {
+  if (!validateForm()) return;
+
+  isSubmitting.value = true;
+  try {
+    const payload = {
+      transactionNumber: formData.value.transactionNumber,
+      policyid: getPolicyId(),
+      corporate: formData.value.corporate || null,
+      details: formData.value.details,
+      modifiedby: userId.userId,
+    };
+
+    const response = await apiFetch(
+      `/api/exception/update-draft/${exemptionId.value}`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    if (response) {
+      showToast({
+        type: "success",
+        title: "Success",
+        message: "Draft updated successfully!",
+        duration: 5000,
+      });
+      // Redirect to exemptions view page after success
+      router.push(`/exemptions/view?id=${exemptionId.value}`);
+    } else {
+      showToast({
+        type: "error",
+        title: "Error",
+        message: response?.message || "Failed to update draft",
+        duration: 5000,
+      });
+    }
+  } catch (error: any) {
+    console.error("Error updating draft:", error);
+    showToast({
+      type: "error",
+      title: "Error",
+      message: error.message || "An error occurred while updating the request",
+      duration: 5000,
+    });
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
 // Format date
 const formatDate = (date: string | Date | null) => {
   if (!date) return "N/A";
-  return new Date(date).toLocaleDateString("en-US", {
+  return new Date(date).toLocaleDateString("en-PH", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -368,6 +470,7 @@ const getStatusDisplay = (status: string) => {
     O: "Open",
     P: "Open", // Approval in progress (one or more approved, waiting for all)
     C: "Closed",
+    D: "Draft",
   };
   return statusMap[status] || status;
 };
@@ -378,6 +481,7 @@ const getFinalDecisionDisplay = (decision: string) => {
     Pending: "Pending",
     Approved: "Approved",
     Disapproved: "Disapproved",
+    Draft: "Draft",
   };
   return decisionMap[decision] || decision;
 };
@@ -388,6 +492,7 @@ const getApproverStatusDisplay = (respond: number) => {
     0: "Pending",
     1: "Approved",
     2: "Disapproved",
+    3: "Draft",
   };
   return statusMap[respond] || "Pending";
 };
@@ -398,6 +503,7 @@ const getApproverStatusColor = (respond: number) => {
     0: "bg-yellow-100 text-yellow-800 border border-yellow-900",
     1: "bg-green-100 text-green-800 border border-green-900",
     2: "bg-red-100 text-red-800 border border-red-900",
+    3: "bg-gray-100 text-gray-800 border border-gray-900",
   };
   return colorMap[respond] || "bg-gray-100 text-gray-800";
 };
@@ -657,7 +763,11 @@ onMounted(() => {
             customClass="rounded-full"
             @onclick="handleBack"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900">Edit Request</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900">
+            {{
+              exemptionDetails?.status === "D" ? "Edit Draft" : "Edit Request"
+            }}
+          </h1>
         </div>
         <div class="flex items-center gap-3">
           <Button
@@ -668,16 +778,36 @@ onMounted(() => {
           >
             Cancel
           </Button>
-          <Button
-            variant="primary"
-            size="md"
-            icon="save"
-            iconPosition="left"
-            @onclick="handleSubmit"
-            :loading="isSubmitting"
-          >
-            Save Changes
-          </Button>
+          <template v-if="exemptionDetails?.status === 'D'">
+            <Button
+              variant="outline-info"
+              size="md"
+              @onclick="handleUpdateDraft"
+              :loading="isSubmitting"
+            >
+              Update Draft
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              @onclick="handleSubmitDraft"
+              :loading="isSubmitting"
+            >
+              Submit Request
+            </Button>
+          </template>
+          <template v-else>
+            <Button
+              variant="primary"
+              size="md"
+              icon="save"
+              iconPosition="left"
+              @onclick="handleSubmit"
+              :loading="isSubmitting"
+            >
+              Save Changes
+            </Button>
+          </template>
         </div>
       </div>
     </header>
@@ -756,6 +886,8 @@ onMounted(() => {
                           exemptionDetails.status === 'P',
                         'bg-gray-200 text-gray-800 border border-gray-900':
                           exemptionDetails.status === 'C',
+                        'bg-gray-100 text-gray-800 border border-gray-900':
+                          exemptionDetails.status === 'D',
                       }"
                     >
                       {{ getStatusDisplay(exemptionDetails.status) }}
@@ -764,14 +896,6 @@ onMounted(() => {
                 </div>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    Transaction ID
-                  </label>
-                  <p class="text-gray-900 font-medium">
-                    {{ exemptionDetails?.transactionId || "N/A" }}
-                  </p>
-                </div> -->
                 <div>
                   <label class="block text-sm font-medium text-gray-500 mb-1">
                     Transaction Number
@@ -798,7 +922,12 @@ onMounted(() => {
                   <!-- md:grid-cols-2 -->
                   <div>
                     <label class="block text-sm font-medium text-gray-500 mb-1">
-                      Policy To Override <span class="text-red-500">*</span>
+                      Policy To Override
+                      <span
+                        v-if="exemptionDetails?.status !== 'D'"
+                        class="text-red-500"
+                        >*</span
+                      >
                     </label>
                     <Dropdown
                       v-model="policyValue"
@@ -987,6 +1116,8 @@ onMounted(() => {
                         exemptionDetails.finalDecision === 'Approved',
                       'bg-red-100 text-red-800 border border-red-900':
                         exemptionDetails.finalDecision === 'Disapproved',
+                      'bg-gray-100 text-gray-800 border border-gray-900':
+                        exemptionDetails.finalDecision === 'Draft',
                     }"
                   >
                     {{
@@ -1038,7 +1169,7 @@ onMounted(() => {
                           {{ getApproverStatusDisplay(approver.respond) }}
                         </span>
                         <!-- Decision badge for decided approvers -->
-                        
+
                         <!-- Resend button only for current pending approver (and not satisfied by group) -->
                         <button
                           v-if="
@@ -1128,7 +1259,7 @@ onMounted(() => {
                             {{ getApproverStatusDisplay(proxy.respond) }}
                           </span>
                           <!-- Decision badge for decided proxy approvers -->
-                          
+
                           <!-- Resend button only for current pending proxy (and not satisfied by group) -->
                           <button
                             v-if="
@@ -1187,9 +1318,15 @@ onMounted(() => {
               </div>
               <div
                 v-else
-                class="text-gray-500 text-sm flex items-center justify-center h-24"
+                class="text-sm flex items-center justify-center h-24 text-gray-400"
               >
-                No approvers assigned yet.
+                <span
+                  v-if="exemptionDetails?.status === 'D'"
+                  class="text-black bg-amber-200 p-2 rounded-md"
+                  >Please submit request to send email notifications to
+                  approvers.</span
+                >
+                <span v-else>No approvers assigned yet.</span>
               </div>
             </div>
 

@@ -280,7 +280,7 @@
                           'group-hover:scale-110 transition-transform duration-200',
                         ]"
                       />
-                      <span class="font-medium">{{ action.tooltip }}</span>
+                      <span class="font-medium">{{ typeof action.tooltip === 'function' ? action.tooltip(row) : action.tooltip }}</span> <!-- added -->
                     </button>
                   </div>
                 </div>
@@ -332,8 +332,8 @@
                       hoveredTooltip === `action-${rowIndex}-${actionIndex}`
                     "
                     class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap z-10 animate-in fade-in slide-in-from-bottom-1 duration-200"
-                  >
-                    {{ action.tooltip || action.label }}
+                  ><!-- added -->
+                    {{ (typeof action.tooltip === 'function' ? action.tooltip(row) : action.tooltip) || action.label }}
                     <div
                       class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"
                     ></div>
@@ -434,8 +434,8 @@
             @click="action.handler(row), closeDropdown()"
             :disabled="action.disabled && action.disabled(row)"
             class="w-full px-4 py-3 text-left text-sm hover:bg-indigo-50"
-          >
-            {{ action.tooltip }}
+          ><!-- added -->
+            {{ typeof action.tooltip === 'function' ? action.tooltip(row) : action.tooltip }}
           </button>
         </div>
       </div>
@@ -449,7 +449,8 @@
         :disabled="action.disabled && action.disabled(row)"
         class="px-3 py-2 text-sm rounded-lg border border-gray-200"
       >
-        {{ action.tooltip }}
+      <!-- added -->
+        {{ typeof action.tooltip === 'function' ? action.tooltip(row) : action.tooltip }}
       </button>
     </div>
   </div>
@@ -481,7 +482,7 @@ import { startLoading, stopLoading } from "~/stores/globalvar";
 
 type TableAction = {
   label: string | Component;
-  tooltip?: string;
+  tooltip?: string | ((row: Record<string, any>) => string); //added
   handler: (row: Record<string, any>) => void;
   class?: string;
   iconClass?: string;
