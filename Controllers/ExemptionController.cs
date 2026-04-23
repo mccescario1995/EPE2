@@ -417,6 +417,83 @@ namespace EPEAPI.Controllers
 
         }
 
+        [HttpPost("save-draft")]
+        public async Task<IActionResult> SaveDraft([FromForm] DraftExemptionRequestDto request)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var createdBy = request.Modifiedby;
+                var requesterId = request.Requestorid;
+
+                var userDetails = await _context.CoreVEmployeeDetails.Where(e => e.EmplId == requesterId).FirstOrDefaultAsync();
+
+                var transactionHeader = new EpeTransactionheader
+                {
+                    Policyid = request.Policyid ?? 0, // Allow null for drafts
+                    Details = request.Details,
+                    Corporate = userDetails?.Corporate,
+                    Requestorid = requesterId,
+                    Finaldecision = "Draft",
+                    Status = "D",
+                    Createdby = createdBy.HasValue ? createdBy.Value : 0,
+                    Createddate = DateTime.UtcNow.AddHours(8)
+                };
+
+                // Client IP from headers
+                var ipAddress = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                                ?? HttpContext.Connection.RemoteIpAddress?.ToString()
+                                ?? "Unknown";
+
+                // MAC address — server's own NIC (not the client's)
+                var macAddress = NetworkInterface.GetAllNetworkInterfaces()
+                    .FirstOrDefault(n =>
+                        n.OperationalStatus == OperationalStatus.Up &&
+                        n.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                    ?.GetPhysicalAddress()
+                    .ToString() ?? "Unknown";
+
+                request.Ipaddress = ipAddress;
+                request.Macaddress = macAddress;
+
+                _context.EpeTransactionheaders.Add(transactionHeader);
+
+                await _context.SaveChangesAsync();
+
+                // Handle attachments (same as create)
+                if (request.Attachments != null && request.Attachments.Any())
+                {
+                    foreach (var attachment in request.Attachments)
+                    {
+                        var savedFileName = await _fileUploadService.SaveFile(attachment.File);
+                        var epeAttachment = new EpeAttachment
+                        {
+                            TaskId = transactionHeader.Transactionnumber,
+                            ReferenceType = attachment.ReferenceType,
+                            UploadFilename = attachment.File.FileName,
+                            Newfilename = savedFileName,
+                            Filetype = Path.GetExtension(attachment.File.FileName).TrimStart('.'),
+                            Createdate = DateTime.UtcNow.AddHours(8),
+                            Computerhost = HttpContext.Request.Host.Host
+                        };
+                        _context.EpeAttachments.Add(epeAttachment);
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
+                // No approvers or emails for drafts
+
+                await transaction.CommitAsync();
+
+                return Ok(new { success = true, message = "Draft saved successfully", item = transactionHeader });
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, "Error " + e.Message);
+            }
+        }
+
         [HttpPost("create")]
         public async Task<IActionResult> CreateExemptionRequest([FromForm] CreateExemptionRequestDto request)
         {
@@ -436,7 +513,7 @@ namespace EPEAPI.Controllers
                     Requestorid = requesterId,
                     Finaldecision = "Pending",
                     Createdby = createdBy.HasValue ? createdBy.Value : 0,
-                    Createddate = DateTime.UtcNow
+                    Createddate = DateTime.UtcNow.AddHours(8)
                 };
 
                 // Client IP from headers
@@ -481,7 +558,7 @@ namespace EPEAPI.Controllers
                             Issent = 0,
                             Sentcount = 0,
                             Isdelete = 0,
-                            Createddate = DateTime.UtcNow
+                            Createddate = DateTime.UtcNow.AddHours(8)
                         };
                         _context.EpeTransactionapprovers.Add(transApprover);
                     }
@@ -501,7 +578,7 @@ namespace EPEAPI.Controllers
                                 UploadFilename = attachment.File.FileName,
                                 Newfilename = savedFileName,
                                 Filetype = Path.GetExtension(attachment.File.FileName).TrimStart('.'),
-                                Createdate = DateTime.UtcNow,
+                                Createdate = DateTime.UtcNow.AddHours(8),
                                 Computerhost = HttpContext.Request.Host.Host
                             };
                             _context.EpeAttachments.Add(epeAttachment);
@@ -607,6 +684,197 @@ namespace EPEAPI.Controllers
 
         }
 
+        [HttpPost("update-draft/{id}")]
+        public async Task<IActionResult> UpdateDraft(int id, [FromBody] EpeTransactionheader request)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var existingItem = await _context.EpeTransactionheaders
+                    .Where(u => u.Transactionid == id && u.Status == "D" && u.Isdelete == 0)
+                    .FirstOrDefaultAsync();
+
+                if (existingItem == null)
+                {
+                    return NotFound(new { success = false, message = "Draft not found" });
+                }
+
+                // Only allow updating these fields for drafts
+                existingItem.Corporate = request.Corporate ?? existingItem.Corporate;
+                existingItem.Policyid = request.Policyid  != 0 ? request.Policyid : existingItem.Policyid;
+                existingItem.Details = request.Details ?? existingItem.Details;
+                existingItem.Modifieddate = DateTime.UtcNow.AddHours(8);
+                existingItem.Modifiedby = request.Modifiedby; // Use Modifiedby as modifier
+
+                await _context.SaveChangesAsync();                
+
+                await transaction.CommitAsync();
+
+                return Ok(new { success = true, message = "Draft updated successfully", item = existingItem });
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, "Error " + e.Message);
+            }
+        }
+
+        [HttpPost("submit-draft/{id}")]
+        public async Task<IActionResult> SubmitDraft(int id)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var draft = await _context.EpeTransactionheaders
+                    .Where(u => u.Transactionid == id && u.Status == "D" && u.Isdelete == 0)
+                    .FirstOrDefaultAsync();
+
+                if (draft == null)
+                {
+                    return NotFound(new { success = false, message = "Draft not found" });
+                }
+
+                // Validate required fields
+                if (draft.Policyid == 0 || string.IsNullOrEmpty(draft.Details))
+                {
+                    return BadRequest(new { success = false, message = "Draft must have policy and details to submit" });
+                }
+
+                // Change status to Open
+                draft.Status = "O";
+                draft.Finaldecision = "Pending";
+                draft.Modifieddate = DateTime.UtcNow.AddHours(8);
+
+                await _context.SaveChangesAsync();
+
+                // Get policy approvers and create transaction approvers (same as create)
+                var policyApprovers = await _context.EpePolicyapprovers
+                    .Where(p => p.Policyid == draft.Policyid && p.Isdelete == 0)
+                    .OrderBy(p => p.Linesequence)
+                    .ThenBy(p => p.Sort)
+                    .ToListAsync();
+
+                if (policyApprovers.Any())
+                {
+                    foreach (var policyApprover in policyApprovers)
+                    {
+                        var transApprover = new EpeTransactionapprover
+                        {
+                            Transactionid = draft.Transactionid,
+                            Approverid = policyApprover.Id.ToString(),
+                            Approvertype = policyApprover.Approvertype,
+                            Linesequence = policyApprover.Linesequence,
+                            Sort = policyApprover.Sort,
+                            Respond = 0,
+                            Issent = 0,
+                            Sentcount = 0,
+                            Isdelete = 0,
+                            Createddate = DateTime.UtcNow.AddHours(8)
+                        };
+                        _context.EpeTransactionapprovers.Add(transApprover);
+                    }
+
+                    await _context.SaveChangesAsync();
+
+                    // Send email to first approver(s) (same as create)
+                    var firstSequence = policyApprovers.Min(p => p.Linesequence);
+                    var firstApprovers = policyApprovers.Where(p => p.Linesequence == firstSequence).ToList();
+
+                    var userDetails = await _context.CoreVEmployeeDetails.Where(e => e.EmplId == draft.Requestorid).FirstOrDefaultAsync();
+
+                    foreach (var approver in firstApprovers)
+                    {
+                        string approverEmail = approver.Approveremail ?? "";
+                        string approverName = approver.Approvername ?? "";
+                        //int approverId = int.Parse(approver.Approverid);
+
+                        // If approver type is IM (Immediate Manager), get the requester's immediate head
+                        if (approver.Approvertype == "IM" && userDetails != null)
+                        {
+                            approverEmail = userDetails.ImmediateEmail ?? "";
+                            approverName = userDetails.ImmediateName ?? "";
+                        }
+
+                        if (!string.IsNullOrEmpty(approverEmail))
+                        {
+                            try
+                            {
+                                var approverUserId = 0;
+                                // Get the approver's user ID from CoreVUsers using Approverid as EmplId
+                                if (!string.IsNullOrEmpty(approver.Approverid))
+                                {
+                                    var approverUser = await _context.CoreVUsers
+                                        .FirstOrDefaultAsync(u => u.EmplId == approver.Approverid);
+                                    _logger.LogWarning("Approve User: "+ approverUser);
+
+                                    if (approverUser != null)
+                                    {
+                                        approverUserId = approverUser.UserId;
+                                    }
+                                }
+                                // If we couldn't get it from Approverid and it's an IM type, try from employee details
+                                if (approverUserId == 0 && approver.Approvertype == "IM" && userDetails != null && !string.IsNullOrEmpty(userDetails.EmplId))
+                                {
+                                    var imUser = await _context.CoreVUsers
+                                        .FirstOrDefaultAsync(u => u.EmplId == userDetails.EmplId);
+                                    if (imUser != null)
+                                    {
+                                        approverUserId = imUser.UserId;
+                                    }
+                                }
+
+                                await _emailService.SendApprovalRequestEmailAsync(
+                                    approverEmail,
+                                    draft.Transactionid,
+                                    draft.Transactionnumber,
+                                    userDetails?.Employeename ?? draft.Requestorid,
+                                    draft.Details ?? "No details provided",
+                                    approverUserId
+                                );
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log error but don't fail the request creation
+                                _logger.LogError(ex, "Failed to send approval request email to {Email}", approverEmail);
+                            }
+                        }
+                    }
+
+                    var requester = await _context.CoreVEmployeeDetails
+                        .Where(r => r.EmplId == draft.Requestorid)
+                        .FirstOrDefaultAsync();
+
+                    var requesterUserId = 0;
+                    if (requester != null && !string.IsNullOrEmpty(requester.EmplId))
+                    {
+                        var user = await _context.CoreVUsers
+                            .FirstOrDefaultAsync(u => u.EmplId == requester.EmplId);
+                        if (user != null)
+                        {
+                            requesterUserId = user.UserId;
+                        }
+                    }
+
+                    await _emailService.SendRequestCreatedEmailAsync(
+                        requester.Emailadd,
+                        draft.Transactionid,
+                        draft.Transactionnumber,
+                        draft.Details ?? "No details provided",
+                        requesterUserId
+                    );
+                }
+
+                await transaction.CommitAsync();
+
+                return Ok(new { success = true, message = "Draft submitted successfully", item = draft });
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, "Error " + e.Message);
+            }
+        }
+
         [HttpPost("update/{id}")]
         public async Task<IActionResult> UpdateExemptionRequest(int id, [FromBody] EpeTransactionheader request)
         {
@@ -627,7 +895,7 @@ namespace EPEAPI.Controllers
                 existingItem.Corporate = request.Corporate;
                 existingItem.Policyid = request.Policyid;
                 existingItem.Details = request.Details;
-                existingItem.Modifieddate = DateTime.UtcNow;
+                existingItem.Modifieddate = DateTime.UtcNow.AddHours(8);
                 existingItem.Modifiedby = request.Modifiedby;
 
                 await _context.SaveChangesAsync();
@@ -662,12 +930,12 @@ namespace EPEAPI.Controllers
                 //existingItem.ExecuteUpdateAsync(s => s
                 //    .SetProperty(h => h.Isdelete, 1)
                 //    .SetProperty(h => h.Modifiedby, request.UserId)
-                //    .SetProperty(h => h.Modifieddate, DateTime.UtcNow)
+                //    .SetProperty(h => h.Modifieddate, DateTime.UtcNow.AddHours(8))
                 //);
 
                 existingItem.Isdelete = 1;
                 existingItem.Modifiedby = request.UserId;
-                existingItem.Modifieddate = DateTime.UtcNow;
+                existingItem.Modifieddate = DateTime.UtcNow.AddHours(8);
 
                 var exsistingApprovals = await _context.EpeTransactionapprovers
                     .Where(a => a.Transactionid == id && a.Isdelete == 0)
@@ -715,7 +983,7 @@ namespace EPEAPI.Controllers
                     .Where(a => a.Transapproverid == request.TransApproverId)
                     .ExecuteUpdateAsync(b => b
                         .SetProperty(a => a.Respond, request.Respond)
-                        .SetProperty(a => a.Responddate, DateTime.UtcNow)
+                        .SetProperty(a => a.Responddate, DateTime.UtcNow.AddHours(8))
                         .SetProperty(a => a.Remarks, request.Remarks)
                     );
 
@@ -744,7 +1012,7 @@ namespace EPEAPI.Controllers
                             .Where(a => groupIds.Contains(a.Transapproverid))
                             .ExecuteUpdateAsync(b => b
                                 .SetProperty(a => a.Respond, 1)
-                                .SetProperty(a => a.Responddate, DateTime.UtcNow)
+                                .SetProperty(a => a.Responddate, DateTime.UtcNow.AddHours(8))
                                 .SetProperty(a => a.Remarks, request.Remarks ?? "Auto-approved: group member approved")
                             );
                     }
@@ -874,7 +1142,7 @@ namespace EPEAPI.Controllers
                                  && a.Isdelete == 0)
                         .ExecuteUpdateAsync(b => b
                             .SetProperty(a => a.Respond, 2)
-                            .SetProperty(a => a.Responddate, DateTime.UtcNow)
+                            .SetProperty(a => a.Responddate, DateTime.UtcNow.AddHours(8))
                             .SetProperty(a => a.Remarks, "Auto-disapproved: sequence disapproved")
                         );
 
@@ -988,7 +1256,7 @@ namespace EPEAPI.Controllers
                         UploadFilename = attachment.File.FileName,
                         Newfilename = savedFileName,
                         Filetype = Path.GetExtension(attachment.File.FileName).TrimStart('.'),
-                        Createdate = DateTime.UtcNow,
+                        Createdate = DateTime.UtcNow.AddHours(8),
                         Computerhost = HttpContext.Request.Host.Host,
                     };
                     _context.EpeAttachments.Add(epeAttachment);
@@ -1148,12 +1416,12 @@ namespace EPEAPI.Controllers
                 // Update tracking fields
                 approver.Issent = 1;
                 approver.Sentcount = approver.Sentcount + 1;
-                approver.Lastsentdate = DateTime.UtcNow;
+                approver.Lastsentdate = DateTime.UtcNow.AddHours(8);
 
                 // Set SentDate only on first send
                 if (approver.Sentdate == null)
                 {
-                    approver.Sentdate = DateTime.UtcNow;
+                    approver.Sentdate = DateTime.UtcNow.AddHours(8);
                 }
 
                 await _context.SaveChangesAsync();

@@ -20,7 +20,7 @@ public partial class EpeTransactionheader
     /// <summary>
     /// Open, Pending, Closed
     /// </summary>
-    public string Status { get; set; } = null!;
+    public string? Status { get; set; }
 
     public string? Remarks { get; set; }
 

@@ -30,7 +30,7 @@ public class EmailNotificationService
                 Type = type,
                 IsRead = 0,
                 RelatedUrl = relatedUrl,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = DateTime.UtcNow.AddHours(8)
             };
 
             _context.EpeNotifications.Add(notification);
