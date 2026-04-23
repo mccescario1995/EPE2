@@ -14,6 +14,7 @@ const labelMap = ref<Record<string, string>>({
   profile: "My Profile",
   edit: "Edit",
   create: "Create",
+  "email-response": "Email Response",
 });
 
 export const useBreadcrumbs = () => {

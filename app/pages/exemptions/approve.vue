@@ -167,14 +167,14 @@ const getApproverStatusDisplay = (respond: number) => {
 };
 
 // Get approver status color
-const getApproverStatusColor = (respond: number) => {
-  const colorMap: Record<number, string> = {
-    0: "bg-yellow-100 text-yellow-800",
-    1: "bg-green-100 text-green-800",
-    2: "bg-red-100 text-red-800",
-  };
-  return colorMap[respond] || "bg-gray-100 text-gray-800";
-};
+// const getApproverStatusColor = (respond: number) => {
+//   const colorMap: Record<number, string> = {
+//     0: "bg-yellow-100 text-yellow-800",
+//     1: "bg-green-100 text-green-800",
+//     2: "bg-red-100 text-red-800",
+//   };
+//   return colorMap[respond] || "bg-gray-100 text-gray-800";
+// };
 
 // Check if any approver has already disapproved (respond = 2)
 const isDisapproved = computed(() => {
@@ -582,9 +582,8 @@ onMounted(async () => {
                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                       :class="{
                         'bg-blue-100 text-blue-800':
-                          exemptionData.status === 'O',
-                        'bg-yellow-100 text-yellow-800':
-                          exemptionData.status === 'P',
+                          exemptionData.status === 'O' || exemptionData.status === 'P',
+                                                                                                                                                                                                                                                                                                                                                                        
                         'bg-green-100 text-green-800':
                           exemptionData.status === 'C',
                       }"
@@ -899,7 +898,7 @@ onMounted(async () => {
                   You are not assigned as an approver for this request.
                 </p>
                 <!-- Debug info -->
-                <div class="text-xs text-left bg-gray-200 p-3 rounded mt-4 font-mono">
+                <!-- <div class="text-xs text-left bg-gray-200 p-3 rounded mt-4 font-mono">
                   <div>=== DEBUG INFO ===</div>
                   <div>canRespond: {{ canRespond }}</div>
                   <div>isSatisfiedByGroup: {{ isSatisfiedByGroup }}</div>
@@ -913,7 +912,7 @@ onMounted(async () => {
                     {{ idx }}: {{ a.approverName }} - empId={{ a.employeeId }}, respond={{ a.respond }}, seq={{ a.lineSequence }}, sort={{ a.sort }}
                   </div>
                   <div>=== END DEBUG ===</div>
-                </div>
+                </div> -->
                 <Button variant="primary" size="lg" @onclick="handleBack" class="mt-4">
                   Back to List
                 </Button>
