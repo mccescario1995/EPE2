@@ -9,4 +9,5 @@ public class CreateApproverRequest
     public string? Approvertype { get; set; }
     public int Sort { get; set; } = 0;
     public int Linesequence { get; set; } = 1;
+    public int CreatedBy { get; set; } // Added
 }
