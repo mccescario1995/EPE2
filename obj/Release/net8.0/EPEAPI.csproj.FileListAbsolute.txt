@@ -150,7 +150,6 @@ C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Release\net8.0\staticwebasse
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Release\net8.0\staticwebassets.build.json.cache
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Release\net8.0\staticwebassets.development.json
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Release\net8.0\staticwebassets.build.endpoints.json
-C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Release\net8.0\staticwebassets.upToDateCheck.txt
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Release\net8.0\EPEAPI.csproj.Up2Date
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Release\net8.0\EPEAPI.dll
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Release\net8.0\refint\EPEAPI.dll

@@ -28,6 +28,7 @@ builder.Services.AddCors(options =>
                 "http://localhost:80",
                 "http://localhost",
                 "http://localhost/epe2api",
+                "http://localhost/epe2dev",
                 "http://192.168.136.64",
                 "https://apps.fastlogistics.com.ph/epe2dev"
                 )

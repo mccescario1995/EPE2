@@ -301,7 +301,8 @@ public class EmailNotificationService
     {
         try
         {
-            var trackUrl = $"https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id={requestId}";
+            //var trackUrl = $"https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id={requestId}";
+            var trackUrl = $"http://localhost:3000/epe2dev/exemptions/view?id={requestId}";
 
             toEmail = "mccescario@fastgroup.biz"; // testing
 
@@ -452,7 +453,9 @@ public class EmailNotificationService
     {
         try
         {
-            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id=" + requestId;
+            //var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id=" + requestId;
+            var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestId;
+        
 
             toEmail = "mccescario@fastgroup.biz"; // for testing
 
@@ -606,7 +609,8 @@ public class EmailNotificationService
     {
         try
         {
-            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id=" + requestNumber;
+            //var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id=" + requestNumber;
+            var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestNumber;
 
             toEmail = "mccescario@fastgroup.biz"; // for testing
 

@@ -3,20 +3,24 @@
   "WorkspaceRootPath": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\dto\\policyrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:dto\\policyrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\controllers\\maintenancecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:controllers\\maintenancecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\controllers\\exemptioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:controllers\\exemptioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\services\\emailapprovaltokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:services\\emailapprovaltokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\controllers\\policycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:controllers\\policycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\controllers\\emailapprovalcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:controllers\\emailapprovalcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\dto\\useridrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:dto\\useridrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,7 +30,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 179,
-          "SelectedChildIndex": 12,
+          "SelectedChildIndex": 13,
           "Children": [
             {
               "$type": "Bookmark",
@@ -69,53 +73,74 @@
               "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
             },
             {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "EmailApprovalTokenService.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Services\\EmailApprovalTokenService.cs",
-              "RelativeDocumentMoniker": "Services\\EmailApprovalTokenService.cs",
-              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Services\\EmailApprovalTokenService.cs",
-              "RelativeToolTip": "Services\\EmailApprovalTokenService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAdAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-23T05:42:19.965Z"
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Program.cs",
-              "RelativeDocumentMoniker": "Program.cs",
-              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Program.cs",
-              "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAADEAAAAAAAAAAAAIwEsAAAAmAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "MaintenanceController.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\MaintenanceController.cs",
+              "RelativeDocumentMoniker": "Controllers\\MaintenanceController.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\MaintenanceController.cs*",
+              "RelativeToolTip": "Controllers\\MaintenanceController.cs*",
+              "ViewState": "AgIAAFIAAAAAAAAAAAAqwFgAAABcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-23T05:25:56.339Z"
+              "WhenOpened": "2026-04-24T08:26:53.811Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "PolicyRequest.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Dto\\PolicyRequest.cs",
+              "RelativeDocumentMoniker": "Dto\\PolicyRequest.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Dto\\PolicyRequest.cs",
+              "RelativeToolTip": "Dto\\PolicyRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAkAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-24T07:46:46.26Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "UseridRequest.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Dto\\UseridRequest.cs",
+              "RelativeDocumentMoniker": "Dto\\UseridRequest.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Dto\\UseridRequest.cs",
+              "RelativeToolTip": "Dto\\UseridRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-24T07:33:51.464Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "ExemptionController.cs",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\ExemptionController.cs",
               "RelativeDocumentMoniker": "Controllers\\ExemptionController.cs",
               "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\ExemptionController.cs",
               "RelativeToolTip": "Controllers\\ExemptionController.cs",
-              "ViewState": "AgIAAIIFAAAAAAAAAAAiwJgFAABTAAAAAAAAAA==",
+              "ViewState": "AgIAAFACAAAAAAAAAAASwBkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-23T03:32:33.691Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-24T07:33:07.231Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "EmailApprovalController.cs",
-              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\EmailApprovalController.cs",
-              "RelativeDocumentMoniker": "Controllers\\EmailApprovalController.cs",
-              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\EmailApprovalController.cs",
-              "RelativeToolTip": "Controllers\\EmailApprovalController.cs",
-              "ViewState": "AgIAAAkAAAAAAAAAAAAAAB4AAAA+AAAAAAAAAA==",
+              "Title": "PolicyController.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\PolicyController.cs",
+              "RelativeDocumentMoniker": "Controllers\\PolicyController.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\PolicyController.cs",
+              "RelativeToolTip": "Controllers\\PolicyController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAA3AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-23T02:39:21.587Z"
+              "WhenOpened": "2026-04-24T07:28:07.731Z"
             }
           ]
         }

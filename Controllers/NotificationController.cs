@@ -12,9 +12,9 @@ namespace EPEAPI.Controllers
     public class NotificationController : ControllerBase
     {
         private readonly EpeDbContext _context;
-        private readonly ILogger<ExceptionController> _logger;
+        private readonly ILogger<NotificationController> _logger;
 
-        public NotificationController(EpeDbContext context, ILogger<ExceptionController> logger)
+        public NotificationController(EpeDbContext context, ILogger<NotificationController> logger)
         {
             _context = context;
             _logger = logger;

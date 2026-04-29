@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace EPEAPI.Models;
 
 public class ApproverRequest
@@ -16,3 +18,5 @@ public class ApproverResponseRequest
     public string? Remarks { get; set; }
     public int Respond { get; set; } // 1 = approved, 2 = disapproved
 }
+
+

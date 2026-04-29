@@ -15,22 +15,22 @@ namespace EPEAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ExceptionController : ControllerBase
+    public class ExemptionController : ControllerBase
     {
-    private readonly EpeDbContext _context;
-    private readonly EmailNotificationService _emailService;
-    private readonly FileUploadService _fileUploadService;
-    private readonly ILogger<ExceptionController> _logger;
-    private readonly IWebHostEnvironment _env;
+        private readonly EpeDbContext _context;
+        private readonly EmailNotificationService _emailService;
+        private readonly FileUploadService _fileUploadService;
+        private readonly ILogger<ExemptionController> _logger;
+        private readonly IWebHostEnvironment _env;
 
-    public ExceptionController(EpeDbContext contextdb, EmailNotificationService emailService, FileUploadService fileUploadService, ILogger<ExceptionController> logger, IWebHostEnvironment env)
-    {
-        _context = contextdb;
-        _emailService = emailService;
-        _fileUploadService = fileUploadService;
-        _logger = logger;
-        _env = env;
-    }
+        public ExemptionController(EpeDbContext contextdb, EmailNotificationService emailService, FileUploadService fileUploadService, ILogger<ExemptionController> logger, IWebHostEnvironment env)
+        {
+            _context = contextdb;
+            _emailService = emailService;
+            _fileUploadService = fileUploadService;
+            _logger = logger;
+            _env = env;
+        }
 
         public class ExemptionListRequest
         {
@@ -605,33 +605,33 @@ namespace EPEAPI.Controllers
 
                         if (!string.IsNullOrEmpty(approverEmail))
                         {
-                              try
-                              {
-                                  var approverUserId = 0;
-                                  // Get the approver's user ID from CoreVUsers using Approverid as EmplId
-                                  if (!string.IsNullOrEmpty(approver.Approverid))
-                                  {
-                                      var approverUser = await _context.CoreVUsers
-                                          .FirstOrDefaultAsync(u => u.EmplId == approver.Approverid);
+                            try
+                            {
+                                var approverUserId = 0;
+                                // Get the approver's user ID from CoreVUsers using Approverid as EmplId
+                                if (!string.IsNullOrEmpty(approver.Approverid))
+                                {
+                                    var approverUser = await _context.CoreVUsers
+                                        .FirstOrDefaultAsync(u => u.EmplId == approver.Approverid);
 
-                                    _logger.LogWarning("Approve User: "+ approverUser);
+                                    _logger.LogWarning("Approve User: " + approverUser);
 
-                                      if (approverUser != null)
-                                      {
-                                          approverUserId = approverUser.UserId;
-                                      }
-                                  }
-                                  // If we couldn't get it from Approverid and it's an IM type, try from employee details
-                                  if (approverUserId == 0 && approver.Approvertype == "IM" && userDetails != null && !string.IsNullOrEmpty(userDetails.EmplId))
-                                  {
-                                      var imUser = await _context.CoreVUsers
-                                          .FirstOrDefaultAsync(u => u.EmplId == userDetails.EmplId);
-                                      if (imUser != null)
-                                      {
-                                          approverUserId = imUser.UserId;
-                                      }
-                                  }
-                                
+                                    if (approverUser != null)
+                                    {
+                                        approverUserId = approverUser.UserId;
+                                    }
+                                }
+                                // If we couldn't get it from Approverid and it's an IM type, try from employee details
+                                if (approverUserId == 0 && approver.Approvertype == "IM" && userDetails != null && !string.IsNullOrEmpty(userDetails.EmplId))
+                                {
+                                    var imUser = await _context.CoreVUsers
+                                        .FirstOrDefaultAsync(u => u.EmplId == userDetails.EmplId);
+                                    if (imUser != null)
+                                    {
+                                        approverUserId = imUser.UserId;
+                                    }
+                                }
+
                                 var transApproverRecord = await _context.EpeTransactionapprovers
                                   .Where(a => a.Transactionid == transactionHeader.Transactionid
                                            && a.Approverid == approver.Approverid.ToString()
@@ -647,7 +647,7 @@ namespace EPEAPI.Controllers
                                       approverUserId,
                                       transApproverRecord?.Transapproverid ?? 0
                                   );
-                              }
+                            }
                             catch (Exception ex)
                             {
                                 // Log error but don't fail the request creation
@@ -709,12 +709,12 @@ namespace EPEAPI.Controllers
 
                 // Only allow updating these fields for drafts
                 existingItem.Corporate = request.Corporate ?? existingItem.Corporate;
-                existingItem.Policyid = request.Policyid  != 0 ? request.Policyid : existingItem.Policyid;
+                existingItem.Policyid = request.Policyid != 0 ? request.Policyid : existingItem.Policyid;
                 existingItem.Details = request.Details ?? existingItem.Details;
                 existingItem.Modifieddate = DateTime.UtcNow.AddHours(8);
                 existingItem.Modifiedby = request.Modifiedby; // Use Modifiedby as modifier
 
-                await _context.SaveChangesAsync();                
+                await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
 
@@ -814,7 +814,7 @@ namespace EPEAPI.Controllers
                                 {
                                     var approverUser = await _context.CoreVUsers
                                         .FirstOrDefaultAsync(u => u.EmplId == approver.Approverid);
-                                    _logger.LogWarning("Approve User: "+ approverUser);
+                                    _logger.LogWarning("Approve User: " + approverUser);
 
                                     if (approverUser != null)
                                     {
@@ -842,7 +842,7 @@ namespace EPEAPI.Controllers
                                     approverEmail,
                                     draft.Transactionid,
                                     draft.Transactionnumber,
-                                    userDetails?.Employeename ,
+                                    userDetails?.Employeename,
                                     draft.Details ?? "No details provided",
                                     approverUserId,
                                     transApproverRecord?.Transapproverid ?? 0
@@ -1084,9 +1084,9 @@ namespace EPEAPI.Controllers
                             }
                             else
                             {
-                                
+
                                 approverEmail = policyApprover?.Approveremail ?? "";
-                            }                         
+                            }
 
                             var transApproverRecord = await _context.EpeTransactionapprovers
                                 .Where(a => a.Transactionid == transactionHeader.Transactionid
@@ -1110,6 +1110,7 @@ namespace EPEAPI.Controllers
                                 }
                                 catch (Exception ex)
                                 {
+                                    // Log error but don't fail the request creation
                                     _logger.LogError(ex, "Failed to send next approver email to {Email}", approverEmail);
                                 }
                             }
@@ -1126,30 +1127,30 @@ namespace EPEAPI.Controllers
                             );
 
                         if (requester != null && !string.IsNullOrEmpty(requester.Emailadd))
-                         {
-                             try
-                             {
-                                 var requesterUserId = 0;
-                                 if (requester != null && !string.IsNullOrEmpty(requester.EmplId))
-                                 {
-                                     var user = await _context.CoreVUsers
-                                         .FirstOrDefaultAsync(u => u.EmplId == requester.EmplId);
-                                     if (user != null)
-                                     {
-                                         requesterUserId = user.UserId;
-                                     }
-                                 }
+                        {
+                            try
+                            {
+                                var requesterUserId = 0;
+                                if (requester != null && !string.IsNullOrEmpty(requester.EmplId))
+                                {
+                                    var user = await _context.CoreVUsers
+                                        .FirstOrDefaultAsync(u => u.EmplId == requester.EmplId);
+                                    if (user != null)
+                                    {
+                                        requesterUserId = user.UserId;
+                                    }
+                                }
 
-                                 await _emailService.SendStatusChangedEmailAsync(
-                                     requester.Emailadd,
-                                     transactionHeader.Transactionid,
-                                     transactionHeader.Transactionnumber,
-                                     "Pending",
-                                     "Approved",
-                                     "System",
-                                     requesterUserId
-                                 );
-                             }
+                                await _emailService.SendStatusChangedEmailAsync(
+                                    requester.Emailadd,
+                                    transactionHeader.Transactionid,
+                                    transactionHeader.Transactionnumber,
+                                    "Pending",
+                                    "Approved",
+                                    "System",
+                                    requesterUserId
+                                );
+                            }
                             catch (Exception ex)
                             {
                                 _logger.LogError(ex, "Failed to send approval email to {Email}", requester.Emailadd);
@@ -1179,31 +1180,31 @@ namespace EPEAPI.Controllers
                             .SetProperty(h => h.Finaldecision, "Disapproved")
                         );
 
-                     if (requester != null && !string.IsNullOrEmpty(requester.Emailadd))
-                     {
-                         try
-                         {
-                             var requesterUserId = 0;
-                             if (requester != null && !string.IsNullOrEmpty(requester.EmplId))
-                             {
-                                 var user = await _context.CoreVUsers
-                                     .FirstOrDefaultAsync(u => u.EmplId == requester.EmplId);
-                                 if (user != null)
-                                 {
-                                     requesterUserId = user.UserId;
-                                 }
-                             }
+                    if (requester != null && !string.IsNullOrEmpty(requester.Emailadd))
+                    {
+                        try
+                        {
+                            var requesterUserId = 0;
+                            if (requester != null && !string.IsNullOrEmpty(requester.EmplId))
+                            {
+                                var user = await _context.CoreVUsers
+                                    .FirstOrDefaultAsync(u => u.EmplId == requester.EmplId);
+                                if (user != null)
+                                {
+                                    requesterUserId = user.UserId;
+                                }
+                            }
 
-                             await _emailService.SendStatusChangedEmailAsync(
-                                 requester.Emailadd,
-                                 transactionHeader.Transactionid,
-                                 transactionHeader.Transactionnumber,
-                                 "Pending",
-                                 "Disapproved",
-                                 "System",
-                                 requesterUserId
-                             );
-                         }
+                            await _emailService.SendStatusChangedEmailAsync(
+                                requester.Emailadd,
+                                transactionHeader.Transactionid,
+                                transactionHeader.Transactionnumber,
+                                "Pending",
+                                "Disapproved",
+                                "System",
+                                requesterUserId
+                            );
+                        }
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, "Failed to send disapproved email to {Email}", requester.Emailadd);
@@ -1302,7 +1303,7 @@ namespace EPEAPI.Controllers
         [HttpPost("delete-attachment/{attachId}")]
         public async Task<IActionResult> DeleteAttachment(int attachId)
         {
-            if (attachId <= 0 )
+            if (attachId <= 0)
             {
                 return BadRequest(new { success = false, message = "Invalid request parameters" });
             }
@@ -1330,7 +1331,7 @@ namespace EPEAPI.Controllers
                 //}
 
                 //Build file path
-                var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads","attachments");
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "attachments");
                 var fullPath = Path.Combine(uploadsFolder, attachment.Newfilename ?? "");
 
                 _logger.LogWarning("Full Path: " + fullPath);

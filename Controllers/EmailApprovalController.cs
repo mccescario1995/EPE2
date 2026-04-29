@@ -23,8 +23,8 @@ public class EmailApprovalController : ControllerBase
     [HttpGet("act")]
     public async Task<IActionResult> ActOnToken([FromQuery] string token)
     {
-        //var baseUrl = "https://apps.fastlogistics.com.ph/epe2dev"; // TODO: Move to config
-        var baseUrl = "http://localhost:3000/epe2dev"; // For development, change to production URL when deploying
+        var baseUrl = "https://apps.fastlogistics.com.ph/epe2dev"; // TODO: Move to config
+        //var baseUrl = "http://localhost:3000/epe2dev"; // For development, change to production URL when deploying
 
         try
         {
