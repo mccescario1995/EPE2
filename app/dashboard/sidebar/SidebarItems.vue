@@ -39,51 +39,63 @@ async function refreshAll() {
 
 onMounted(async () => {
   const staticMenus = [
-    // {
-    //   id: 1,
-    //   title: "Activity",
-    //   isopen: false,
-    //   isActive: false,
-    //   submenu: [
-    //     {
-    //       id: "A1",
-    //       title: "Notification",
-    //       route: "/activity/notificationpage",
-    //     },
-    //     { id: "A2", title: "Modal", route: "/activity/modal" },
-    //     { id: "A3", title: "Buttons", route: "/activity/buttons" },
-    //     { id: "A4", title: "Table", route: "/activity/table" },
-    //     { id: "A5", title: "Cards", route: "/activity/cards" },
-    //     { id: "A6", title: "Forms", route: "/activity/forms" },
-    //   ],
-    // },
-    // {
-    //   id: 2,
-    //   title: "Documentation",
-    //   isopen: false,
-    //   isActive: false,
-    //   submenu: [
-    //     { id: "D1", title: "Table", route: "/documentation/table" },
-    //     { id: "D2", title: "Sidebar", route: "/documentation/sidebar" },
-    //     {
-    //       id: "D3",
-    //       title: "Notification",
-    //       route: "/documentation/notification",
-    //     },
-    //     { id: "D4", title: "Cards", route: "/documentation/card" },
-    //     { id: "D5", title: "Modals", route: "/documentation/modal" },
-    //     { id: "D6", title: "Dropdown", route: "/documentation/dropdown" },
-    //     { id: "D7", title: "Input", route: "/documentation/input" },
-    //   ],
-    // },
-    // {
-    //   id: 3,
-    //   title: "Report",
-    //   route: "/dashboard",
-    //   iswithfunction: true,
-    //   isopen: false,
-    //   isActive: true,
-    // },
+    {
+      id: 1,
+      title: "Activity",
+      isopen: false,
+      isActive: false,
+      submenu: [
+        {
+          id: "A1",
+          title: "Notification",
+          route: "/activity/notificationpage",
+        },
+        { id: "A2", title: "Modal", route: "/activity/modal" },
+        { id: "A3", title: "Buttons", route: "/activity/buttons" },
+        { id: "A4", title: "Table", route: "/activity/table" },
+        { id: "A5", title: "Cards", route: "/activity/cards" },
+        { id: "A6", title: "Forms", route: "/activity/forms" },
+      ],
+    },
+    {
+      id: 2,
+      title: "Documentation",
+      isopen: false,
+      isActive: false,
+      submenu: [
+        { id: "D1", title: "Table", route: "/documentation/table" },
+        { id: "D2", title: "Sidebar", route: "/documentation/sidebar" },
+        {
+          id: "D3",
+          title: "Notification",
+          route: "/documentation/notification",
+        },
+        { id: "D4", title: "Cards", route: "/documentation/card" },
+        { id: "D5", title: "Modals", route: "/documentation/modal" },
+        { id: "D6", title: "Dropdown", route: "/documentation/dropdown" },
+        { id: "D7", title: "Input", route: "/documentation/input" },
+      ],
+    },
+    {
+      id: 3,
+      title: "Report",
+      route: "/dashboard",
+      iswithfunction: true,
+      isopen: false,
+      isActive: true,
+    },
+    {
+      id: 2,
+      title: "Maintenance",
+      isopen: false,
+      submenu: [
+        {
+          id: "M1",
+          title: "Policy",
+          route: "/maintenance/policies",
+        },
+      ],
+    },
     {
       id: 3,
       title: "Requests",
@@ -111,6 +123,33 @@ onMounted(async () => {
         },
       ],
     },
+    // {
+    //   id: 4,
+    //   title: "Policies",
+    //   isopen: false,
+    //   submenu: [
+    //     {
+    //       id: "P1",
+    //       title: "All Policies",
+    //       route: "/policies",
+    //     },
+    //     {
+    //       id: "P2",
+    //       title: "Create Policy",
+    //       route: "/policies/create",
+    //     },
+    //     {
+    //       id: "P3",
+    //       title: "Pending Approvals",
+    //       route: "/policies/edit",
+    //     },
+    //     {
+    //       id: "P4",
+    //       title: "Closed Policies",
+    //       route: "/policies/approvers",
+    //     },
+    //   ],
+    // }
 
     // =============================================================
 
@@ -153,13 +192,13 @@ const updateActiveStates = (path) => {
     if (menu.submenu) {
       // Check if any submenu route matches current path (exact match)
       const hasActiveSubmenu = menu.submenu.some((sub) => sub.route === path);
-      
+
       // Set isclick for each submenu item
       menu.submenu.forEach((sub) => (sub.isclick = sub.route === path));
-      
+
       // Open dropdown if sidebar is open and has active submenu
       menu.isopen = sidebarOpen.value && hasActiveSubmenu;
-      
+
       // Parent is active when any child is active (for highlighting)
       menu.isActive = hasActiveSubmenu;
     } else {
@@ -328,7 +367,9 @@ watch(searchQuery, (val) => {
           @click="toggleMenu(item)"
           class="group flex w-full items-center justify-between rounded-lg p-3 transition-all duration-200"
           :class="[
-            item.isActive || (item.submenu && item.submenu.some(sub => sub.route === route.path))
+            item.isActive ||
+            (item.submenu &&
+              item.submenu.some((sub) => sub.route === route.path))
               ? 'bg-gray-200 text-primary-700 font-semibold'
               : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
           ]"

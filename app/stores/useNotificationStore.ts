@@ -21,9 +21,7 @@ export const useNotificationStore = defineStore("notification", () => {
         parseJson: true,
       });
 
-      console.log("API response for notifications:", response);
       notifications.value = response || [];
-      console.log("Fetched notifications:", notifications.value);
       updateUnreadCount();
     } catch (error) {
       console.error("Failed to fetch notifications:", error);

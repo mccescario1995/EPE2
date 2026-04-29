@@ -712,7 +712,7 @@ function formatHeader(headerKey: string): string {
 }
 
 function formatValue(key: string, value: any): string {
-  if (value == null || value === "") return "";
+  if (value == null || value === "") return "-";
 
   if (props.fieldMappings?.[key] && props.fieldMappings[key][value] != null) {
     return props.fieldMappings[key][value];

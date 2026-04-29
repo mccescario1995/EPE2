@@ -80,7 +80,6 @@
 
 <script setup>
 import { defineAsyncComponent } from "vue";
-import Trash from "./icon/Trash.vue";
 
 const props = defineProps({
   variant: {
@@ -203,6 +202,7 @@ const getIconComponent = (iconName) => {
     edit: "EditIcon", // Added EditIcon mapping
     view: "ViewIcon", // Added ViewIcon mapping
     save: "SaveIcon", // Added SaveIcon mapping
+    user_approver: "UserApproverIcon", // Added UserApproverIcon mapping
   };
   return icons[iconName] || null;
 };
@@ -218,6 +218,7 @@ const iconComponents = {
   EditIcon: defineAsyncComponent(() => import("./icon/Edit.vue")), // Added EditIcon component
   ViewIcon: defineAsyncComponent(() => import("./icon/View.vue")), // Added ViewIcon component
   SaveIcon: defineAsyncComponent(() => import("./icon/Save.vue")), // Added SaveIcon component
+  UserApproverIcon: defineAsyncComponent(() => import("./icon/UserApprover.vue")), // Added UserApproverIcon component
 };
 </script>
 

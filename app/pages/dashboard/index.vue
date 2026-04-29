@@ -38,20 +38,20 @@ const policyChartData = computed<PolicyDataProps[]>(() =>
   })),
 );
 
-const policyChartOptions = computed(() => ({
-  data: policyChartData.value,
-  categories: {
-    approved: { name: "Approved", color: "#22c55e" },
-    disapproved: { name: "Disapproved", color: "#ef4444" },
-    pending: { name: "Pending", color: "#f59e0b" },
-  },
-  xAxis: "policyName",
-  xNumTicks: policyChartData.value.length,
+// const policyChartOptions = computed(() => ({
+//   data: policyChartData.value,
+//   categories: {
+//     approved: { name: "Approved", color: "#22c55e" },
+//     disapproved: { name: "Disapproved", color: "#ef4444" },
+//     pending: { name: "Pending", color: "#f59e0b" },
+//   },
+//   xAxis: "policyName",
+//   xNumTicks: policyChartData.value.length,
 
-  // REQUIRED (same fix as your month issue)
-  xFormatter: (tick: number, i?: number) =>
-    policyChartData.value[i ?? tick]?.policyName,
-}));
+//   // REQUIRED (same fix as your month issue)
+//   xFormatter: (tick: number, i?: number) =>
+//     policyChartData.value[i ?? tick]?.policyName,
+// }));
 
 const ApprovalDecision = {
   approved: { name: "Approved", color: "#22c55e" },
