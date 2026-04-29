@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const router = useRouter();
 import { IconView, IconEdit, IconDelete, IconUserApprover } from "#components";
+// import { ManageApprover } from '../../../../.nuxt/components';
+// import ManageApproversModal from './ManageApproversModal.vue';
 
 type PolicyApiItem = {
   policyid: string;
@@ -52,7 +54,7 @@ const editSubmitting = ref(false);
 const editError = ref("");
 
 // Approvers state
-const approvers:any = ref([]);
+const approvers: any = ref([]);
 const approversLoading = ref(false);
 const approversError = ref("");
 const newApprover = reactive({
@@ -114,7 +116,6 @@ const fetchPolicies = async () => {
         createdDate: p.createddate,
         // add others if needed
       }));
-      console.log("Policy data set to:", policyData.value);
     } else {
       console.error("Failed to fetch policies:", response.message);
     }
@@ -144,7 +145,7 @@ const deleteRequestPolicy = async () => {
           "Content-Type": "application/json",
         },
         // parseJson: true,
-      }
+      },
     );
 
     console.log("Delete response:", response);
@@ -213,10 +214,13 @@ const fetchEditPolicy = async (policyId: string) => {
   editLoading.value = true;
   editError.value = "";
   try {
-    const response: any = await apiFetch(`/api/Maintenance/policy/${policyId}`, {
-      method: "GET",
-      parseJson: true,
-    });
+    const response: any = await apiFetch(
+      `/api/Maintenance/policy/${policyId}`,
+      {
+        method: "GET",
+        parseJson: true,
+      },
+    );
     console.log("Fetched policy for edit:", response);
     if (response) {
       editForm.policyid = response.items.policyid || "";
@@ -249,7 +253,7 @@ const submitEditForm = async () => {
           "Content-Type": "application/json",
         },
         // parseJson: true,
-      }
+      },
     );
     console.log("Edit response:", response);
     if (response) {
@@ -277,11 +281,21 @@ const submitEditForm = async () => {
 const fetchApprovers = async (policyId: string) => {
   approversLoading.value = true;
   approversError.value = "";
+  const payload = {
+    userId: userId.userId,
+  };
   try {
-    const response: any = await apiFetch(`/api/Maintenance/policy/${policyId}/approvers`, {
-      method: "GET",
-      parseJson: true,
-    });
+    const response: any = await apiFetch(
+      `/api/Maintenance/policy/${policyId}/approvers`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // parseJson: true,
+      },
+    );
     console.log("Fetched approvers:", response);
     if (response) {
       approvers.value = response.items || [];
@@ -316,7 +330,7 @@ const addApprover = async () => {
           "Content-Type": "application/json",
         },
         parseJson: true,
-      }
+      },
     );
     if (response) {
       newApprover.approverid = null;
@@ -351,7 +365,7 @@ const deleteApprover = async (approverId: string) => {
       {
         method: "DELETE",
         parseJson: true,
-      }
+      },
     );
     if (response) {
       await fetchApprovers(selectedPolicy.value.policyId);
@@ -376,7 +390,9 @@ onMounted(() => {
 <template>
   <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh">
     <header class="bg-white shadow">
-      <div class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+      <div
+        class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
+      >
         <div class="flex items-center">
           <Button
             variant="ghost-primary"
@@ -406,7 +422,13 @@ onMounted(() => {
       <div class="mb-6 px-2 rounded-lg">
         <base-table
           :table-data="policyData"
-          :header="['policyId', 'shortName', 'status', 'description', 'createdDate']"
+          :header="[
+            'policyId',
+            'shortName',
+            'status',
+            'description',
+            'createdDate',
+          ]"
           :badge-fields="['status']"
           :field-mappings="{
             status: {
@@ -463,7 +485,9 @@ onMounted(() => {
           ></div>
 
           <!-- Modal Content -->
-          <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div
+            class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+          >
             <div
               class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4"
             >
@@ -485,7 +509,8 @@ onMounted(() => {
               Delete Request
             </h3>
             <p class="text-gray-500 text-center mb-6">
-              Are you sure you want to delete this policy? This action cannot be undone.
+              Are you sure you want to delete this policy? This action cannot be
+              undone.
             </p>
             <div class="flex gap-3 justify-center">
               <button
@@ -518,12 +543,17 @@ onMounted(() => {
       :closeOnEsc="true"
     >
       <template #header>
-        <h3 class="text-lg font-medium leading-6 text-gray-900">Create Policy</h3>
+        <h3 class="text-lg font-medium leading-6 text-gray-900">
+          Create Policy
+        </h3>
       </template>
 
       <form @submit.prevent="submitCreateForm" class="space-y-4">
         <div>
-          <label for="create-shortname" class="block text-sm font-medium text-gray-700">
+          <label
+            for="create-shortname"
+            class="block text-sm font-medium text-gray-700"
+          >
             Shortname
           </label>
           <input
@@ -536,7 +566,10 @@ onMounted(() => {
         </div>
 
         <div>
-          <label for="create-description" class="block text-sm font-medium text-gray-700">
+          <label
+            for="create-description"
+            class="block text-sm font-medium text-gray-700"
+          >
             Description <span class="text-red-500 text-md">*</span>
           </label>
           <textarea
@@ -549,7 +582,10 @@ onMounted(() => {
         </div>
 
         <div>
-          <label for="create-status" class="block text-sm font-medium text-gray-700">
+          <label
+            for="create-status"
+            class="block text-sm font-medium text-gray-700"
+          >
             Status <span class="text-red-500 text-md">*</span>
           </label>
           <select
@@ -576,7 +612,11 @@ onMounted(() => {
           >
             Cancel
           </Button>
-          <Button variant="primary" @onclick="submitCreateForm" :disabled="createLoading">
+          <Button
+            variant="primary"
+            @onclick="submitCreateForm"
+            :disabled="createLoading"
+          >
             {{ createLoading ? "Creating..." : "Create Policy" }}
           </Button>
         </div>
@@ -592,14 +632,19 @@ onMounted(() => {
       :closeOnEsc="true"
     >
       <template #header>
-        <h3 class="text-lg font-medium leading-6 text-gray-900">Edit Policy {{ editForm.policyid }}</h3>
+        <h3 class="text-lg font-medium leading-6 text-gray-900">
+          Edit Policy {{ editForm.policyid }}
+        </h3>
       </template>
 
       <div v-if="editLoading" class="text-center py-4">Loading...</div>
 
       <form v-else @submit.prevent="submitEditForm" class="space-y-4">
         <div>
-          <label for="edit-shortname" class="block text-sm font-medium text-gray-700">
+          <label
+            for="edit-shortname"
+            class="block text-sm font-medium text-gray-700"
+          >
             Shortname
           </label>
           <input
@@ -612,7 +657,10 @@ onMounted(() => {
         </div>
 
         <div>
-          <label for="edit-description" class="block text-sm font-medium text-gray-700">
+          <label
+            for="edit-description"
+            class="block text-sm font-medium text-gray-700"
+          >
             Description
           </label>
           <textarea
@@ -625,7 +673,10 @@ onMounted(() => {
         </div>
 
         <div>
-          <label for="edit-status" class="block text-sm font-medium text-gray-700">
+          <label
+            for="edit-status"
+            class="block text-sm font-medium text-gray-700"
+          >
             Status
           </label>
           <select
@@ -637,7 +688,7 @@ onMounted(() => {
             <option value="I">Inactive</option>
           </select>
         </div>
-        
+
         <div v-if="editError" class="text-red-500 text-sm">{{ editError }}</div>
       </form>
 
@@ -675,29 +726,45 @@ onMounted(() => {
 
       <div v-if="selectedPolicy" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700"> Policy ID </label>
-          <p class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md">
+          <label class="block text-sm font-medium text-gray-700">
+            Policy ID
+          </label>
+          <p
+            class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md"
+          >
             {{ selectedPolicy.policyId }}
           </p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700"> Shortname </label>
-          <p class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md">
+          <label class="block text-sm font-medium text-gray-700">
+            Shortname
+          </label>
+          <p
+            class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md"
+          >
             {{ selectedPolicy.shortName ?? "-" }}
           </p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700"> Description </label>
-          <p class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md">
+          <label class="block text-sm font-medium text-gray-700">
+            Description
+          </label>
+          <p
+            class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md"
+          >
             {{ selectedPolicy.description }}
           </p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700"> Status </label>
-          <p class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md">
+          <label class="block text-sm font-medium text-gray-700">
+            Status
+          </label>
+          <p
+            class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md"
+          >
             <span
               v-if="selectedPolicy.status === 'A'"
               class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
@@ -714,8 +781,12 @@ onMounted(() => {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700"> Created Date </label>
-          <p class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md">
+          <label class="block text-sm font-medium text-gray-700">
+            Created Date
+          </label>
+          <p
+            class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md"
+          >
             {{ selectedPolicy.createdDate }}
           </p>
         </div>
@@ -723,13 +794,15 @@ onMounted(() => {
 
       <template #footer>
         <div class="flex justify-end">
-          <Button variant="ghost" @onclick="viewModalOpen = false"> Close </Button>
+          <Button variant="ghost" @onclick="viewModalOpen = false">
+            Close
+          </Button>
         </div>
       </template>
     </Modal>
 
     <!-- Approvers Modal -->
-    <Modal
+    <!-- <Modal
       v-model:isOpen="approversModalOpen"
       size="xl"
       position="center"
@@ -744,62 +817,65 @@ onMounted(() => {
 
       <div v-if="approversLoading" class="text-center py-4">Loading...</div>
 
-      <div v-else class="space-y-6">
-        <!-- Approvers Table -->
-        <div>
-          <h4 class="text-md font-medium text-gray-900 mb-2">Current Approvers</h4>
-          <div class="overflow-x-auto">
-            <table class="min-w-full bg-white border border-gray-300">
-              <thead>
-                <tr class="bg-gray-100">
-                  <th class="px-4 py-2 border text-left">Name</th>
-                  <th class="px-4 py-2 border text-left">Email</th>
-                  <th class="px-4 py-2 border text-left">Type</th>
-                  <th class="px-4 py-2 border text-left">Sequence</th>
-                  <th class="px-4 py-2 border text-left">Role</th>
-                  <th class="px-4 py-2 border text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="approver in approvers"
-                  :key="approver.Id"
-                  class="hover:bg-gray-50"
+       <div v-else class="space-y-6"> -->
+    <!-- Approvers Table -->
+    <!-- <div>
+      <h4 class="text-md font-medium text-gray-900 mb-2">Current Approvers</h4>
+      <div class="overflow-x-auto">
+        <table class="min-w-full bg-white border border-gray-300">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="px-4 py-2 border text-left">Name</th>
+              <th class="px-4 py-2 border text-left">Email</th>
+              <th class="px-4 py-2 border text-left">Type</th>
+              <th class="px-4 py-2 border text-left">Sequence</th>
+              <th class="px-4 py-2 border text-left">Role</th>
+              <th class="px-4 py-2 border text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="approver in approvers"
+              :key="approver.Id"
+              class="hover:bg-gray-50"
+            >
+              <td class="px-4 py-2 border">{{ approver.Approvername }}</td>
+              <td class="px-4 py-2 border">{{ approver.Approveremail }}</td>
+              <td class="px-4 py-2 border">{{ approver.Approvertype }}</td>
+              <td class="px-4 py-2 border">
+                <input
+                  v-model.number="approver.Linesequence"
+                  @blur="updateSequence(approver)"
+                  type="number"
+                  min="1"
+                  class="w-16 px-2 py-1 border border-gray-300 rounded text-center"
+                />
+              </td>
+              <td class="px-4 py-2 border">{{ approver.ApproverRole }}</td>
+              <td class="px-4 py-2 border">
+                <button
+                  @click="deleteApprover(approver.Id)"
+                  class="text-red-500 hover:underline text-sm"
                 >
-                  <td class="px-4 py-2 border">{{ approver.Approvername }}</td>
-                  <td class="px-4 py-2 border">{{ approver.Approveremail }}</td>
-                  <td class="px-4 py-2 border">{{ approver.Approvertype }}</td>
-                  <td class="px-4 py-2 border">
-                    <input
-                      v-model.number="approver.Linesequence"
-                      @blur="updateSequence(approver)"
-                      type="number"
-                      min="1"
-                      class="w-16 px-2 py-1 border border-gray-300 rounded text-center"
-                    />
-                  </td>
-                  <td class="px-4 py-2 border">{{ approver.ApproverRole }}</td>
-                  <td class="px-4 py-2 border">
-                    <button
-                      @click="deleteApprover(approver.Id)"
-                      class="text-red-500 hover:underline text-sm"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-                <tr v-if="approvers.length === 0">
-                  <td colspan="6" class="px-4 py-2 border text-center text-gray-500">
-                    No approvers found
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+                  Delete
+                </button>
+              </td>
+            </tr>
+            <tr v-if="approvers.length === 0">
+              <td
+                colspan="6"
+                class="px-4 py-2 border text-center text-gray-500"
+              >
+                No approvers found
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div> -->
 
-        <!-- Add New Approver Form -->
-        <div>
+    <!-- Add New Approver Form -->
+    <!-- <div>
           <h4 class="text-md font-medium text-gray-900 mb-2">Add New Approver</h4>
           <form
             @submit.prevent="addApprover"
@@ -890,6 +966,13 @@ onMounted(() => {
           <Button variant="ghost" @onclick="approversModalOpen = false"> Close </Button>
         </div>
       </template>
-    </Modal>
+    </Modal> -->
+    <!-- In maintenance/policies/index.vue -->
+    <ManageApprover
+      :show="approversModalOpen"
+      :policy="selectedPolicy"
+      @close="approversModalOpen = false"
+      @saved="fetchPolicies"
+    />
   </div>
 </template>

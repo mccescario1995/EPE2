@@ -55,6 +55,7 @@ onMounted(async () => {
         { id: "A4", title: "Table", route: "/activity/table" },
         { id: "A5", title: "Cards", route: "/activity/cards" },
         { id: "A6", title: "Forms", route: "/activity/forms" },
+        { id: "A7", title: "Nested Modal", route: "/activity/nestedmodal" },
       ],
     },
     {

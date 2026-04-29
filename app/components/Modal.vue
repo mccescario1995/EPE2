@@ -1,9 +1,11 @@
 <!-- components/Modal.vue -->
 <template>
   <Transition name="modal" appear>
+    <!-- Updated to fixed to ensure it covers the entire viewport, especially for nested modals , removed the zindex from the container and moved it to the overlay and modal container for better stacking control -->
     <div
       v-if="isOpen"
-      class="fixed inset-0 z-50 overflow-y-auto"
+      class="fixed inset-0 overflow-y-auto" 
+      :class="`z-${props.zIndex}`"
       @keydown.esc="handleEsc"
       @click.self="handleOutsideClick"
     >
@@ -75,6 +77,13 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount } from "vue";
 
+// added for nested modals to prevent body scroll when multiple modals are open
+declare global {
+  interface Window {
+    modalCount: number;
+  }
+}
+
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -105,6 +114,12 @@ const props = defineProps({
   showCloseButton: {
     type: Boolean,
     default: true,
+  },
+
+  // Added - zIndex prop to allow custom stacking of modals, especially for nested modals
+  zIndex: {
+    type: Number,
+    default: 50,
   },
 });
 
@@ -156,15 +171,31 @@ const handleOutsideClick = () => {
   }
 };
 
+// Added - Prevent body scroll when modal is open, especially for nested modals
+// Global modal counter for body overflow
+if (typeof window !== 'undefined' && !window.modalCount) {
+  window.modalCount = 0;
+}
+
 // Add/remove event listeners when modal opens/closes
 onMounted(() => {
   if (props.isOpen) {
     document.addEventListener("keydown", handleEsc);
+    // Increment modal count and disable body scroll if this is the first modal - important for nested modals
+    window.modalCount++;
+    if (window.modalCount === 1) {
+      document.body.style.overflow = "hidden";
+    }
   }
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", handleEsc);
+  // Decrement modal count and re-enable body scroll if this was the last modal - important for nested modals
+  window.modalCount--;
+  if (window.modalCount === 0) {
+    document.body.style.overflow = "";
+  }
 });
 
 watch(
@@ -172,10 +203,18 @@ watch(
   (newVal) => {
     if (newVal) {
       document.addEventListener("keydown", handleEsc);
-      document.body.style.overflow = "hidden";
+      //Updated for nested modals: Increment modal count and disable body scroll if this is the first modal
+      window.modalCount++;
+      if (window.modalCount === 1) {
+        document.body.style.overflow = "hidden";
+      }
     } else {
       document.removeEventListener("keydown", handleEsc);
-      document.body.style.overflow = "";
+      //Updated for nested modals: Decrement modal count and re-enable body scroll if this was the last modal
+      window.modalCount--;
+      if (window.modalCount === 0) {
+        document.body.style.overflow = "";
+      }
     }
   }
 );
