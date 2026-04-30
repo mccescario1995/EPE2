@@ -82,7 +82,6 @@ const hasIM = computed(() =>
   groups.value.some((g) => g.main.approvertype === "IM"),
 );
 
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Build groups from flat approver list */
@@ -102,7 +101,7 @@ function buildGroups(approvers: Approver[]): ApproverGroup[] {
 
     if (isMain) {
       groupMap.set(sortKey, {
-        _groupKey: `group-${approver.id}`,  // Updated: Use stable approver.id instead of sortKey
+        _groupKey: `group-${approver.id}`, // Updated: Use stable approver.id instead of sortKey
         sort: sortKey,
         main: approver,
         proxies: [],
@@ -140,7 +139,10 @@ async function fetchApprovers() {
     userId: userId.userId,
   };
   try {
-    console.log("Fetching approvers(fetchApprovers) for policy:", props.policy.policyId);
+    console.log(
+      "Fetching approvers(fetchApprovers) for policy:",
+      props.policy.policyId,
+    );
     const response = await apiFetch(
       `/api/Maintenance/policy/${props.policy.policyId}/approvers`,
       {
@@ -481,9 +483,13 @@ watch(
   },
 );
 
-watch(() => deletingApprover.value, (newVal) => {
-  isDeleteModalOpen.value = newVal !== null;
-}, { immediate: true });
+watch(
+  () => deletingApprover.value,
+  (newVal) => {
+    isDeleteModalOpen.value = newVal !== null;
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -583,24 +589,24 @@ watch(() => deletingApprover.value, (newVal) => {
         </p>
 
         <button
-    class="w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
-    @click="openAddMain"
-  >
-    <svg
-      class="w-4 h-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M12 4v16m8-8H4"
-      />
-    </svg>
-    Add Approver Step
-  </button>
+          class="w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
+          @click="openAddMain"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          Add Approver Step
+        </button>
       </div>
 
       <!-- ─── Approver Groups (Draggable) ─────────────────────────── -->
@@ -744,9 +750,7 @@ watch(() => deletingApprover.value, (newVal) => {
             </div>
 
             <!-- Proxy rows (inner draggable) -->
-            <div
-              
-            >
+            <div>
               <div
                 v-for="proxy in group.proxies"
                 :key="proxy.id"
@@ -1246,7 +1250,6 @@ watch(() => deletingApprover.value, (newVal) => {
     position="center"
     :closeOnOverlayClick="true"
     :closeOnEsc="true"
-    
     @update:isOpen="cancelDelete"
   >
     <div

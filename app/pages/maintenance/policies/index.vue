@@ -82,9 +82,10 @@ const editPolicy = async (row: any) => {
 };
 
 const manageApprovers = async (row: any) => {
-  selectedPolicy.value = row;
-  await fetchApprovers(row.policyId);
-  approversModalOpen.value = true;
+  router.push(`/maintenance/policies/policy-approver-manager?policyId=${row.policyId}`); 
+  // selectedPolicy.value = row;
+  // await fetchApprovers(row.policyId);
+  // approversModalOpen.value = true;
 };
 
 const confirmDeletePolicy = (row: any) => {
