@@ -148,7 +148,39 @@ namespace EPEAPI.Controllers
         }
 
         // Policy Approver Maintenance
-        [HttpGet("policy/{policyId}/approvers")]
+
+        [HttpPost("policy/{policyId}/approvers/create")]
+        public async Task<IActionResult> CreateApprover(int policyId, [FromBody] CreateApproverRequest request)
+        {
+            try
+            {
+                var approver = new EpePolicyapprover
+                {
+                    Policyid = policyId,
+                    Approverid = request.Approverid,
+                    Approvername = request.Approvername,
+                    Approveremail = request.Approveremail,
+                    Approvertype = request.Approvertype,
+                    Sort = request.Sort,
+                    Linesequence = request.Linesequence,
+                    Status = "A",
+                    Isdelete = 0,
+                    Createdby = request.CreatedBy,
+                    Createddate = DateTime.UtcNow.AddHours(8),
+                };
+
+                _context.EpePolicyapprovers.Add(approver);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Approver added", item = approver });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
+        [HttpPost("policy/{policyId}/approvers")]
         public async Task<IActionResult> GetPolicyApprover(int policyId)
         {
             try
@@ -182,5 +214,60 @@ namespace EPEAPI.Controllers
                 return StatusCode(500, "Error: " + e.Message);
             }
         }
+
+        [HttpGet("employees/search")]
+        public async Task<IActionResult> SearchEmployees([FromQuery] string q)
+        {
+            if (string.IsNullOrWhiteSpace(q))
+            {
+                return Ok(new List<object>());
+            }
+
+            var result = await _context.CoreVEmployeeDetails
+                .Where(e =>
+                    EF.Functions.Like(e.EmplId, $"%{q}%") ||
+                    EF.Functions.Like(e.Fname, $"%{q}%") ||
+                    EF.Functions.Like(e.Lname, $"%{q}%") ||
+                    EF.Functions.Like(e.Emailadd, $"%{q}%")
+                )
+                .Select(e => new
+                {
+                    id = e.EmplId,
+                    name = e.Employeename2,
+                    email = e.Emailadd
+                })
+                .Take(20) // limit results for performance
+                .ToListAsync();
+
+            return Ok(result);
+        }
+
+        [HttpPost("policy/{policyId}/approvers/delete/{approverId}")]
+        public async Task<IActionResult> DeletePolicyApprover(int policyId, int approverId)
+        {
+            if (policyId <= 0)
+            {
+                return NotFound(new { success = false, message = "Policy not found" });
+            }
+
+            if (approverId <= 0)
+            {
+                return NotFound(new { success = false, message = "Approver not found" });
+            }
+
+            var approver = await _context.EpePolicyapprovers
+                .FirstOrDefaultAsync(a => a.Policyid == policyId && a.Id == approverId && a.Isdelete == 0);
+
+            if (approver == null)
+            {
+                return NotFound(new { success = false, message = "Approver not found" });
+            }
+
+            approver.Isdelete = 1;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, message = "Approver deleted" });
+        }
+
     }
 }
