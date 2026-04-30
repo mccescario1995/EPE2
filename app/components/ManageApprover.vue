@@ -6,6 +6,7 @@ const props = defineProps<{
   show: boolean;
   policy: {
     policyid: number;
+    policyId: number;
     description: string;
     shortname?: string;
   } | null;
@@ -72,6 +73,7 @@ const employeeSearchLoading = ref(false);
 const showEmployeeDropdown = ref(false);
 
 // Delete confirmation
+const isDeleteModalOpen = ref(false);
 const deletingApprover = ref<Approver | null>(null);
 const deleteLoading = ref(false);
 
@@ -79,6 +81,7 @@ const deleteLoading = ref(false);
 const hasIM = computed(() =>
   groups.value.some((g) => g.main.approvertype === "IM"),
 );
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -99,7 +102,7 @@ function buildGroups(approvers: Approver[]): ApproverGroup[] {
 
     if (isMain) {
       groupMap.set(sortKey, {
-        _groupKey: `group-${sortKey}-${approver.id}`,
+        _groupKey: `group-${approver.id}`,  // Updated: Use stable approver.id instead of sortKey
         sort: sortKey,
         main: approver,
         proxies: [],
@@ -135,17 +138,14 @@ async function fetchApprovers() {
 
   const payload = {
     userId: userId.userId,
-  };  
+  };
   try {
-    console.log("Fetching approvers for policy:", props.policy.policyId);
+    console.log("Fetching approvers(fetchApprovers) for policy:", props.policy.policyId);
     const response = await apiFetch(
       `/api/Maintenance/policy/${props.policy.policyId}/approvers`,
       {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        method: "Post",
+        parseJson: true,
       },
     );
     rawApprovers.value = response.items ?? [];
@@ -168,9 +168,20 @@ const searchDebounce = ref<ReturnType<typeof setTimeout> | null>(null);
 
 function onEmployeeSearch(query: string) {
   newApprover.value.searchQuery = query;
-  newApprover.value.selectedEmployee = null;
+
+  // ONLY clear selected if user edits after selection
+  if (
+    newApprover.value.selectedEmployee &&
+    query !== newApprover.value.selectedEmployee.employeename2
+  ) {
+    newApprover.value.selectedEmployee = null;
+    newApprover.value.approverid = "";
+    newApprover.value.approvername = "";
+    newApprover.value.approveremail = "";
+  }
 
   if (searchDebounce.value) clearTimeout(searchDebounce.value);
+
   if (!query || query.length < 2) {
     employeeOptions.value = [];
     showEmployeeDropdown.value = false;
@@ -182,16 +193,26 @@ function onEmployeeSearch(query: string) {
 
 async function searchEmployees(query: string) {
   employeeSearchLoading.value = true;
-  showEmployeeDropdown.value = true;
+
   try {
-    // Adjust this endpoint to match your actual employee search API
-    const response = await apiFetch(
+    const response: any = await apiFetch(
       `/api/Maintenance/employees/search?q=${encodeURIComponent(query)}`,
       { method: "GET", parseJson: true },
     );
-    employeeOptions.value = response.items ?? [];
-  } catch {
+
+    const list = Array.isArray(response) ? response : response?.items || [];
+
+    employeeOptions.value = list.map((e: any) => ({
+      emplId: e.id,
+      employeename2: e.name,
+      emailadd: e.email,
+    }));
+
+    showEmployeeDropdown.value = employeeOptions.value.length > 0;
+  } catch (err) {
+    console.error(err);
     employeeOptions.value = [];
+    showEmployeeDropdown.value = false;
   } finally {
     employeeSearchLoading.value = false;
   }
@@ -203,6 +224,8 @@ function selectEmployee(emp: EmployeeOption) {
   newApprover.value.approvername = emp.employeename2;
   newApprover.value.approveremail = emp.emailadd;
   newApprover.value.searchQuery = emp.employeename2;
+
+  employeeOptions.value = []; // clear list
   showEmployeeDropdown.value = false;
 }
 
@@ -227,7 +250,7 @@ function cancelAdd() {
 
 function resetAddForm() {
   newApprover.value = {
-    approvertype: "Main" as "Main" | "IM",
+    approvertype: "M" as "M" | "IM",
     approverid: "",
     approvername: "",
     approveremail: "",
@@ -276,24 +299,23 @@ async function confirmAddApprover() {
     }
 
     const payload = {
-      policyid: props.policy.policyid,
+      policyid: props.policy.policyId,
       approverid: approvertype === "IM" ? null : approverid || null,
-      approvername: approvertype === "IM" ? null : approvername,
+      approvername: approvertype === "IM" ? "Immediate Head" : approvername,
       approveremail: approvertype === "IM" ? null : approveremail,
       approvertype,
       sort,
       linesequence,
     };
 
-    console.log("Adding approver for policy:", props.policy.policyid);
+    console.log("Adding approver for policy:", props.policy.policyId);
 
     await apiFetch(
-      `/api/Maintenance/policy/${props.policy.policyid}/approvers`,
+      `/api/Maintenance/policy/${props.policy.policyId}/approvers/create`,
       {
         method: "POST",
-        // body: JSON.stringify(payload),
-        // headers: { "Content-Type": "application/json" },
-        
+        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" },
       },
     );
 
@@ -332,12 +354,17 @@ async function executeDelete() {
   if (!deletingApprover.value || !props.policy) return;
   deleteLoading.value = true;
   try {
-    await apiFetch(
-      `/api/Maintenance/policy/${props.policy.policyid}/approvers/${deletingApprover.value.id}`,
+    console.log("Policy to delete from:", props.policy.policyId);
+    console.log("Deleting approver with ID:", deletingApprover.value.id);
+    const response = await apiFetch(
+      `/api/Maintenance/policy/${props.policy.policyId}/approvers/delete/${deletingApprover.value.id}`,
       {
-        method: "DELETE",
+        method: "POST",
+        parseJson: true,
       },
     );
+
+    console.log("Delete response:", response);
 
     showToast({
       type: "success",
@@ -437,8 +464,8 @@ function handleClose() {
 // ─── Watchers ─────────────────────────────────────────────────────────────────
 watch(
   () => props.show,
-  (val) => {
-    if (val && props.policy) {
+  (newVal) => {
+    if (newVal && props.policy) {
       fetchApprovers();
     }
   },
@@ -448,18 +475,22 @@ watch(
   () => props.policy,
   (val) => {
     if (val && props.show) {
-      console.log("Policy changed, refetching approvers...", props.show);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+      console.log("Policy changed, refetching approvers...", props.show);
       fetchApprovers();
     }
   },
 );
+
+watch(() => deletingApprover.value, (newVal) => {
+  isDeleteModalOpen.value = newVal !== null;
+}, { immediate: true });
 </script>
 
 <template>
   <Modal
     v-model:isOpen="props.show"
-    size="lg"
-    position="center"
+    size="full"
+    position="top-center"
     :closeOnOverlayClick="true"
     :closeOnEsc="true"
   >
@@ -478,7 +509,7 @@ watch(
             >
           </p>
         </div>
-        <button
+        <!-- <button
           class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors"
           @click="handleClose"
         >
@@ -495,7 +526,7 @@ watch(
               d="M6 18L18 6M6 6l12 12"
             />
           </svg>
-        </button>
+        </button> -->
       </div>
     </template>
 
@@ -550,6 +581,26 @@ watch(
         <p class="text-xs text-gray-400 mt-1">
           Add the first approver for this policy
         </p>
+
+        <button
+    class="w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
+    @click="openAddMain"
+  >
+    <svg
+      class="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 4v16m8-8H4"
+      />
+    </svg>
+    Add Approver Step
+  </button>
       </div>
 
       <!-- ─── Approver Groups (Draggable) ─────────────────────────── -->
@@ -693,15 +744,8 @@ watch(
             </div>
 
             <!-- Proxy rows (inner draggable) -->
-            <VueDraggable
-              v-if="group.proxies.length > 0 || addingAsProxy === group.sort"
-              v-model="group.proxies"
-              item-key="id"
-              handle=".proxy-drag-handle"
-              :animation="150"
-              ghost-class="opacity-40"
-              @end="() => onProxyDragEnd(gIndex)"
-              class="divide-y divide-gray-100"
+            <div
+              
             >
               <div
                 v-for="proxy in group.proxies"
@@ -709,7 +753,7 @@ watch(
                 class="flex items-center gap-3 px-4 py-2.5 pl-12 bg-white hover:bg-gray-50 transition-colors"
               >
                 <!-- Proxy drag handle -->
-                <button
+                <!-- <button
                   class="proxy-drag-handle cursor-grab active:cursor-grabbing text-gray-200 hover:text-gray-400 transition-colors flex-shrink-0"
                   title="Drag to reorder proxy"
                 >
@@ -722,12 +766,12 @@ watch(
                       d="M7 2a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zM7 8a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zm-6 6a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4z"
                     />
                   </svg>
-                </button>
+                </button> -->
 
                 <!-- Proxy bullet -->
-                <span
+                <!-- <span
                   class="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0"
-                />
+                /> -->
 
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2">
@@ -764,7 +808,7 @@ watch(
                   </svg>
                 </button>
               </div>
-            </VueDraggable>
+            </div>
 
             <!-- Inline proxy add form -->
             <div
@@ -965,26 +1009,22 @@ watch(
           when a request is submitted.
         </div>
 
-        <!-- Manual fields -->
-        <div
-          v-if="newApprover.approvertype === 'M'"
-          class="space-y-2 mb-3"
-        >
+        <!-- Main fields -->
+        <div v-if="newApprover.approvertype === 'M'" class="space-y-2 mb-3">
           <!-- Employee search -->
           <div class="relative">
-            <!-- <input
-                  type="text"
-                  :value="newApprover.searchQuery"
-                  class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 bg-white"
-                  placeholder="Search employee name..."
-                  @input="
-                    (e) =>
-                      onEmployeeSearch((e.target as HTMLInputElement).value)
-                  "
-                  @focus="showEmployeeDropdown = employeeOptions.length > 0"
-                  @blur="setTimeout(() => (showEmployeeDropdown = false), 200)"
-                /> -->
-            <template>
+            <input
+              type="text"
+              :value="newApprover.searchQuery"
+              class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 bg-white"
+              placeholder="Search employee name..."
+              @input="
+                (e) => onEmployeeSearch((e.target as HTMLInputElement).value)
+              "
+              @focus="showEmployeeDropdown = employeeOptions.length > 0"
+              @blur="setTimeout(() => (showEmployeeDropdown = false), 200)"
+            />
+            <!-- <template>
               <Dropdown
                 v-if="showEmployeeDropdown"
                 :options="employeeOptions"
@@ -992,7 +1032,7 @@ watch(
                 no-results-text="No results found"
                 @select="selectEmployee"
               />
-            </template>
+            </template> -->
             <div
               v-if="showEmployeeDropdown"
               class="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto"
@@ -1025,13 +1065,18 @@ watch(
             </div>
           </div>
 
-          <!-- Manual email override -->
-          <input
+          <!-- Main approver email  -->
+          <!-- <Dropdown
             v-if="!newApprover.selectedEmployee"
             v-model="newApprover.approveremail"
             type="email"
             class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 bg-white"
-            placeholder="Or enter email manually"
+            :placeholder="
+              newApprover.selectedEmployee
+                ? newApprover.approveremail
+                : 'Enter approver email (optional)'
+            "
+            @input="onEmployeeSearch($event.target.value)"
           />
           <div
             v-else
@@ -1078,67 +1123,68 @@ watch(
               </svg>
             </button>
           </div>
-        </div>
+        </div> -->
 
-        <!-- Form actions -->
-        <div class="flex gap-2">
-          <button
-            class="flex-1 py-2 px-4 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
-            :disabled="addFormLoading"
-            @click="confirmAddApprover"
-          >
-            <svg
-              v-if="addFormLoading"
-              class="animate-spin w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
+          <!-- Form actions -->
+          <div class="flex gap-2">
+            <button
+              class="flex-1 py-2 px-4 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
+              :disabled="addFormLoading"
+              @click="confirmAddApprover"
             >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              />
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            <span>{{ addFormLoading ? "Adding..." : "Add Approver" }}</span>
-          </button>
-          <button
-            class="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            @click="cancelAdd"
-          >
-            Cancel
-          </button>
+              <svg
+                v-if="addFormLoading"
+                class="animate-spin w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              <span>{{ addFormLoading ? "Adding..." : "Add Approver" }}</span>
+            </button>
+            <button
+              class="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              @click="cancelAdd"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- Add main approver button -->
-      <button
-        v-if="!showAddForm"
-        class="w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
-        @click="openAddMain"
-      >
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+        <!-- Add main approver button -->
+        <button
+          v-if="!showAddForm"
+          class="w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
+          @click="openAddMain"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 4v16m8-8H4"
-          />
-        </svg>
-        Add Approver Step
-      </button>
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          Add Approver Step
+        </button>
+      </div>
     </div>
 
     <template #footer>
@@ -1195,12 +1241,13 @@ watch(
 
   <!-- ─── Delete Confirmation Modal ────────────────────────────────────── -->
   <Modal
-    v-model:isOpen="props.show"
+    v-model:isOpen="isDeleteModalOpen"
     size="sm"
     position="center"
-    :closeOnOverlayClick="false"
-    :closeOnEsc="false"
-    :zIndex="60"
+    :closeOnOverlayClick="true"
+    :closeOnEsc="true"
+    
+    @update:isOpen="cancelDelete"
   >
     <div
       class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4"

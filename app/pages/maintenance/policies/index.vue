@@ -278,25 +278,24 @@ const submitEditForm = async () => {
   }
 };
 
-const fetchApprovers = async (policyId: string) => {
+const fetchApprovers = async (policyId:any) => {
   approversLoading.value = true;
   approversError.value = "";
   const payload = {
     userId: userId.userId,
   };
+
+  
   try {
-    const response: any = await apiFetch(
+    console.log("Fetching approvers for policy:", policyId);
+    const response = await apiFetch(
       `/api/Maintenance/policy/${policyId}/approvers`,
       {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        // parseJson: true,
+        method: "Post",
+        parseJson: true,
       },
     );
-    console.log("Fetched approvers:", response);
+    console.log("Fetched approvers index.vue:", response);
     if (response) {
       approvers.value = response.items || [];
     }
