@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { VueDraggable } from "vue-draggable-plus";
-
 // ─── Props & Emits ────────────────────────────────────────────────────────────
 const props = defineProps<{
   show: boolean;
@@ -410,6 +408,26 @@ function onProxyDragEnd(groupIndex: number) {
   }));
 }
 
+/** Move group up in the order */
+function moveGroupUp(index: number) {
+  if (index > 0) {
+    const temp = groups.value[index];
+    groups.value[index] = groups.value[index - 1];
+    groups.value[index - 1] = temp;
+    onGroupDragEnd();
+  }
+}
+
+/** Move group down in the order */
+function moveGroupDown(index: number) {
+  if (index < groups.value.length - 1) {
+    const temp = groups.value[index];
+    groups.value[index] = groups.value[index + 1];
+    groups.value[index + 1] = temp;
+    onGroupDragEnd();
+  }
+}
+
 // ─── Save ─────────────────────────────────────────────────────────────────────
 async function saveOrder() {
   if (!props.policy) return;
@@ -495,14 +513,13 @@ watch(
 <template>
   <Modal
     v-model:isOpen="props.show"
-    size="full"
+    size="lg"
     position="top-center"
-    :closeOnOverlayClick="true"
-    :closeOnEsc="true"
+    :show-close-button="false"
   >
     <template #header>
       <div
-        class="flex items-start justify-between px-6 py-5 border-b border-gray-100 bg-gray-50"
+        class="flex items-start justify-between border-b border-gray-100 bg-gray-50"
       >
         <div>
           <h2 class="text-lg font-semibold text-gray-900">Manage Approvers</h2>
@@ -536,7 +553,7 @@ watch(
       </div>
     </template>
 
-    <div class="px-6 py-5 space-y-4">
+    <div class="space-y-4">
       <!-- Loading -->
       <div v-if="loading" class="flex items-center justify-center py-16">
         <svg
@@ -626,20 +643,11 @@ watch(
               d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"
             />
           </svg>
-          Drag rows to reorder approval sequence
+          Click arrow buttons to reorder steps
         </div>
 
-        <!-- Groups drag container -->
-        <VueDraggable
-          v-model="groups"
-          item-key="_groupKey"
-          handle=".group-drag-handle"
-          :animation="200"
-          ghost-class="opacity-40"
-          chosen-class="ring-2 ring-blue-400 rounded-xl"
-          @end="onGroupDragEnd"
-          class="space-y-3"
-        >
+        <!-- Groups container -->
+        <div class="space-y-3">
           <div
             v-for="(group, gIndex) in groups"
             :key="group._groupKey"
@@ -647,17 +655,51 @@ watch(
           >
             <!-- Main Approver Row -->
             <div class="flex items-center gap-3 px-4 py-3 bg-gray-50">
-              <!-- Group drag handle -->
-              <button
-                class="group-drag-handle cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors flex-shrink-0"
-                title="Drag to reorder"
-              >
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M7 2a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zM7 8a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zm-6 6a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4z"
-                  />
-                </svg>
-              </button>
+              <div class="flex items-center gap-1 flex-shrink-0">
+                <!-- Move up -->
+                <button
+                  class="p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Move up"
+                  :disabled="gIndex === 0"
+                  @click="moveGroupUp(gIndex)"
+                >
+                  <svg
+                    class="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 15l7-7 7 7"
+                    />
+                  </svg>
+                </button>
+
+                <!-- Move down -->
+                <button
+                  class="p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Move down"
+                  :disabled="gIndex === groups.length - 1"
+                  @click="moveGroupDown(gIndex)"
+                >
+                  <svg
+                    class="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+              </div>
 
               <!-- Step number badge -->
               <span
@@ -704,12 +746,12 @@ watch(
 
               <!-- Actions -->
               <div class="flex items-center gap-1 flex-shrink-0">
-                <!-- Add proxy button -->
-                <button
-                  v-if="group.main.approvertype !== 'IM'"
-                  class="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors text-xs flex items-center gap-1"
-                  title="Add proxy approver"
-                  @click="openAddProxy(group.sort)"
+                <!-- Move up -->
+                <!-- <button
+                  class="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Move up"
+                  :disabled="gIndex === 0"
+                  @click="moveGroupUp(gIndex)"
                 >
                   <svg
                     class="w-3.5 h-3.5"
@@ -721,14 +763,36 @@ watch(
                       stroke-linecap="round"
                       stroke-linejoin="round"
                       stroke-width="2"
-                      d="M12 4v16m8-8H4"
+                      d="M5 15l7-7 7 7"
                     />
                   </svg>
-                  <span class="text-xs hidden sm:inline">Proxy</span>
-                </button>
+                </button> -->
+
+                <!-- Move down -->
+                <!-- <button
+                  class="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Move down"
+                  :disabled="gIndex === groups.length - 1"
+                  @click="moveGroupDown(gIndex)"
+                >
+                  <svg
+                    class="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button> -->
+
                 <!-- Delete -->
                 <button
-                  class="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  class="p-1.5 rounded-full text-red-400 hover:text-white hover:bg-red-500 transition-colors"
                   title="Remove approver"
                   @click="confirmDelete(group.main)"
                 >
@@ -754,7 +818,7 @@ watch(
               <div
                 v-for="proxy in group.proxies"
                 :key="proxy.id"
-                class="flex items-center gap-3 px-4 py-2.5 pl-12 bg-white hover:bg-gray-50 transition-colors"
+                class="flex items-center gap-3 px-4 py-2.5 pl-30 bg-white hover:bg-gray-50 transition-colors"
               >
                 <!-- Proxy drag handle -->
                 <!-- <button
@@ -791,10 +855,32 @@ watch(
                   <p class="text-xs text-gray-400 truncate">
                     {{ proxy.approveremail ?? "" }}
                   </p>
+
+                  <button
+                    v-if="group.main.approvertype !== 'IM'"
+                    class="mt-4 p-1.5 border border-orange-500 rounded-lg text-orange-500 hover:text-white hover:bg-orange-400 transition-colors text-xs flex items-center gap-1"
+                    title="Add proxy approver"
+                    @click="openAddProxy(group.sort)"
+                  >
+                    <svg
+                      class="w-3.5 h-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    <span class="text-xs hidden sm:inline">Add Proxy</span>
+                  </button>
                 </div>
 
                 <button
-                  class="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                  class="p-1.5 rounded-full text-red-400 hover:text-white hover:bg-red-500 transition-colors flex-shrink-0"
                   @click="confirmDelete(proxy)"
                 >
                   <svg
@@ -819,7 +905,7 @@ watch(
               v-if="showAddForm && addingAsProxy === group.sort"
               class="px-4 py-3 pl-12 bg-blue-50 border-t border-blue-100"
             >
-              <p class="text-xs font-medium text-blue-700 mb-2">
+              <p class="text-xs font-medium text-orange-500 mb-2">
                 Add Proxy Approver
               </p>
               <!-- Employee search -->
@@ -833,7 +919,7 @@ watch(
                 />
                 <div
                   v-if="showEmployeeDropdown"
-                  class="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+                  class="absolute z-200 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto"
                 >
                   <div
                     v-if="employeeSearchLoading"
@@ -948,7 +1034,7 @@ watch(
               </div>
             </div>
           </div>
-        </VueDraggable>
+        </div>
       </div>
 
       <!-- ─── Inline Add Form (for new main approver) ──────────────── -->
@@ -1194,15 +1280,15 @@ watch(
     <template #footer>
       <div class="flex items-center justify-between">
         <p class="text-xs text-gray-400">
-          {{ groups.length }} step{{ groups.length !== 1 ? "s" : "" }} ·
+          {{ groups.length }} Main{{ groups.length !== 1 ? "s" : "" }} ·
           {{ groups.reduce((sum, g) => sum + g.proxies.length, 0) }}
-          proxy{{
-            groups.reduce((sum, g) => sum + g.proxies.length, 0) !== 1
-              ? "s"
-              : ""
+          {{
+            groups.reduce((sum, g) => sum + g.proxies.length, 0) === 1
+              ? "Proxy"
+              : "Proxies"
           }}
         </p>
-        <div class="flex gap-3">
+        <div class="flex gap-3 ms-2">
           <button
             class="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             :disabled="saving"
