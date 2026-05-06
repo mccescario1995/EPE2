@@ -53,14 +53,14 @@ public class EmailNotificationService
             // Generate one-time tokens
             var (approveToken, disapproveToken) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
 
-            //var apiBase = "https://apps.fastlogistics.com.ph/epe2apidev"; // Change to production API base URL when deploying
-            var apiBase = "http://localhost:5000";
+            var apiBase = "https://apps.fastlogistics.com.ph/epe2apidev"; // Change to production API base URL when deploying
+            // var apiBase = "http://localhost:5000";
             var approveUrl = $"{apiBase}/api/emailapproval/act?token={approveToken}";
             var disapproveUrl = $"{apiBase}/api/emailapproval/act?token={disapproveToken}";
             var viewUrl = $"https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/approve?id={requestId}";
             var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/exemptions/approve?id=" + requestId;
 
-            toEmail = "mccescario@fastgroup.biz"; // for testing
+            // toEmail = "mccescario@fastgroup.biz"; // for testing
 
             //var emailBody = $@"
             //    <html>
@@ -301,10 +301,10 @@ public class EmailNotificationService
     {
         try
         {
-            //var trackUrl = $"https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id={requestId}";
-            var trackUrl = $"http://localhost:3000/epe2dev/exemptions/view?id={requestId}";
+            var trackUrl = $"https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id={requestId}";
+            // var trackUrl = $"http://localhost:3000/epe2dev/exemptions/view?id={requestId}";
 
-            toEmail = "mccescario@fastgroup.biz"; // testing
+            // toEmail = "mccescario@fastgroup.biz"; // for testing
 
             var theme = GetEmailTheme(newStatus);
 
@@ -453,11 +453,11 @@ public class EmailNotificationService
     {
         try
         {
-            //var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id=" + requestId;
-            var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestId;
+            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id=" + requestId;
+            //var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestId;
         
 
-            toEmail = "mccescario@fastgroup.biz"; // for testing
+            // toEmail = "mcccescario@fastgroup.biz"; // for testing
 
             var emailBody = $@"
                 <html>
@@ -609,10 +609,10 @@ public class EmailNotificationService
     {
         try
         {
-            //var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id=" + requestNumber;
-            var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestNumber;
+            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id=" + requestNumber;
+            // var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestNumber;
 
-            toEmail = "mccescario@fastgroup.biz"; // for testing
+            // toEmail = "mccescario@fastgroup.biz"; // for testing
 
             var truncatedMessage = messagePreview.Length > 100 ? messagePreview.Substring(0, 100) + "..." : messagePreview;
 
