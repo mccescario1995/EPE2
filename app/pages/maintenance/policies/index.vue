@@ -968,7 +968,7 @@ onMounted(() => {
       </template>
     </Modal> -->
     <!-- In maintenance/policies/index.vue -->
-    <ManageApprover
+    <ManageApprovers
       :show="approversModalOpen"
       :policy="selectedPolicy"
       @close="approversModalOpen = false"

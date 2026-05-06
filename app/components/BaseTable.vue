@@ -1,9 +1,7 @@
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <template>
+<template>
   <!-- Global Search -->
   <div v-if="props.showSearch" class="flex mb-6">
-    <div
-      class="relative text-gray-400 focus-within:text-indigo-600 flex-1"
-    >
+    <div class="relative text-gray-400 focus-within:text-indigo-600 flex-1">
       <div
         class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none"
       >
@@ -56,12 +54,21 @@
     </Button>
   </div>
 
-  <!-- Added if condition  : mccesccario  (to remove floating div with margin)--> 
+  <Button
+    v-if="props.showExport"
+    variant="secondary"
+    size="sm"
+    icon="download"
+    @onclick="exportToExcel"
+    class="border hover:bg-gray-300 mb-3"
+  >
+    Export Excel
+  </Button>
+  <!-- Added if condition  : mccesccario  (to remove floating div with margin)-->
   <div
-    v-if="showFilterControls || props.showlimitfilter" 
+    v-if="showFilterControls || props.showlimitfilter"
     class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6"
   >
-
     <!-- Dynamic Filter Controls -->
     <div v-if="showFilterControls" class="flex flex-wrap gap-3">
       <div
@@ -115,7 +122,8 @@
   </div>
 
   <!-- Table -->
-  <div class="hidden md:block"
+  <div
+    class="hidden md:block"
     :class="[
       'overflow-hidden rounded-2xl border border-gray-200 shadow-lg bg-white',
       tableClass,
@@ -264,7 +272,7 @@
                   >
                     <button
                       class="w-full text-left px-4 py-3 text-sm hover:bg-linear-to-r hover:from-indigo-50 hover:to-purple-50 flex gap-3 items-center transition-all duration-200 group"
-                      @click="action.handler(row), closeDropdown()"
+                      @click="(action.handler(row), closeDropdown())"
                       v-if="!action.visible || action.visible(row)"
                       :disabled="action.disabled && action.disabled(row)"
                       :class="{
@@ -280,7 +288,12 @@
                           'group-hover:scale-110 transition-transform duration-200',
                         ]"
                       />
-                      <span class="font-medium">{{ typeof action.tooltip === 'function' ? action.tooltip(row) : action.tooltip }}</span> <!-- added -->
+                      <span class="font-medium">{{
+                        typeof action.tooltip === "function"
+                          ? action.tooltip(row)
+                          : action.tooltip
+                      }}</span>
+                      <!-- added -->
                     </button>
                   </div>
                 </div>
@@ -332,8 +345,13 @@
                       hoveredTooltip === `action-${rowIndex}-${actionIndex}`
                     "
                     class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap z-10 animate-in fade-in slide-in-from-bottom-1 duration-200"
-                  ><!-- added -->
-                    {{ (typeof action.tooltip === 'function' ? action.tooltip(row) : action.tooltip) || action.label }}
+                  >
+                    <!-- added -->
+                    {{
+                      (typeof action.tooltip === "function"
+                        ? action.tooltip(row)
+                        : action.tooltip) || action.label
+                    }}
                     <div
                       class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"
                     ></div>
@@ -380,90 +398,98 @@
   </div>
 
   <!-- MOBILE CARD VIEW -->
-<div class="md:hidden space-y-4">
-  <div
-    v-for="(row, rowIndex) in paginatedData"
-    :key="'mobile-row-' + rowIndex"
-    class="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-3"
-  >
-    <!-- Fields -->
+  <div class="md:hidden space-y-4">
     <div
-      v-for="key in resolvedHeaders"
-      :key="'mobile-field-' + key"
-      class="flex justify-between gap-4 text-sm"
+      v-for="(row, rowIndex) in paginatedData"
+      :key="'mobile-row-' + rowIndex"
+      class="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-3"
     >
-      <span class="text-gray-500 font-medium">
-        {{ formatHeader(key) }}
-      </span>
-
-      <span class="text-gray-800 text-right break-all">
-        <StatusBadge
-          v-if="props.badgeFields?.includes(key)"
-          :value="row[key]"
-          :field="key"
-          :field-mappings="props.fieldMappings"
-          :field-colors="props.fieldColors"
-        />
-        <span v-else>
-          {{ formatValue(key, row[key]) }}
+      <!-- Fields -->
+      <div
+        v-for="key in resolvedHeaders"
+        :key="'mobile-field-' + key"
+        class="flex justify-between gap-4 text-sm"
+      >
+        <span class="text-gray-500 font-medium">
+          {{ formatHeader(key) }}
         </span>
-      </span>
-    </div>
 
-    <!-- Actions -->
-    <div
-      v-if="hasActions"
-      class="pt-3 border-t border-gray-100 flex justify-end gap-2"
-    >
-      <!-- Grouped actions -->
-      <div v-if="props.groupActions" class="relative">
-        <button
-          @click="toggleDropdown(rowIndex)"
-          class="px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50"
-        >
-          Actions
-        </button>
-
-        <div
-          v-if="openDropdownIndex === rowIndex"
-          class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-20"
-        >
-          <button
-            v-for="(action, i) in props.actions"
-            :key="'mobile-action-' + i"
-            @click="action.handler(row), closeDropdown()"
-            :disabled="action.disabled && action.disabled(row)"
-            class="w-full px-4 py-3 text-left text-sm hover:bg-indigo-50"
-          ><!-- added -->
-            {{ typeof action.tooltip === 'function' ? action.tooltip(row) : action.tooltip }}
-          </button>
-        </div>
+        <span class="text-gray-800 text-right break-all">
+          <StatusBadge
+            v-if="props.badgeFields?.includes(key)"
+            :value="row[key]"
+            :field="key"
+            :field-mappings="props.fieldMappings"
+            :field-colors="props.fieldColors"
+          />
+          <span v-else>
+            {{ formatValue(key, row[key]) }}
+          </span>
+        </span>
       </div>
 
-      <!-- Inline actions -->
-      <button
-        v-else
-        v-for="(action, i) in props.actions"
-        :key="'mobile-action-inline-' + i"
-        @click="action.handler(row)"
-        :disabled="action.disabled && action.disabled(row)"
-        class="px-3 py-2 text-sm rounded-lg border border-gray-200"
+      <!-- Actions -->
+      <div
+        v-if="hasActions"
+        class="pt-3 border-t border-gray-100 flex justify-end gap-2"
       >
-      <!-- added -->
-        {{ typeof action.tooltip === 'function' ? action.tooltip(row) : action.tooltip }}
-      </button>
+        <!-- Grouped actions -->
+        <div v-if="props.groupActions" class="relative">
+          <button
+            @click="toggleDropdown(rowIndex)"
+            class="px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50"
+          >
+            Actions
+          </button>
+
+          <div
+            v-if="openDropdownIndex === rowIndex"
+            class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-20"
+          >
+            <button
+              v-for="(action, i) in props.actions"
+              :key="'mobile-action-' + i"
+              @click="(action.handler(row), closeDropdown())"
+              :disabled="action.disabled && action.disabled(row)"
+              class="w-full px-4 py-3 text-left text-sm hover:bg-indigo-50"
+            >
+              <!-- added -->
+              {{
+                typeof action.tooltip === "function"
+                  ? action.tooltip(row)
+                  : action.tooltip
+              }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Inline actions -->
+        <button
+          v-else
+          v-for="(action, i) in props.actions"
+          :key="'mobile-action-inline-' + i"
+          @click="action.handler(row)"
+          :disabled="action.disabled && action.disabled(row)"
+          class="px-3 py-2 text-sm rounded-lg border border-gray-200"
+        >
+          <!-- added -->
+          {{
+            typeof action.tooltip === "function"
+              ? action.tooltip(row)
+              : action.tooltip
+          }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div
+      v-if="tableData && !tableData.length"
+      class="text-center py-12 text-gray-400"
+    >
+      No data available
     </div>
   </div>
-
-  <!-- Empty state -->
-  <div
-    v-if="tableData && !tableData.length"
-    class="text-center py-12 text-gray-400"
-  >
-    No data available
-  </div>
-</div>
-
 
   <!-- Pagination -->
   <div class="mt-6">
@@ -479,6 +505,7 @@
 <script setup lang="ts">
 import { format, isValid, parseISO } from "date-fns";
 import { startLoading, stopLoading } from "~/stores/globalvar";
+import * as XLSX from "xlsx";
 
 type TableAction = {
   label: string | Component;
@@ -508,6 +535,7 @@ const props = defineProps<{
   draggable?: boolean;
   pagination?: boolean;
   perPage?: number;
+  showExport?: boolean;
   serverPagination?: boolean;
   totalItems?: number | undefined;
   fetchData?: (params: {
@@ -534,7 +562,7 @@ const emit = defineEmits<{
     e: "on-filtersearch",
     page: number,
     limit: number,
-    searchquery?: string
+    searchquery?: string,
   ): void;
 }>();
 
@@ -567,6 +595,34 @@ const mergedProps = {
   ...props,
 };
 
+function exportToExcel() {
+  const data = paginatedData.value; // Or filteredData.value for all results
+  if (!data || data.length === 0) return;
+
+  const headers = resolvedHeaders.value;
+
+  // Prepare data for Excel (include headers as first row)
+  const excelData = data.map((row) => {
+    const excelRow: any = {};
+    headers.forEach((key) => {
+      excelRow[formatHeader(key)] = formatValue(key, row[key]);
+    });
+    return excelRow;
+  });
+
+  // Create worksheet
+  const worksheet = XLSX.utils.json_to_sheet(excelData, {
+    header: headers.map(formatHeader),
+  });
+
+  // Create workbook
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Closed Requests");
+
+  // Download the file
+  XLSX.writeFile(workbook, "closed_requests.xlsx");
+}
+
 // Computed properties
 const computedHeaderKeys = computed(() => {
   if (props.header && props.header.length) {
@@ -595,7 +651,7 @@ const resolvedHeaders = computed(() => {
   const sampleRow = displayData.value?.[0];
   if (sampleRow) {
     return Object.keys(sampleRow).filter(
-      (key) => !props.hiddenFields?.includes(key)
+      (key) => !props.hiddenFields?.includes(key),
     );
   }
 
@@ -609,14 +665,14 @@ const filterableColumns = computed(() => {
       (key) =>
         props.filterableColumns?.includes(key) &&
         !props.badgeFields?.includes(key) &&
-        !props.dateFields?.includes(key)
+        !props.dateFields?.includes(key),
     );
   }
   return [];
 });
 
 const showFilterControls = computed(
-  () => props.filter && resolvedHeaders.value.length > 0
+  () => props.filter && resolvedHeaders.value.length > 0,
 );
 
 const paginatedData = computed(() => {
@@ -656,7 +712,7 @@ const filteredData = computed(() => {
         if (!value) return true;
         const displayValue = formatValue(key, row[key]);
         return String(displayValue) === value;
-      }
+      },
     );
 
     return matchesSearch && matchesColumnFilters && matchesDynamicFilters;
@@ -686,7 +742,7 @@ watch(
       if (!(key in dynamicFilters.value)) dynamicFilters.value[key] = "";
     });
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 watch([currentPage, globalSearch], () => {
@@ -707,7 +763,7 @@ function formatHeader(headerKey: string): string {
     .replace(/([a-z]{2,})([A-Z])/g, "$1 $2")
     // Capitalize first letter of each word
     .replace(/\b\w/g, (char) => char.toUpperCase());
-  
+
   return result;
 }
 
@@ -794,11 +850,9 @@ function onDrop() {
   }
 
   if (draggingIndex.value !== targetIndex.value) {
-
     console.log("drag row: ", props.tableData[draggingIndex.value]);
 
     console.log("target row: ", props.tableData[targetIndex.value]);
-    
 
     [props.tableData[draggingIndex.value], props.tableData[targetIndex.value]] =
       [
@@ -806,19 +860,17 @@ function onDrop() {
         props.tableData[draggingIndex.value],
       ];
 
-
     console.log("done drag row: ", props.tableData[draggingIndex.value]);
 
     console.log("done target row: ", props.tableData[targetIndex.value]);
-      
+
     emit(
       "on-drop",
       props.tableData[draggingIndex.value],
-      props.tableData[targetIndex.value]
+      props.tableData[targetIndex.value],
     );
 
-    
-      console.log("Dropping");
+    console.log("Dropping");
   }
 
   draggingIndex.value = null;

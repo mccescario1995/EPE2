@@ -44,7 +44,7 @@ Based on the epe_transactionheader table, the create form should include:
 ## API Endpoints
 
 ### Create Exemption (Existing)
-- **Endpoint**: `POST /api/exception/create`
+- **Endpoint**: `POST /api/exemption/create`
 - **Request Body** (matches epe_transactionheader):
 ```json
 {
@@ -78,7 +78,7 @@ Based on the epe_transactionheader table, the create form should include:
 │   ├── Details Textarea (required) *
 │   └── Action Buttons
 │       ├── Cancel → /exemptions
-│       └── Submit → POST /api/exception/create
+│       └── Submit → POST /api/exemption/create
 └── Toast: Success/Error feedback
 ```
 
@@ -121,7 +121,7 @@ Based on the epe_transactionheader table, the create form should include:
 - Loading state for submission
 
 ### Step 3: Implement Form Submission
-- Call to `/api/exception/create`
+- Call to `/api/exemption/create`
 - Handle success/error responses
 - Redirect to list on success
 

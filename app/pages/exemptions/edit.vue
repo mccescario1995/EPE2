@@ -132,7 +132,7 @@ const fetchExemptionDetails = async () => {
   isLoading.value = true;
   try {
     const response = await apiFetch(
-      `/api/exception/edit/${exemptionId.value}`,
+      `/api/exemption/edit/${exemptionId.value}`,
       {
         method: "POST",
         parseJson: true,
@@ -169,8 +169,15 @@ const fetchExemptionDetails = async () => {
         ipAddress: item.ipAddress,
       };
 
+      // In fetchExemptionDetails, after setting exemptionDetails.value
+      if (exemptionDetails.value?.status === "D" && item.policyId) {
+        await fetchApprovers(item.policyId);
+      } else {
+        approversData.value = response.approvers || [];
+      }
+
       // Set approvers data
-      approversData.value = response.approvers || [];
+      // approversData.value = response.approvers || [];
 
       // Fetch attachments
       await fetchAttachments();
@@ -213,7 +220,7 @@ const fetchAttachments = async () => {
 
   try {
     const response = await apiFetch(
-      `/api/exception/attachments/${exemptionId.value}`,
+      `/api/exemption/attachments/${exemptionId.value}`,
       {
         method: "GET",
         parseJson: true,
@@ -314,7 +321,7 @@ const handleSubmit = async () => {
     };
 
     const response = await apiFetch(
-      `/api/exception/update/${exemptionId.value}`,
+      `/api/exemption/update/${exemptionId.value}`,
       {
         method: "POST",
         body: JSON.stringify(payload),
@@ -361,7 +368,7 @@ const handleSubmitDraft = async () => {
   isSubmitting.value = true;
   try {
     const response = await apiFetch(
-      `/api/exception/submit-draft/${exemptionId.value}`,
+      `/api/exemption/submit-draft/${exemptionId.value}`,
       {
         method: "POST",
       },
@@ -412,7 +419,7 @@ const handleUpdateDraft = async () => {
     };
 
     const response = await apiFetch(
-      `/api/exception/update-draft/${exemptionId.value}`,
+      `/api/exemption/update-draft/${exemptionId.value}`,
       {
         method: "POST",
         body: JSON.stringify(payload),
@@ -514,7 +521,7 @@ const resendToApprover = async (transApproverId: number) => {
   isResending.value = transApproverId;
   try {
     const response = await apiFetch(
-      `/api/exception/resend/${exemptionId.value}`,
+      `/api/exemption/resend/${exemptionId.value}`,
       {
         method: "POST",
         body: JSON.stringify({ transApproverId }),
@@ -655,7 +662,7 @@ const deleteAttachment = async (attachId: number) => {
 
   try {
     const response = await apiFetch(
-      `/api/exception/delete-attachment/${attachId}`,
+      `/api/exemption/delete-attachment/${attachId}`,
       {
         method: "POST",
       },
@@ -704,7 +711,7 @@ const addNewAttachments = async () => {
 
   try {
     const response = await apiFetch(
-      `/api/exception/add-attachment/${exemptionId.value}`,
+      `/api/exemption/add-attachment/${exemptionId.value}`,
       {
         method: "POST",
         body: formData,
@@ -737,6 +744,54 @@ const addNewAttachments = async () => {
       message: "Failed to add attachments",
       duration: 3000,
     });
+  }
+};
+
+// Add to the reactive variables section
+const isLoadingApprovers = ref(false);
+
+// Add this function (adapted from create.vue)
+const fetchApprovers = async (policyId: number) => {
+  if (!policyId) {
+    approversData.value = [];
+    return;
+  }
+
+  isLoadingApprovers.value = true;
+  try {
+    const response = await apiFetch(`/api/policy/approvers/${policyId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ UserId: userId.userId }),
+      credentials: "include",
+      parseJson: true,
+    });
+
+    const items = response.success ? response.items : response;
+    if (!items || !Array.isArray(items)) {
+      console.error("Invalid approvers response:", items);
+      approversData.value = [];
+      return;
+    }
+
+    approversData.value = items
+      .filter((a: any) => a.approvername && a.approveremail && a.approvertype)
+      .map((a: any) => ({
+        transApproverId: a.id, // Map to match existing structure
+        approverName: a.approvername,
+        approverEmail: a.approveremail,
+        approverRole: a.approverRole,
+        respond: 3, // Set to draft status
+        sort: a.sort,
+        lineSequence: a.linesequence,
+      }));
+  } catch (error) {
+    console.error("Error fetching approvers:", error);
+    approversData.value = [];
+  } finally {
+    isLoadingApprovers.value = false;
   }
 };
 
@@ -1163,6 +1218,7 @@ onMounted(() => {
                       </div>
                       <div class="flex flex-col items-end gap-1">
                         <span
+                          v-if="approver.respond != 3"
                           class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
                           :class="getApproverStatusColor(approver.respond)"
                         >
@@ -1253,6 +1309,7 @@ onMounted(() => {
                         </div>
                         <div class="flex flex-col items-end gap-1">
                           <span
+                            v-if="approver.respond != 3"
                             class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
                             :class="getApproverStatusColor(proxy.respond)"
                           >

@@ -345,19 +345,23 @@ const handleSaveDraft = async () => {
     if (draftId.value) {
       // Update existing draft
       response = await apiFetch(
-        `/api/exception/update-draft/${draftId.value}`,
+        `/api/exemption/update-draft/${draftId.value}`,
         {
-          method: "PUT",
+          method: "POST",
           body: formDataToSend,
+          parseJson: true,
         },
       );
     } else {
       // Save new draft
-      response = await apiFetch("/api/exception/save-draft", {
+      response = await apiFetch("/api/exemption/save-draft", {
         method: "POST",
         body: formDataToSend,
+        parseJson: true,
       });
     }
+
+    console.log("Draft save response:", response);
 
     if (response) {
       draftId.value = response.item.transactionId;
@@ -402,7 +406,7 @@ const handleSubmit = async () => {
     if (draftId.value) {
       // Submit existing draft
       const response = await apiFetch(
-        `/api/exception/submit-draft/${draftId.value}`,
+        `/api/exemption/submit-draft/${draftId.value}`,
         {
           method: "POST",
         },
@@ -463,7 +467,7 @@ const handleSubmit = async () => {
         );
       });
 
-      const response = await apiFetch("/api/exception/create", {
+      const response = await apiFetch("/api/exemption/create", {
         method: "POST",
         body: formDataToSend,
         // No Content-Type header - let browser set it for FormData
@@ -529,7 +533,7 @@ const handleFileChange = (index: number, event: Event) => {
 // Load draft if draftId is provided
 const loadDraft = async (id: number) => {
   try {
-    const response = await apiFetch(`/api/exception/view/${id}`, {
+    const response = await apiFetch(`/api/exemption/view/${id}`, {
       method: "POST",
       body: JSON.stringify({ UserId: userId.userId }),
       headers: {

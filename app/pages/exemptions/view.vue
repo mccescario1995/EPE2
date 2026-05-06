@@ -38,7 +38,7 @@ const fetchExemptionDetails = async () => {
 
   loading.value = true;
   try {
-    const response = await apiFetch(`/api/exception/view/${exemptionId.value}`, {
+    const response = await apiFetch(`/api/exemption/view/${exemptionId.value}`, {
       method: "POST",
       parseJson: true,
     });
@@ -79,7 +79,7 @@ const fetchAttachments = async () => {
   if (!exemptionId.value) return;
 
   try {
-    const response = await apiFetch(`/api/exception/attachments/${exemptionId.value}`, {
+    const response = await apiFetch(`/api/exemption/attachments/${exemptionId.value}`, {
       method: "GET",
       parseJson: true,
     });
@@ -267,7 +267,7 @@ const isResending = ref<number | null>(null);
 const resendToApprover = async (transApproverId: number) => {
   isResending.value = transApproverId;
   try {
-    const response = await apiFetch(`/api/exception/resend/${exemptionId.value}`, {
+    const response = await apiFetch(`/api/exemption/resend/${exemptionId.value}`, {
       method: "POST",
       body: JSON.stringify({ transApproverId }),
       headers: {

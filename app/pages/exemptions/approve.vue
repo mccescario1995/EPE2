@@ -50,7 +50,7 @@ const fetchExemptionDetails = async () => {
   try {
     const transactionnumber = exemptionId.value;
     const response = await apiFetch(
-      `/api/exception/view/${transactionnumber}`,
+      `/api//exemption/view/${transactionnumber}`,
       {
         method: "POST",
         parseJson: true,
@@ -435,7 +435,7 @@ const handleApprove = async () => {
       respond: selectedRespond.value,
     };
 
-    const response = await apiFetch("/api/exception/respond", {
+    const response = await apiFetch("/api/exemption/respond", {
       method: "POST",
       body: JSON.stringify(payload),
       headers: {

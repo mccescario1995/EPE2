@@ -43,7 +43,7 @@ const deleteRequest = async () => {
     };
 
     const response = await apiFetch(
-      `/api/exception/delete/${deletingItem.value.transactionId}`,
+      `/api/exemption/delete/${deletingItem.value.transactionId}`,
       {
         method: "POST",
         body: JSON.stringify(payload),
@@ -80,7 +80,7 @@ const deleteRequest = async () => {
 const fetchExemptionRequests = async () => {
   loading.value = true;
   try {
-    const responseExemptions = await apiFetch("/api/exception", {
+    const responseExemptions = await apiFetch("/api/exemption", {
       method: "POST",
       body: JSON.stringify({ UserId: parseInt(userId.emplId) }),
       headers: {
