@@ -450,7 +450,7 @@ watch(
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
           </svg>
-          Drag <span class="font-bold px-0.5">⠿</span> handles to reorder steps and proxies
+          Drag <span class="font-bold px-0.5">⠿</span> handles to reorder approvers and their proxies
         </div>
 
         <!-- ── Top-level draggable: reorder groups ── -->

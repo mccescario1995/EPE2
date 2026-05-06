@@ -585,7 +585,7 @@ watch(
       <div v-else-if="!loading">
         <!-- Drag hint -->
         <div class="flex items-center gap-2 text-xs text-gray-400 mb-3">
-          <svg
+          <!-- <svg
             class="w-3.5 h-3.5"
             fill="none"
             viewBox="0 0 24 24"
@@ -597,9 +597,8 @@ watch(
               stroke-width="2"
               d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"
             />
-          </svg>
-          Drag <span class="font-bold px-0.5">⠿</span> handles to reorder steps
-          and proxies
+          </svg> -->
+          Drag <span class="font-bold px-0.5">⠿</span> handles to reorder approvers and their proxies
         </div>
 
         <!-- Testing groups -->
@@ -629,6 +628,25 @@ watch(
                 ⠿
               </div>
               {{ element.name }}
+              <button
+                class="ml-auto text-red-500 hover:text-red-700 transition-colors"
+                title="Delete approver"
+                @click="confirmDelete(element.approver)"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </button>
             </div>
 
             <!-- CHILDREN DRAG -->
@@ -650,6 +668,25 @@ watch(
                   ⠿
                 </div>
                 {{ child.name }}
+                <button
+                  class="ml-auto text-red-400 hover:text-red-600 transition-colors"
+                  title="Delete approver"
+                  @click="confirmDelete(child.approver)"
+                >
+                  <svg
+                    class="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
               </div>
             </VueDraggable>
           </div>
@@ -851,7 +888,7 @@ watch(
         <!-- Add main approver button -->
         <button
           v-if="!showAddForm"
-          class="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
+          class="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-blue-200 rounded-xl text-sm text-blue-400 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-100 transition-all"
           @click="openAddMain"
         >
           <svg
