@@ -269,5 +269,45 @@ namespace EPEAPI.Controllers
             return Ok(new { success = true, message = "Approver deleted" });
         }
 
+        [HttpPost("policy/{policyId}/approvers/reorder")]
+        public async Task<IActionResult> ReorderApprovers(int policyId, [FromBody] List<ReorderApproverRequest> requests)
+        {
+            if (requests == null || !requests.Any())
+            {
+                return BadRequest(new { success = false, message = "No reorder data provided" });
+            }
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var request in requests)
+                {
+                    var approver = await _context.EpePolicyapprovers
+                        .FirstOrDefaultAsync(a => a.Id == request.Id && a.Policyid == policyId && a.Isdelete == 0);
+
+                    if (approver == null)
+                    {
+                        return NotFound(new { success = false, message = $"Approver {request.Id} not found" });
+                    }
+
+                    approver.Sort = request.Sort;
+                    approver.Linesequence = request.Linesequence;
+                    approver.Modifieddate = DateTime.UtcNow.AddHours(8);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { success = true, message = "Approvers reordered successfully" });
+            }
+            catch (Exception e)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { success = false, message = "Error: " + e.Message });
+            }
+        }
+
     }
+
+                                                                                                                                                                                                                                                                                                                    
 }

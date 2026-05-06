@@ -12,4 +12,10 @@ public class ReorderApproverItem           // added this new DTO
     public int Id { get; set; }
     public int Sort { get; set; }
     public int Linesequence { get; set; }
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+public class ReorderApproverRequest
+{
+    public int Id { get; set; }
+    public int? Sort { get; set; }
+    public int? Linesequence { get; set; }
 }
