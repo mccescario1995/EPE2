@@ -242,14 +242,37 @@ watch(
   () => newAttachments.value,
   () => {
     errors.value.attachments = ""; // Clear attachments error when changed
+    errors.value.referenceType = ""; // Clear referenceType error when changed
   },
   { deep: true }, // Deep watch for array/object changes
 );
 
+// watch(
+//   () => newAttachments.value.map(a => a.referenceType),
+//   () => {
+//     errors.value.referenceType = "";
+//   },
+//   { deep: true }
+// );
+
+// Clear attachment error only when a file is selected
+watch(
+  () => newAttachments.value.map(a => a.file),
+  (newFiles) => {
+    if (newFiles.some(f => f !== null)) {
+      errors.value.attachments = "";
+    }
+  },
+  { deep: true }
+);
+
+// Clear referenceType error when any referenceType is selected
 watch(
   () => newAttachments.value.map(a => a.referenceType),
-  () => {
-    errors.value.referenceType = "";
+  (newTypes) => {
+    if (newTypes.some(t => t !== "")) {
+      errors.value.referenceType = "";
+    }
   },
   { deep: true }
 );
@@ -284,23 +307,30 @@ const validateForm = (forDraft = false) => {
 
   // Per-attachment validation
   for (const attachment of newAttachments.value) {
+    console.log("Validating attachment:", {
+      attachment: attachment,
+      attachmentFile: attachment.file,
+      fileName: attachment.file?.name,
+      fileSize: attachment.file?.size,
+      referenceType: attachment.referenceType,
+    });
     if (!attachment.file) {
       errors.value.attachments = "Please select a file for all attachments.";
       isValid = false;
-      break;
+      // break;
     }
 
-    if (attachment.file.size > 10 * 1024 * 1024) {
-      errors.value.attachments = "Each file must be less than 10MB.";
-      isValid = false;
-      break;
-    }
+    // if (attachment.file.size > 10 * 1024 * 1024) {
+    //   errors.value.attachments = "Each file must be less than 10MB.";
+    //   isValid = false;
+    //   // break;
+    // }
 
     if (!attachment.referenceType) {
       errors.value.referenceType =
         "Please select a reference type for all attachments.";
       isValid = false;
-      break;
+      // break;
     }
   }
 
@@ -577,6 +607,25 @@ const addAttachment = () => {
 // Remove attachment
 const removeAttachment = (index: number) => {
   newAttachments.value.splice(index, 1);
+
+  // Re-check referenceType error after deletion
+  const hasEmptyReferenceType = newAttachments.value.some(
+    a => a.file && !a.referenceType
+  );
+  
+  if (hasEmptyReferenceType) {
+    errors.value.referenceType = "Please select a type for all attachments.";
+  } else {
+    errors.value.referenceType = "";
+  }
+
+  // Re-check attachment error after deletion
+  const hasMissingFile = newAttachments.value.some(a => !a.file);
+  if (hasMissingFile) {
+    errors.value.attachments = "Please select a file for all attachments.";
+  } else {
+    errors.value.attachments = "";
+  }
 };
 
 // Handle file selection
