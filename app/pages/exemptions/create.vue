@@ -227,69 +227,76 @@ watch(
 watch(
   () => formData.value.policyid,
   () => {
-    errors.value.policyid = "";  // Clear policy error when changed
+    errors.value.policyid = ""; // Clear policy error when changed
   },
 );
 
 watch(
   () => formData.value.details,
   () => {
-    errors.value.details = "";  // Clear details error when changed
+    errors.value.details = ""; // Clear details error when changed
   },
 );
 
 watch(
   () => newAttachments.value,
   () => {
-    errors.value.attachments = "";  // Clear attachments error when changed
+    errors.value.attachments = ""; // Clear attachments error when changed
   },
-  { deep: true },  // Deep watch for array/object changes
+  { deep: true }, // Deep watch for array/object changes
 );
 
 watch(
-  () => formData.value.referenceType,
+  () => newAttachments.value.map(a => a.referenceType),
   () => {
-    errors.value.referenceType = "";  // Clear reference type error when changed
-  }, 
+    errors.value.referenceType = "";
+  },
+  { deep: true }
 );
 
 // Validate form
-const validateForm = (isDraft = false) => {
+const validateForm = (forDraft = false) => {
   let isValid = true;
-  errors.value = { policyid: "", details: "", attachments: "", referenceType: "" };
+  errors.value = {
+    policyid: "",
+    details: "",
+    attachments: "",
+    referenceType: "",
+  };
 
-  if (!isDraft && !formData.value.policyid) {
+  // Policy is required only for full submission (not draft)
+  if (!forDraft && !formData.value.policyid) {
     errors.value.policyid = "Please select a policy";
     isValid = false;
   }
 
+  // Details required for both draft and submission
   if (!formData.value.details || formData.value.details.trim().length < 10) {
-    errors.value.details =
-      "Please provide details (minimum 10 characters). Please explain the reason for your exemption request.";
+    errors.value.details = "Please provide details (minimum 10 characters).";
     isValid = false;
   }
 
+  // Attachment count limit
   if (newAttachments.value.length > 5) {
     errors.value.attachments = "Maximum 5 attachments allowed.";
     isValid = false;
   }
 
-
+  // Per-attachment validation
   for (const attachment of newAttachments.value) {
     if (!attachment.file) {
       errors.value.attachments = "Please select a file for all attachments.";
       isValid = false;
       break;
     }
-    
+
     if (attachment.file.size > 10 * 1024 * 1024) {
       errors.value.attachments = "Each file must be less than 10MB.";
       isValid = false;
       break;
     }
 
-    
-  if (!attachment.referenceType) {
+    if (!attachment.referenceType) {
       errors.value.referenceType =
         "Please select a reference type for all attachments.";
       isValid = false;
@@ -370,9 +377,7 @@ const parseWorkstation = (): string => {
 
 // Save or update draft
 const handleSaveDraft = async () => {
-  if (!validateForm(true)) {
-    return;
-  }
+  if (!validateForm(true)) return;
 
   isSavingDraft.value = true;
   try {
@@ -454,9 +459,7 @@ const handleSaveDraft = async () => {
 
 // Submit form
 const handleSubmit = async () => {
-  if (!validateForm()) {
-    return;
-  }
+  if (!validateForm()) return;
 
   isSubmitting.value = true;
   try {
@@ -751,7 +754,6 @@ onMounted(async () => {
             <p v-if="errors.referenceType" class="mt-1 text-xs text-red-500">
               {{ errors.referenceType }}
             </p>
-            
           </div>
 
           <!-- Approvers List -->
