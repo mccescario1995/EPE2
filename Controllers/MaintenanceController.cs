@@ -1,4 +1,5 @@
-﻿using EPEAPI.Dto;
+﻿using Azure.Core;
+using EPEAPI.Dto;
 using EPEAPI.Models;
 using LinqKit;
 using Microsoft.AspNetCore.Mvc;
@@ -181,23 +182,44 @@ namespace EPEAPI.Controllers
         }
 
         [HttpPost("policy/{policyId}/approvers")]
-        public async Task<IActionResult> GetPolicyApprover(int policyId)
+        public async Task<IActionResult> GetPolicyApprover(int policyId, ApproverRequest request)
         {
             try
             {
+                var userId = request.UserId;
+
+                var empId = await _context.CoreVUsers
+                        .Where(u => u.UserId == userId)
+                        .FirstOrDefaultAsync();
+
+                if (empId == null)
+                {
+                    return BadRequest(new { success = false, message = "User not found", userId = request });
+                }
+
                 var items = await _context.EpePolicyapprovers
                     .Where(a => a.Policyid == policyId && a.Isdelete == 0)
                     .OrderBy(u => u.Linesequence)
                     .ThenBy(u => u.Sort)
                     .ToListAsync();
 
+                var imHead = await _context.CoreVEmployeeDetails
+                        .Where(e => e.EmplId == empId.EmplId)
+                        .Select(e => new
+                        {
+                            e.ImmediateId,
+                            e.ImmediateName,
+                            e.ImmediateEmail
+                        })
+                        .FirstOrDefaultAsync();
+
                 var itemsWithRole = items.Select(a => new
                 {
                     a.Id,
                     a.Policyid,
                     a.Approverid,
-                    a.Approvername,
-                    a.Approveremail,
+                    Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
+                    Approveremail = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateEmail : a.Approveremail,
                     a.Approvertype,
                     a.Sort,
                     a.Linesequence,

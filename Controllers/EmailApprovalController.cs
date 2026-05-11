@@ -23,8 +23,8 @@ public class EmailApprovalController : ControllerBase
     [HttpGet("act")]
     public async Task<IActionResult> ActOnToken([FromQuery] string token)
     {
-        var baseUrl = "https://apps.fastlogistics.com.ph/epe2dev"; // TODO: Move to config
-        //var baseUrl = "http://localhost:3000/epe2dev"; // For development, change to production URL when deploying
+        //var baseUrl = "https://apps.fastlogistics.com.ph/epe2dev"; // TODO: Move to config
+        var baseUrl = "http://localhost:3000/epe2dev"; // For development, change to production URL when deploying
 
         try
         {
@@ -42,7 +42,7 @@ public class EmailApprovalController : ControllerBase
 
             // Get transaction
             var transaction = await _context.EpeTransactionheaders
-                .FirstOrDefaultAsync(t => t.Transactionid == record.TransactionId && t.Isdelete == 0);
+                .FirstOrDefaultAsync(t => t.Transactionid == record.TransactionId );
 
             if (transaction == null)
                 return Redirect($"{baseUrl}/#/email-response?status=not_found");
@@ -52,7 +52,7 @@ public class EmailApprovalController : ControllerBase
 
             // Get the specific approver record
             var approver = await _context.EpeTransactionapprovers
-                .FirstOrDefaultAsync(a => a.Transapproverid == record.TransApproverId && a.Isdelete == 0);
+                .FirstOrDefaultAsync(a => a.Transactionid == transaction.Transactionid);
 
             if (approver == null)
                 return Redirect($"{baseUrl}/#/email-response?status=invalid");

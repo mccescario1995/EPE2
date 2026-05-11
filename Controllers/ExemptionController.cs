@@ -638,7 +638,7 @@ namespace EPEAPI.Controllers
                                            && a.Isdelete == 0)
                                   .FirstOrDefaultAsync();
 
-                                await _emailService.SendApprovalRequestEmailAsync(
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            await _emailService.SendApprovalRequestEmailAsync(
                                       approverEmail,
                                       transactionHeader.Transactionid,
                                       transactionHeader.Transactionnumber,
@@ -1227,8 +1227,12 @@ namespace EPEAPI.Controllers
         {
             try
             {
+                var transactionNumber = await _context.EpeTransactionheaders
+                    .Where(a => a.Transactionid == transactionId)
+                    .FirstAsync();
+
                 var attachments = await _context.EpeAttachments
-                    .Where(a => a.TaskId == transactionId.ToString())
+                    .Where(a => a.TaskId == transactionNumber.Transactionnumber)
                     .OrderBy(a => a.Createdate)
                     .Select(a => new
                     {
