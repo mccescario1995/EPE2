@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EPEAPI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3f831e0612f6271499ba03996d76aef8449a16d1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+21521644bff3b54a202e0fd4e8cafc865f69e942")]
 [assembly: System.Reflection.AssemblyProductAttribute("EPEAPI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EPEAPI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

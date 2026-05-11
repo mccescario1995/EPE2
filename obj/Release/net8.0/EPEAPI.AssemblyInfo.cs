@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EPEAPI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e79495b7d8fd694c8e63e558ef9ee9e3e3e22382")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+21521644bff3b54a202e0fd4e8cafc865f69e942")]
 [assembly: System.Reflection.AssemblyProductAttribute("EPEAPI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EPEAPI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

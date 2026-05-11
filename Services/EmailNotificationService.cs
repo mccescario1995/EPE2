@@ -53,7 +53,7 @@ public class EmailNotificationService
             // Generate one-time tokens
             var (approveToken, disapproveToken) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
 
-            var apiBase = "https://apps.fastlogistics.com.ph/epe2apidev/"; // Change to production API base URL when deploying
+            var apiBase = "https://apps.fastlogistics.com.ph/epe2apidev"; // Change to production API base URL when deploying
             // var apiBase = "http://localhost:5000";
             var approveUrl = $"{apiBase}/api/emailapproval/act?token={approveToken}";
             var disapproveUrl = $"{apiBase}/api/emailapproval/act?token={disapproveToken}";
