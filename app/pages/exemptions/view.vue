@@ -32,7 +32,7 @@ const fetchExemptionDetails = async () => {
       message: "Invalid exemption ID",
       duration: 5000,
     });
-    router.push("/exemptions");
+    router.push("/exemptions/all");
     return;
   }
 
@@ -171,7 +171,7 @@ const getApproverStatusColor = (respond: number) => {
 
 // Handle back navigation
 const handleBack = () => {
-  router.push("/exemptions");
+  router.push("/exemptions/all");
 };
 
 // Handle edit navigation

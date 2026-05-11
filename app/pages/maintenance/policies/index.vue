@@ -282,17 +282,16 @@ const submitEditForm = async () => {
 const fetchApprovers = async (policyId:any) => {
   approversLoading.value = true;
   approversError.value = "";
-  const payload = {
-    userId: userId.userId,
-  };
-
-  
   try {
     console.log("Fetching approvers for policy:", policyId);
     const response = await apiFetch(
       `/api/Maintenance/policy/${policyId}/approvers`,
       {
-        method: "Post",
+        method: "POST",
+        body: JSON.stringify({ UserId: userId.userId }),
+        headers: {
+          "Content-Type": "application/json",
+        },
         parseJson: true,
       },
     );

@@ -125,7 +125,7 @@ const fetchExemptionDetails = async () => {
       message: "Invalid exemption ID",
       duration: 5000,
     });
-    router.push("/exemptions");
+    router.push("/exemptions/all");
     return;
   }
 
@@ -198,7 +198,7 @@ const fetchExemptionDetails = async () => {
         message: response.message || "Failed to load exemption details",
         duration: 5000,
       });
-      router.push("/exemptions");
+      router.push("/exemptions/all");
     }
   } catch (error) {
     console.error("Error fetching exemption details:", error);
@@ -208,7 +208,7 @@ const fetchExemptionDetails = async () => {
       message: "Failed to load exemption details",
       duration: 5000,
     });
-    router.push("/exemptions");
+    router.push("/exemptions/all");
   } finally {
     isLoading.value = false;
   }
@@ -227,7 +227,7 @@ const fetchAttachments = async () => {
       },
     );
 
-    if (response.success) {
+    if (response) {
       attachments.value = response.data || [];
     } else {
       console.error("Failed to fetch attachments:", response);
@@ -294,10 +294,10 @@ const hasUnsavedChanges = computed(() => {
 const handleCancel = () => {
   if (hasUnsavedChanges.value) {
     if (confirm("You have unsaved changes. Are you sure you want to leave?")) {
-      router.push("/exemptions");
+      router.push("/exemptions/all");
     }
   } else {
-    router.push("/exemptions");
+    router.push("/exemptions/all");
   }
 };
 
@@ -382,7 +382,7 @@ const handleSubmitDraft = async () => {
         duration: 5000,
       });
       // Redirect to exemptions list after success
-      router.push("/exemptions");
+      router.push("/exemptions/all");
     } else {
       showToast({
         type: "error",
@@ -481,6 +481,15 @@ const getStatusDisplay = (status: string) => {
   };
   return statusMap[status] || status;
 };
+
+watch(
+  () => policyValue.value,
+  (newVal) => {
+    if (newVal && exemptionDetails.value?.status === "D") {
+      fetchApprovers(newVal.id);
+    }
+  },
+);
 
 // Get final decision display
 const getFinalDecisionDisplay = (decision: string) => {
@@ -591,6 +600,7 @@ const getProxies = (transApproverId: number): any[] => {
 
 // Helper function to check if a group (main + proxies) is satisfied (someone in group approved)
 const isGroupSatisfied = (transApproverId: number): boolean => {
+  console.log(" Group approvers for transApproverId", groupedApprovers.value);
   const { mainApprovers, proxiesMap } = groupedApprovers.value;
   const mainApprover = mainApprovers.find(
     (a) => a.transApproverId === transApproverId,
@@ -759,17 +769,23 @@ const fetchApprovers = async (policyId: number) => {
 
   isLoadingApprovers.value = true;
   try {
-    const response = await apiFetch(`/api/policy/approvers/${policyId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await apiFetch(
+      `/api/Maintenance/policy/${policyId}/approvers`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ UserId: userId.userId }),
+        credentials: "include",
+        parseJson: true,
       },
-      body: JSON.stringify({ UserId: userId.userId }),
-      credentials: "include",
-      parseJson: true,
-    });
+    );
 
     const items = response.success ? response.items : response;
+
+    console.log("Fetched approvers in Edit page", items);
+
     if (!items || !Array.isArray(items)) {
       console.error("Invalid approvers response:", items);
       approversData.value = [];
@@ -777,13 +793,14 @@ const fetchApprovers = async (policyId: number) => {
     }
 
     approversData.value = items
-      .filter((a: any) => a.approvername && a.approveremail && a.approvertype)
+      .filter((a: any) => a.approvername && a.approvertype) // Remove approveremail from filter
       .map((a: any) => ({
-        transApproverId: a.id, // Map to match existing structure
+        transApproverId: a.id,
         approverName: a.approvername,
         approverEmail: a.approveremail,
-        approverRole: a.approverRole,
-        respond: 3, // Set to draft status
+        approverRole:
+          a.approvertype === "IM" ? "Immediate Manager" : a.approverRole, // Override for IM
+        respond: 3,
         sort: a.sort,
         lineSequence: a.linesequence,
       }));

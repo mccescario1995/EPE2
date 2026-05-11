@@ -187,7 +187,14 @@ async function fetchApprovers() {
   try {
     const response = await apiFetch(
       `/api/Maintenance/policy/${props.policy.policyId}/approvers`,
-      { method: "Post", parseJson: true },
+      {
+        method: "POST",
+        body: JSON.stringify({ UserId: userId.userId }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        parseJson: true,
+      },
     );
     rawApprovers.value = response.items ?? [];
     console.log("Fetched approvers ManageApprovers:", rawApprovers.value);
@@ -577,7 +584,7 @@ watch(
               d="M12 4v16m8-8H4"
             />
           </svg>
-          Add Approver Step
+          Add Approver
         </button>
       </div>
 
@@ -598,7 +605,8 @@ watch(
               d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"
             />
           </svg> -->
-          Drag <span class="font-bold px-0.5">⠿</span> handles to reorder approvers and their proxies
+          Drag <span class="font-bold px-0.5">⠿</span> handles to reorder
+          approvers and their proxies
         </div>
 
         <!-- Testing groups -->
@@ -615,7 +623,7 @@ watch(
           class="flex flex-col gap-2"
         >
           <div
-            v-for="element in groups"
+            v-for="(element, index) in groups"
             :key="element.id"
             class="bg-white border rounded p-3"
           >
@@ -627,6 +635,10 @@ watch(
               >
                 ⠿
               </div>
+              <span
+                class="rounded-full bg-blue-200 h-7 w-7 flex justify-center"
+                >{{ index + 1 }}</span
+              >
               {{ element.name }}
               <button
                 class="ml-auto text-red-500 hover:text-red-700 transition-colors"
@@ -667,6 +679,10 @@ watch(
                 >
                   ⠿
                 </div>
+                <span
+                class="rounded-full bg-orange-200 h-5 w-5 flex justify-center"
+                >{{ index + 1 }}</span
+              >
                 {{ child.name }}
                 <button
                   class="ml-auto text-red-400 hover:text-red-600 transition-colors"
@@ -689,22 +705,46 @@ watch(
                 </button>
               </div>
             </VueDraggable>
+            <button
+              v-if="!showAddForm"
+              class="mt-2 ml-auto w-full flex items-center justify-center gap-2 py-2 px-4 border-2 border-dashed border-orange-200 rounded text-sm text-orange-400 hover:border-orange-300 hover:text-orange-500 hover:bg-orange-50 transition-all"
+              @click="openAddProxy(element.approver.sort)"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Add Proxy
+            </button>
           </div>
         </VueDraggable>
 
         <!-- ─── Inline Add Form (for new main approver) ──────────────── -->
         <div
-          v-if="showAddForm && addingAsProxy === null"
+          v-if="showAddForm"
           class="mt-3 border-2 border-blue-200 border-dashed rounded-xl p-4 bg-blue-50"
         >
           <p
             class="text-xs font-semibold text-blue-700 mb-3 uppercase tracking-wide"
           >
-            New Approver — Step {{ groups.length + 1 }}
+            {{
+              addingAsProxy !== null
+                ? `New Proxy for Approver ${addingAsProxy}`
+                : `New Approver — Approver ${groups.length + 1}`
+            }}
           </p>
 
-          <!-- Type selector -->
-          <div class="flex gap-2 mb-3">
+          <!-- Type selector (only show for main approvers) -->
+          <div v-if="addingAsProxy === null" class="flex gap-2 mb-3">
             <button
               class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-all"
               :class="
@@ -734,9 +774,9 @@ watch(
             </button>
           </div>
 
-          <!-- IM info -->
+          <!-- IM info (only for main IM) -->
           <div
-            v-if="newApprover.approvertype === 'IM'"
+            v-if="addingAsProxy === null && newApprover.approvertype === 'IM'"
             class="flex items-start gap-2 p-3 bg-purple-50 rounded-lg mb-3 text-xs text-purple-700"
           >
             <svg
@@ -756,8 +796,11 @@ watch(
             when a request is submitted.
           </div>
 
-          <!-- Main fields -->
-          <div v-if="newApprover.approvertype === 'M'" class="space-y-2 mb-3">
+          <!-- Main fields (always show, but adjust for proxy) -->
+          <div
+            v-if="addingAsProxy === null || newApprover.approvertype !== 'IM'"
+            class="space-y-2 mb-3"
+          >
             <div class="relative">
               <input
                 type="text"
@@ -904,7 +947,7 @@ watch(
               d="M12 4v16m8-8H4"
             />
           </svg>
-          Add Approver Step
+          Add Approver
         </button>
       </div>
     </div>

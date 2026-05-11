@@ -596,7 +596,7 @@ const mergedProps = {
 };
 
 function exportToExcel() {
-  const data = paginatedData.value; // Or filteredData.value for all results
+  const data = filteredData.value; // Or filteredData.value for all results
   if (!data || data.length === 0) return;
 
   const headers = resolvedHeaders.value;
@@ -614,6 +614,18 @@ function exportToExcel() {
   const worksheet = XLSX.utils.json_to_sheet(excelData, {
     header: headers.map(formatHeader),
   });
+
+  const colWidths = headers.map((header) => {
+    const headerText = formatHeader(header);
+    const headerLen = headerText.length;
+    const maxDataLen = Math.max(
+      ...data.map((row) => String(formatValue(header, row[header])).length),
+      0
+    );
+    return { wch: Math.max(headerLen, maxDataLen) + 2 }; // +2 for padding
+  });
+
+  worksheet["!cols"] = colWidths;
 
   // Create workbook
   const workbook = XLSX.utils.book_new();

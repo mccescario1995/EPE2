@@ -42,7 +42,7 @@ const fetchExemptionDetails = async () => {
       message: "Invalid exemption ID",
       duration: 5000,
     });
-    router.push("/exemptions");
+    router.push("/exemptions/all");
     return;
   }
 
@@ -50,7 +50,7 @@ const fetchExemptionDetails = async () => {
   try {
     const transactionnumber = exemptionId.value;
     const response = await apiFetch(
-      `/api//exemption/view/${transactionnumber}`,
+      `/api/exemption/view/${transactionnumber}`,
       {
         method: "POST",
         parseJson: true,
@@ -75,7 +75,7 @@ const fetchExemptionDetails = async () => {
           message: "You are not authorized to approve this request",
           duration: 5000,
         });
-        router.push("/exemptions");
+        router.push("/exemptions/all");
         return;
       }
 
@@ -455,7 +455,7 @@ const handleApprove = async () => {
       });
 
       // Redirect to exemptions list
-      router.push("/exemptions");
+      router.push("/exemptions/all");
     } else {
       showToast({
         type: "error",
@@ -510,7 +510,7 @@ const getProxies = (transApproverId: number): any[] => {
 
 // Handle back navigation
 const handleBack = () => {
-  router.push("/exemptions");
+  router.push("/exemptions/all");
 };
 
 // Fetch on mount

@@ -7,15 +7,16 @@ const userStore = useUserStore();
 const userId = userStore.profile;
 
 // Form data
+// Form data (remove attachments from here)
 const formData = ref({
   policyid: null as number | { id: number; label: string } | null,
   corporate: null as { id: string; label: string } | null,
   details: "",
-  attachments: [] as {
-    file: File | null;
-    referenceType: string | { id: string; label: string } | null;
-  }[],
+  referenceType: "",
 });
+
+// Add newAttachments (from edit.vue)
+const newAttachments = ref<{ file: File; referenceType: string }[]>([]);
 
 // Draft state
 const isDraft = ref(false);
@@ -25,14 +26,6 @@ const isDraftMode = ref(false);
 // Policy options - will be fetched from API
 const policyOptions = ref<{ id: number; label: string }[]>([]);
 const isLoadingPolicies = ref(false);
-
-// Reference type options for attachments
-const referenceTypeOptions = [
-  { id: "documentation", label: "Documentation" },
-  { id: "email", label: "Email" },
-  { id: "supporting", label: "Supporting Document" },
-  { id: "other", label: "Other" },
-];
 
 // Approvers for selected policy
 const approvers = ref<
@@ -95,6 +88,7 @@ const errors = ref({
   policyid: "",
   details: "",
   attachments: "",
+  referenceType: "",
 });
 
 // Loading state
@@ -147,17 +141,23 @@ const fetchApprovers = async (policyId: number) => {
 
   isLoadingApprovers.value = true;
   try {
-    const response = await apiFetch(`/api/policy/approvers/${policyId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await apiFetch(
+      `/api/Maintenance/policy/${policyId}/approvers`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ UserId: userId.userId }),
+        credentials: "include",
+        parseJson: true,
       },
-      body: JSON.stringify({ UserId: userId.userId }),
-      credentials: "include",
-      parseJson: true,
-    });
+    );
 
     const items = response.success ? response.items : response;
+
+    console.log("Fetched approvers in Create Page", items);
+
     if (!items || !Array.isArray(items)) {
       console.error("Invalid approvers response:", items);
       approvers.value = [];
@@ -200,10 +200,63 @@ watch(
   },
 );
 
+// Watchers to clear errors on input changes for real-time feedback
+watch(
+  () => formData.value.policyid,
+  () => {
+    errors.value.policyid = "";
+  },
+);
+
+watch(
+  () => formData.value.details,
+  () => {
+    errors.value.details = "";
+  },
+);
+
+watch(
+  () => newAttachments.value,
+  () => {
+    errors.value.attachments = "";
+  },
+  { deep: true },
+);
+
+// Add watchers to clear errors on input changes
+watch(
+  () => formData.value.policyid,
+  () => {
+    errors.value.policyid = "";  // Clear policy error when changed
+  },
+);
+
+watch(
+  () => formData.value.details,
+  () => {
+    errors.value.details = "";  // Clear details error when changed
+  },
+);
+
+watch(
+  () => newAttachments.value,
+  () => {
+    errors.value.attachments = "";  // Clear attachments error when changed
+  },
+  { deep: true },  // Deep watch for array/object changes
+);
+
+watch(
+  () => formData.value.referenceType,
+  () => {
+    errors.value.referenceType = "";  // Clear reference type error when changed
+  }, 
+);
+
 // Validate form
 const validateForm = (isDraft = false) => {
   let isValid = true;
-  errors.value = { policyid: "", details: "", attachments: "" };
+  errors.value = { policyid: "", details: "", attachments: "", referenceType: "" };
 
   if (!isDraft && !formData.value.policyid) {
     errors.value.policyid = "Please select a policy";
@@ -216,25 +269,29 @@ const validateForm = (isDraft = false) => {
     isValid = false;
   }
 
-  if (formData.value.attachments.length > 5) {
+  if (newAttachments.value.length > 5) {
     errors.value.attachments = "Maximum 5 attachments allowed.";
     isValid = false;
   }
 
-  for (const attachment of formData.value.attachments) {
+
+  for (const attachment of newAttachments.value) {
     if (!attachment.file) {
       errors.value.attachments = "Please select a file for all attachments.";
       isValid = false;
       break;
     }
-    if (!attachment.referenceType) {
-      errors.value.attachments =
-        "Please select a reference type for all attachments.";
+    
+    if (attachment.file.size > 10 * 1024 * 1024) {
+      errors.value.attachments = "Each file must be less than 10MB.";
       isValid = false;
       break;
     }
-    if (attachment.file.size > 10 * 1024 * 1024) {
-      errors.value.attachments = "Each file must be less than 10MB.";
+
+    
+  if (!attachment.referenceType) {
+      errors.value.referenceType =
+        "Please select a reference type for all attachments.";
       isValid = false;
       break;
     }
@@ -249,8 +306,8 @@ const isFormValid = computed(() => {
     !!formData.value.policyid &&
     !!formData.value.details &&
     formData.value.details.trim().length >= 10 &&
-    formData.value.attachments.length <= 5 &&
-    formData.value.attachments.every(
+    newAttachments.value.length <= 5 &&
+    newAttachments.value.every(
       (att) =>
         att.file && att.referenceType && att.file.size <= 10 * 1024 * 1024,
     )
@@ -262,8 +319,8 @@ const isDraftValid = computed(() => {
   return (
     !!formData.value.details &&
     formData.value.details.trim().length >= 10 &&
-    formData.value.attachments.length <= 5 &&
-    formData.value.attachments.every(
+    newAttachments.value.length <= 5 &&
+    newAttachments.value.every(
       (att) =>
         att.file && att.referenceType && att.file.size <= 10 * 1024 * 1024,
     )
@@ -321,23 +378,22 @@ const handleSaveDraft = async () => {
   try {
     const workstation = parseWorkstation();
     const formDataToSend = new FormData();
-    if (formData.value.policyid) {
-      formDataToSend.append("policyid", getPolicyId().toString());
+    const policyId = getPolicyId();
+    if (formData.value.policyid && policyId != null) {
+      formDataToSend.append("policyid", policyId.toString());
     }
     formDataToSend.append("details", formData.value.details);
     formDataToSend.append("requestorid", userId.emplId);
     formDataToSend.append("createdby", userId.userId.toString());
     formDataToSend.append("computerhost", workstation);
 
-    formData.value.attachments.forEach((attachment, index) => {
+    newAttachments.value.forEach((attachment, index) => {
       if (attachment.file) {
-        formDataToSend.append(`attachments[${index}].file`, attachment.file);
+        formDataToSend.append(`Attachments[${index}].file`, attachment.file);
       }
       formDataToSend.append(
-        `attachments[${index}].referenceType`,
-        typeof attachment.referenceType === "object" && attachment.referenceType
-          ? (attachment.referenceType as any).id
-          : attachment.referenceType,
+        `Attachments[${index}].ReferenceType`,
+        attachment.referenceType,
       );
     });
 
@@ -374,6 +430,7 @@ const handleSaveDraft = async () => {
           : "Draft saved successfully!",
         duration: 5000,
       });
+      router.push("/exemptions/view?id=" + draftId.value);
     } else {
       showToast({
         type: "error",
@@ -412,14 +469,14 @@ const handleSubmit = async () => {
         },
       );
 
-      if (response.success) {
+      if (response) {
         showToast({
           type: "success",
           title: "Success",
           message: "Draft submitted successfully!",
           duration: 5000,
         });
-        router.push("/exemptions");
+        router.push("/exemptions/all");
       } else {
         showToast({
           type: "error",
@@ -436,7 +493,7 @@ const handleSubmit = async () => {
         details: formData.value.details,
         requestorId: userId.emplId,
         createdBy: userId.userId,
-        attachments: formData.value.attachments.map((a) => ({
+        attachments: newAttachments.value.map((a) => ({
           fileName: a.file?.name,
           fileSize: a.file?.size,
           referenceType: a.referenceType,
@@ -454,16 +511,13 @@ const handleSubmit = async () => {
       formDataToSend.append("createdby", userId.userId.toString());
       formDataToSend.append("computerhost", workstation);
 
-      formData.value.attachments.forEach((attachment, index) => {
+      newAttachments.value.forEach((attachment, index) => {
         if (attachment.file) {
-          formDataToSend.append(`attachments[${index}].file`, attachment.file);
+          formDataToSend.append(`Attachments[${index}].file`, attachment.file);
         }
         formDataToSend.append(
-          `attachments[${index}].referenceType`,
-          typeof attachment.referenceType === "object" &&
-            attachment.referenceType
-            ? (attachment.referenceType as any).id
-            : attachment.referenceType,
+          `Attachments[${index}].ReferenceType`,
+          attachment.referenceType,
         );
       });
 
@@ -473,7 +527,7 @@ const handleSubmit = async () => {
         // No Content-Type header - let browser set it for FormData
       });
 
-      if (response.success) {
+      if (response) {
         showToast({
           type: "success",
           title: "Success",
@@ -481,7 +535,7 @@ const handleSubmit = async () => {
           duration: 5000,
         });
         // Redirect to exemptions list after success
-        router.push("/exemptions");
+        router.push("/exemptions/all");
       } else {
         showToast({
           type: "error",
@@ -507,26 +561,26 @@ const handleSubmit = async () => {
 
 // Handle cancel
 const handleCancel = () => {
-  router.push("/exemptions");
+  router.push("/exemptions/all");
 };
 
 // Add attachment
 const addAttachment = () => {
-  if (formData.value.attachments.length < 5) {
-    formData.value.attachments.push({ file: null, referenceType: "" });
+  if (newAttachments.value.length < 5) {
+    newAttachments.value.push({ file: null as any, referenceType: "" });
   }
 };
 
 // Remove attachment
 const removeAttachment = (index: number) => {
-  formData.value.attachments.splice(index, 1);
+  newAttachments.value.splice(index, 1);
 };
 
 // Handle file selection
 const handleFileChange = (index: number, event: Event) => {
   const target = event.target as HTMLInputElement;
-  if (target.files && target.files[0]) {
-    formData.value.attachments[index].file = target.files[0];
+  if (target.files && target.files[0] && newAttachments.value[index]) {
+    newAttachments.value[index].file = target.files[0];
   }
 };
 
@@ -542,7 +596,7 @@ const loadDraft = async (id: number) => {
       parseJson: true,
     });
 
-    if (response.success && response.item) {
+    if (response && response.item) {
       const item = response.item;
       if (item.status === "D") {
         draftId.value = id;
@@ -639,7 +693,7 @@ onMounted(async () => {
               Attachments (Optional - Max 5 files, 10MB each)
             </label>
             <div
-              v-for="(attachment, index) in formData.attachments"
+              v-for="(attachment, index) in newAttachments"
               :key="index"
               class="mb-4 p-4 border border-gray-200 rounded-lg"
             >
@@ -659,11 +713,16 @@ onMounted(async () => {
                   </p>
                 </div>
                 <div class="w-48">
-                  <Dropdown
+                  <select
                     v-model="attachment.referenceType"
-                    :initialItems="referenceTypeOptions"
-                    placeholder="Select Reference Type"
-                  />
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select type</option>
+                    <option value="documentation">Documentation</option>
+                    <option value="email">Email</option>
+                    <option value="supporting">Supporting Document</option>
+                    <option value="other">Other</option>
+                  </select>
                 </div>
                 <Button
                   variant="outline-danger"
@@ -675,18 +734,24 @@ onMounted(async () => {
                 </Button>
               </div>
             </div>
-            <Button
-              v-if="formData.attachments.length < 5"
-              variant="outline-primary"
-              size="sm"
-              @onclick="addAttachment"
-              icon="add"
-            >
-              Add Attachment
-            </Button>
+            <div class="flex gap-3">
+              <Button
+                v-if="newAttachments.length < 5"
+                variant="outline-primary"
+                size="sm"
+                @onclick="addAttachment"
+                icon="plus"
+              >
+                Add Attachment
+              </Button>
+            </div>
             <p v-if="errors.attachments" class="mt-1 text-xs text-red-500">
               {{ errors.attachments }}
             </p>
+            <p v-if="errors.referenceType" class="mt-1 text-xs text-red-500">
+              {{ errors.referenceType }}
+            </p>
+            
           </div>
 
           <!-- Approvers List -->
