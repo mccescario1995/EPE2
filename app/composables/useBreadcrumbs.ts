@@ -21,6 +21,7 @@ export const useBreadcrumbs = () => {
   const route = useRoute();
 
   const breadcrumbs = computed<Crumb[]>(() => {
+    // const pathSegments = route.path.split("/").filter(Boolean).filter(segment => segment !== "exemptions");
     const pathSegments = route.path.split("/").filter(Boolean);
 
     const crumbs: Crumb[] = [];

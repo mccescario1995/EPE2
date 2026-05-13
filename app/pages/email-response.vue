@@ -84,7 +84,7 @@ const current = computed(
           View Request
         </button>
         <button
-          @click="router.push('/exemptions')"
+          @click="router.push('/exemptions/dashboard')"
           class="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
         >
           Back to Dashboard

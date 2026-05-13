@@ -80,6 +80,9 @@ const isDeleteModalOpen = ref(false);
 const deletingApprover = ref<Approver | null>(null);
 const deleteLoading = ref(false);
 
+const hasUnsavedOrder = ref(false);
+const isModalOpen = ref(false);
+
 // ─── Computed ─────────────────────────────────────────────────────────────────
 const hasIM = computed(() =>
   groups.value.some((g) => g.approver.approvertype === "IM"),
@@ -201,6 +204,7 @@ async function fetchApprovers() {
     groups.value = buildGroups(rawApprovers.value);
     console.log("RAW:", rawApprovers.value);
     console.log("GROUPS:", groups.value);
+    hasUnsavedOrder.value = false;
   } catch (err) {
     console.error("Failed to fetch approvers ManageApprovers:", err);
     showToast({
@@ -313,6 +317,17 @@ async function confirmAddApprover() {
         type: "warning",
         title: "Validation",
         message: "Please fill in approver name and email",
+        duration: 3000,
+      });
+      return;
+    }
+    // Check for duplicate approver
+    const isDuplicate = rawApprovers.value.some(a => a.approverid === approverid);
+    if (isDuplicate) {
+      showToast({
+        type: "warning",
+        title: "Duplicate Approver",
+        message: "This approver is already added to the policy",
         duration: 3000,
       });
       return;
@@ -443,8 +458,9 @@ async function saveOrder() {
       message: "Approver order saved successfully",
       duration: 3000,
     });
+    hasUnsavedOrder.value = false;
     emit("saved");
-    handleClose();
+    // handleClose();
   } catch (err) {
     console.error("Failed to save order:", err);
     showToast({
@@ -459,12 +475,42 @@ async function saveOrder() {
 }
 
 // ─── Close ────────────────────────────────────────────────────────────────────
-function handleClose() {
+function resetState() {
   cancelAdd();
   deletingApprover.value = null;
   groups.value = [];
   rawApprovers.value = [];
+}
+
+function tryClose() {
+  if (hasUnsavedOrder.value || showAddForm.value) {
+    showToast({
+      type: "warning",
+      title: "Unsaved Changes",
+      message: "Please save changes before closing",
+      duration: 3000,
+    });
+    return;
+  }
+  resetState();
   emit("close");
+}
+
+function handleModalUpdate(newVal: boolean) {
+  if (!newVal) {
+    if (hasUnsavedOrder.value || showAddForm.value) {
+      showToast({
+        type: "warning",
+        title: "Unsaved Changes",
+        message: "Please save changes or cancel adding before closing",
+        duration: 3000,
+      });
+      isModalOpen.value = true; // Keep modal open
+    } else {
+      resetState();
+      emit("close");
+    }
+  }
 }
 
 // ─── Watchers ─────────────────────────────────────────────────────────────────
@@ -473,6 +519,7 @@ watch(
   (newVal) => {
     if (newVal && props.policy) fetchApprovers();
   },
+  { immediate: true },
 );
 
 watch(
@@ -483,20 +530,37 @@ watch(
 );
 
 watch(
+  () => props.show,
+  (newVal) => {
+    isModalOpen.value = newVal;
+  },
+  { immediate: true },
+);
+
+watch(
   () => deletingApprover.value,
   (newVal) => {
     isDeleteModalOpen.value = newVal !== null;
   },
   { immediate: true },
 );
+
+watch(
+  groups,
+  () => {
+    hasUnsavedOrder.value = true;
+  },
+  { deep: true },
+);
 </script>
 
 <template>
   <Modal
-    v-model:isOpen="props.show"
+    v-model:isOpen="isModalOpen"
     size="lg"
     position="top-center"
     :show-close-button="false"
+    @update:isOpen="handleModalUpdate"
   >
     <template #header>
       <div
@@ -963,13 +1027,13 @@ watch(
           <button
             class="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             :disabled="saving"
-            @click="handleClose"
+            @click="tryClose"
           >
             Cancel
           </button>
           <button
             class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-            :disabled="saving || loading"
+            :disabled="saving || loading || showAddForm || !hasUnsavedOrder"
             @click="saveOrder"
           >
             <svg
