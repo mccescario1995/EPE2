@@ -160,12 +160,16 @@ async function handleResponse<T>(
   }
 
   /* --------------------------------------------------------------
-   * B. Auto JSON parsing
-   * -------------------------------------------------------------- */
+    * B. Auto JSON parsing
+    * -------------------------------------------------------------- */
   if (init.parseJson) {
     // Empty responses (204)
     if (response.status === 204) {
       return null as T;
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     return (await response.json()) as T;

@@ -68,8 +68,6 @@ const newApprover = ref({
 });
 
 const employeeOptions = ref<EmployeeOption[]>([]);
-const employeeSearchLoading = ref(false);
-const showEmployeeDropdown = ref(false);
 
 const isDeleteModalOpen = ref(false);
 const deletingApprover = ref<Approver | null>(null);
@@ -84,7 +82,8 @@ const hasIM = computed(() =>
 );
 
 function buildGroups(approvers: Approver[]): TreeNode[] {
-  const sorted = [...approvers].sort((a, b) => {
+  const activeApprovers = approvers.filter(a => a.isdelete === 0);
+  const sorted = [...activeApprovers].sort((a, b) => {
     const sortA = a.sort ?? 0;
     const sortB = b.sort ?? 0;
     if (sortA !== sortB) return sortA - sortB;
@@ -198,44 +197,48 @@ function onEmployeeSearch(query: string) {
   if (searchDebounce.value) clearTimeout(searchDebounce.value);
   if (!query || query.length < 2) {
     employeeOptions.value = [];
-    showEmployeeDropdown.value = false;
     return;
   }
   searchDebounce.value = setTimeout(() => searchEmployees(query), 300);
 }
 
 async function searchEmployees(query: string) {
-  employeeSearchLoading.value = true;
   try {
+    const q = (query ?? "").trim();
+
     const response: any = await apiFetch(
-      `/api/Maintenance/employees/search?q=${encodeURIComponent(query)}`,
-      { method: "GET", parseJson: true },
+      `/api/Maintenance/employees/search?q=${encodeURIComponent(q)}`,
+      {
+        method: "GET",
+        parseJson: true,
+      }
     );
-    const list = Array.isArray(response) ? response : response?.items || [];
+
+    const list = Array.isArray(response) ? response : [];
+
     employeeOptions.value = list.map((e: any) => ({
       id: e.id,
-      label: e.name,
+      label: e.label,
       email: e.email,
     }));
-    showEmployeeDropdown.value = employeeOptions.value.length > 0;
   } catch (err) {
     console.error(err);
     employeeOptions.value = [];
-    showEmployeeDropdown.value = false;
-  } finally {
-    employeeSearchLoading.value = false;
   }
 }
 
-function selectEmployee(emp: EmployeeOption) {
-  newApprover.value.selectedEmployee = emp;
-  newApprover.value.approverid = emp.id;
-  newApprover.value.approvername = emp.label;
-  newApprover.value.approveremail = emp.email;
-  newApprover.value.searchQuery = emp.label;
-  employeeOptions.value = [];
-  showEmployeeDropdown.value = false;
-}
+// Watch for selectedEmployee changes
+watch(() => newApprover.value.selectedEmployee, (newVal) => {
+  if (newVal) {
+    newApprover.value.approverid = newVal.id;
+    newApprover.value.approvername = newVal.label;
+    newApprover.value.approveremail = newVal.email;
+  } else {
+    newApprover.value.approverid = "";
+    newApprover.value.approvername = "";
+    newApprover.value.approveremail = "";
+  }
+});
 
 // ─── Add Approver ─────────────────────────────────────────────────────────────
 function openAddMain() {
@@ -266,7 +269,6 @@ function resetAddForm() {
     selectedEmployee: null,
   };
   employeeOptions.value = [];
-  showEmployeeDropdown.value = false;
 }
 
 async function confirmAddApprover() {
@@ -828,53 +830,19 @@ watch(
             v-if="addingAsProxy === null || newApprover.approvertype !== 'IM'"
             class="space-y-2 mb-3"
           >
-            <div class="relative">
-            <Dropdown
+            <!-- <BaseInput
               v-model="newApprover.searchQuery"
+              type="text"
+              placeholder="Search employee name..."
+              customClass="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 bg-white"
+              
+            /> -->
+            <Dropdown
+              v-model="newApprover.selectedEmployee"
               :initialItems="employeeOptions"
-              placeholder="Add Approver"
-              :disabled="employeeSearchLoading"
+              placeholder="Select an employee"
+              @input="(e) => onEmployeeSearch(e.target.value)"
             />
-              <BaseInput
-                v-model="newApprover.searchQuery"
-                type="text"
-                placeholder="Search employee name..."
-                customClass="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 bg-white"
-                @input="(e) => onEmployeeSearch(e.target.value)"
-                @focus="showEmployeeDropdown = employeeOptions.length > 0"
-                @blur="setTimeout(() => (showEmployeeDropdown = false), 200)"
-                searc
-              >
-                <div
-                  v-if="showEmployeeDropdown"
-                  class="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto"
-                >
-                  <div
-                    v-if="employeeSearchLoading"
-                    class="px-3 py-2 text-xs text-gray-400"
-                  >
-                    Searching...
-                  </div>
-                  <div
-                    v-else-if="employeeOptions.length === 0"
-                    class="px-3 py-2 text-xs text-gray-400"
-                  >
-                    No results found
-                  </div>
-                  <button
-                    v-for="emp in employeeOptions"
-                    :key="emp.emplId"
-                    class="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors"
-                    @mousedown.prevent="selectEmployee(emp)"
-                  >
-                    <div class="font-medium text-gray-900">
-                      {{ emp.employeename2 }}
-                    </div>
-                    <div class="text-xs text-gray-400">{{ emp.emailadd }}</div>
-                  </button>
-                </div>
-              </BaseInput>
-            </div>
 
             <!-- Selected employee confirmation -->
             <div
