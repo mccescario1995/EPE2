@@ -38,15 +38,10 @@ interface TreeNode {
   children: TreeNode[];
 }
 
-interface ApproverLists {
-  main: Approver[];
-  proxy: Approver[];
-}
-
 interface EmployeeOption {
-  emplId: string;
-  employeename2: string;
-  emailadd: string;
+  id: string;
+  label: string;
+  email: string;
 }
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -88,38 +83,6 @@ const hasIM = computed(() =>
   groups.value.some((g) => g.approver.approvertype === "IM"),
 );
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-// function buildGroups(approvers: Approver[]): ApproverGroup[] {
-//   const sorted = [...approvers].sort((a, b) => {
-//     const sortA = a.sort ?? 0;
-//     const sortB = b.sort ?? 0;
-//     if (sortA !== sortB) return sortA - sortB;
-//     return (a.linesequence ?? 0) - (b.linesequence ?? 0);
-//   });
-
-//   const groupMap = new Map<number, ApproverGroup>();
-
-//   for (const approver of sorted) {
-//     const sortKey = approver.sort ?? 0;
-//     const isMain = approver.linesequence === 1;
-
-//     if (isMain) {
-//       groupMap.set(sortKey, {
-//         _groupKey: `group-${approver.id}`,
-//         sort: sortKey,
-//         main: approver,
-//         proxies: [],
-//       });
-//     } else {
-//       const group = groupMap.get(sortKey);
-//       if (group) {
-//         group.proxies.push(approver);
-//       }
-//     }
-//   }
-
-//   return Array.from(groupMap.values());
-// }
 function buildGroups(approvers: Approver[]): TreeNode[] {
   const sorted = [...approvers].sort((a, b) => {
     const sortA = a.sort ?? 0;
@@ -225,7 +188,7 @@ function onEmployeeSearch(query: string) {
   newApprover.value.searchQuery = query;
   if (
     newApprover.value.selectedEmployee &&
-    query !== newApprover.value.selectedEmployee.employeename2
+    query !== newApprover.value.selectedEmployee.label
   ) {
     newApprover.value.selectedEmployee = null;
     newApprover.value.approverid = "";
@@ -250,9 +213,9 @@ async function searchEmployees(query: string) {
     );
     const list = Array.isArray(response) ? response : response?.items || [];
     employeeOptions.value = list.map((e: any) => ({
-      emplId: e.id,
-      employeename2: e.name,
-      emailadd: e.email,
+      id: e.id,
+      label: e.name,
+      email: e.email,
     }));
     showEmployeeDropdown.value = employeeOptions.value.length > 0;
   } catch (err) {
@@ -266,10 +229,10 @@ async function searchEmployees(query: string) {
 
 function selectEmployee(emp: EmployeeOption) {
   newApprover.value.selectedEmployee = emp;
-  newApprover.value.approverid = emp.emplId;
-  newApprover.value.approvername = emp.employeename2;
-  newApprover.value.approveremail = emp.emailadd;
-  newApprover.value.searchQuery = emp.employeename2;
+  newApprover.value.approverid = emp.id;
+  newApprover.value.approvername = emp.label;
+  newApprover.value.approveremail = emp.email;
+  newApprover.value.searchQuery = emp.label;
   employeeOptions.value = [];
   showEmployeeDropdown.value = false;
 }
@@ -866,45 +829,51 @@ watch(
             class="space-y-2 mb-3"
           >
             <div class="relative">
-              <input
+            <Dropdown
+              v-model="newApprover.searchQuery"
+              :initialItems="employeeOptions"
+              placeholder="Add Approver"
+              :disabled="employeeSearchLoading"
+            />
+              <BaseInput
+                v-model="newApprover.searchQuery"
                 type="text"
-                :value="newApprover.searchQuery"
-                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 bg-white"
                 placeholder="Search employee name..."
-                @input="
-                  (e) => onEmployeeSearch((e.target as HTMLInputElement).value)
-                "
+                customClass="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 bg-white"
+                @input="(e) => onEmployeeSearch(e.target.value)"
                 @focus="showEmployeeDropdown = employeeOptions.length > 0"
                 @blur="setTimeout(() => (showEmployeeDropdown = false), 200)"
-              />
-              <div
-                v-if="showEmployeeDropdown"
-                class="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+                searc
               >
                 <div
-                  v-if="employeeSearchLoading"
-                  class="px-3 py-2 text-xs text-gray-400"
+                  v-if="showEmployeeDropdown"
+                  class="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto"
                 >
-                  Searching...
-                </div>
-                <div
-                  v-else-if="employeeOptions.length === 0"
-                  class="px-3 py-2 text-xs text-gray-400"
-                >
-                  No results found
-                </div>
-                <button
-                  v-for="emp in employeeOptions"
-                  :key="emp.emplId"
-                  class="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors"
-                  @mousedown.prevent="selectEmployee(emp)"
-                >
-                  <div class="font-medium text-gray-900">
-                    {{ emp.employeename2 }}
+                  <div
+                    v-if="employeeSearchLoading"
+                    class="px-3 py-2 text-xs text-gray-400"
+                  >
+                    Searching...
                   </div>
-                  <div class="text-xs text-gray-400">{{ emp.emailadd }}</div>
-                </button>
-              </div>
+                  <div
+                    v-else-if="employeeOptions.length === 0"
+                    class="px-3 py-2 text-xs text-gray-400"
+                  >
+                    No results found
+                  </div>
+                  <button
+                    v-for="emp in employeeOptions"
+                    :key="emp.emplId"
+                    class="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors"
+                    @mousedown.prevent="selectEmployee(emp)"
+                  >
+                    <div class="font-medium text-gray-900">
+                      {{ emp.employeename2 }}
+                    </div>
+                    <div class="text-xs text-gray-400">{{ emp.emailadd }}</div>
+                  </button>
+                </div>
+              </BaseInput>
             </div>
 
             <!-- Selected employee confirmation -->

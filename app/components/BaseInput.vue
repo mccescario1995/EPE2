@@ -18,6 +18,7 @@
         :value="innerValue"
         :id="id"
         :type="!isTextarea ? inputType : undefined"
+        :placeholder="placeholder"
         :rows="isTextarea ? rowCount : undefined"
         :maxlength="maxCharCount || undefined"
         :class="[
@@ -106,6 +107,7 @@ interface Props {
   modelValue?: string | number | null;
   label?: string;
   type?: string;
+  placeholder?: string;
   maxCharCount?: number;
   minCharCount?: number; // added minCharCount prop for validation of minimum characters in textarea
   rowCount?: number;
