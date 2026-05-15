@@ -273,9 +273,9 @@ function resetAddForm() {
 
 async function confirmAddApprover() {
   if (!props.policy) return;
-  const { approvertype, approverid, approvername, approveremail } =
-    newApprover.value;
+  const { approvertype, approverid, approvername, approveremail } = newApprover.value;
 
+  // Validation for non-IM types
   if (approvertype !== "IM") {
     if (!approvername.trim() || !approveremail.trim()) {
       showToast({
@@ -286,69 +286,116 @@ async function confirmAddApprover() {
       });
       return;
     }
-    // Check for duplicate approver
-    const isDuplicate = rawApprovers.value.some(a => a.approverid === approverid);
-    if (isDuplicate) {
-      showToast({
-        type: "warning",
-        title: "Duplicate Approver",
-        message: "This approver is already added to the policy",
-        duration: 3000,
-      });
-      return;
-    }
   }
+
+  // Check for active duplicates (only if isdelete === 0)
+  const activeDuplicate = rawApprovers.value.find(
+    (a) => a.approverid === approverid && a.isdelete === 0
+  );
+  if (activeDuplicate) {
+    showToast({
+      type: "warning",
+      title: "Duplicate Approver",
+      message: "This approver is already active in the policy",
+      duration: 3000,
+    });
+    return;
+  }
+
+  // Check for soft-deleted approver (for reactivation)
+  const softDeletedApprover = rawApprovers.value.find(
+    (a) => a.approverid === approverid && a.isdelete === 1
+  );
 
   addFormLoading.value = true;
   try {
-    let sort: number;
-    let linesequence: number;
+    if (softDeletedApprover) {
+      // Reactivate the soft-deleted approver
+      let sort: number;
+      let linesequence: number;
 
-    if (addingAsProxy.value !== null) {
-      sort = addingAsProxy.value;
-      const group = groups.value[addingAsProxy.value! - 1];
-      linesequence = group.children.length + 2;
+      if (addingAsProxy.value !== null) {
+        sort = addingAsProxy.value;
+        const group:any = groups.value[addingAsProxy.value - 1];
+        linesequence = group.children.length + 2; // Next available proxy position
+      } else {
+        sort = groups.value.length + 1; // Next main position
+        linesequence = 1;
+      }
+
+      // Assumed update API payload (adjust based on your backend)
+      const updatePayload = {
+        isdelete: 0,
+        sort,
+        linesequence,
+        ModifiedBy: userId.userId,
+      };
+
+      await apiFetch(
+        `/api/Maintenance/policy/${props.policy.policyId}/approvers/update/${softDeletedApprover.id}`,
+        {
+          method: "POST",
+          body: JSON.stringify(updatePayload),
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      showToast({
+        type: "success",
+        title: "Reactivated",
+        message: "Approver reactivated and added successfully",
+        duration: 3000,
+      });
     } else {
-      sort = groups.value.length + 1;
-      linesequence = 1;
+      // No soft-deleted match: Create a new approver
+      let sort: number;
+      let linesequence: number;
+
+      if (addingAsProxy.value !== null) {
+        sort = addingAsProxy.value;
+        const group:any = groups.value[addingAsProxy.value - 1];
+        linesequence = group.children.length + 2;
+      } else {
+        sort = groups.value.length + 1;
+        linesequence = 1;
+      }
+
+      const payload = {
+        policyid: props.policy.policyId,
+        approverid: approvertype === "IM" ? null : approverid || null,
+        approvername: approvertype === "IM" ? "Immediate Head" : approvername,
+        approveremail: approvertype === "IM" ? null : approveremail,
+        approvertype,
+        sort,
+        linesequence,
+        CreatedBy: userId.userId,
+      };
+
+      await apiFetch(
+        `/api/Maintenance/policy/${props.policy.policyId}/approvers/create`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      showToast({
+        type: "success",
+        title: "Added",
+        message: "Approver added successfully",
+        duration: 3000,
+      });
     }
 
-    const payload = {
-      policyid: props.policy.policyId,
-      approverid: approvertype === "IM" ? null : approverid || null,
-      approvername: approvertype === "IM" ? "Immediate Head" : approvername,
-      approveremail: approvertype === "IM" ? null : approveremail,
-      approvertype,
-      sort,
-      linesequence,
-    };
-
-    await apiFetch(
-      `/api/Maintenance/policy/${props.policy.policyId}/approvers/create`,
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" },
-      },
-    );
-
-    showToast({
-      type: "success",
-      title: "Added",
-      message: "Approver added successfully",
-      duration: 3000,
-    });
     cancelAdd();
-    await fetchApprovers();
+    await fetchApprovers(); // Refresh to reflect changes
   } catch (err) {
-    console.error(
-      "Failed to add approver ManageApprovers                                                                                                                                                                                                                                                                                                 :",
-      err,
-    );
+    console.error("Failed to add/reactivate approver:", err);
     showToast({
       type: "error",
       title: "Error",
-      message: "Failed to add approver",
+      message: "Failed to add or reactivate approver",
       duration: 4000,
     });
   } finally {
