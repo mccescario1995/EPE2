@@ -308,7 +308,7 @@ const resendToApprover = async (transApproverId: number) => {
   <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh">
     <header class="bg-white shadow">
       <div
-        class="max-w-7xl me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
+        class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
       >
         <div class="flex items-center">
           <Button

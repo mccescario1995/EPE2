@@ -712,9 +712,9 @@ const addNewAttachments = async () => {
 
   const formData = new FormData();
   newAttachments.value.forEach((attachment, index) => {
-    formData.append(`attachments[${index}].file`, attachment.file);
+    formData.append(`Attachments[${index}].file`, attachment.file);
     formData.append(
-      `attachments[${index}].referenceType`,
+      `Attachments[${index}].ReferenceType`,
       attachment.referenceType,
     );
   });
@@ -729,15 +729,16 @@ const addNewAttachments = async () => {
     );
 
     if (response) {
+      newAttachments.value = [];
+      // await handleBack();
+      await fetchAttachments();
+
       showToast({
         type: "success",
         title: "Success",
         message: "Attachments added successfully!",
         duration: 3000,
       });
-      newAttachments.value = [];
-      await handleBack();
-      // await fetchAttachments();
     } else {
       showToast({
         type: "error",
@@ -823,7 +824,7 @@ onMounted(() => {
   <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh">
     <header class="bg-white shadow">
       <div
-        class="max-w-7xl me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
+        class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
       >
         <div class="flex items-center">
           <!-- v-if="row.requesterId === userId.emplId && exemptionDetails.status !== 'C'" -->

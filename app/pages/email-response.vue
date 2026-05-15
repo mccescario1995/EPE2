@@ -1,36 +1,22 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 const route = useRoute();
 const router = useRouter();
 
-const rawStatus = computed(() => {
-  const s = route.query.status;
-  if (Array.isArray(s)) return s[0] ?? '';
-  return (s ?? '') as string;
-});
-const rawAction = computed(() => {
-  const a = route.query.action;
-  if (Array.isArray(a)) return a[0] ?? '';
-  return (a ?? '') as string;
-});
-const rawTransactionId = computed(() => {
-  const t = route.query.transactionId;
-  if (Array.isArray(t)) return t[0] ?? '';
-  return (t ?? '') as string;
-});
 const rawToken = computed(() => {
   const t = route.query.token;
   if (Array.isArray(t)) return t[0] ?? '';
   return (t ?? '') as string;
 });
 
-const localStatus = ref(rawStatus.value || '');
-const localAction = ref(rawAction.value || '');
-const transactionId = ref(rawTransactionId.value || '');
+const localStatus = ref('');
+const localAction = ref('');
+const transactionId = ref('');
 const token = ref(rawToken.value || '');
-const showConfirm = ref(!localStatus.value);
+const showConfirm = ref(true);
 const processing = ref(false);
 const errorMessage = ref('');
+const transaction = ref<any>(null);
 
 const config: Record<string, any> = {
   invalid: {
@@ -45,8 +31,7 @@ const config: Record<string, any> = {
     color: 'text-orange-600',
     bg: 'bg-orange-50',
     title: 'Link Expired',
-    message:
-      'This approval link has expired (72-hour limit). Please visit the app to respond.',
+    message: 'This approval link has expired (72-hour limit). Please visit the app to respond.',
   },
   already_used: {
     icon: '✅',
@@ -74,8 +59,7 @@ const config: Record<string, any> = {
     color: 'text-red-600',
     bg: 'bg-red-50',
     title: 'Something Went Wrong',
-    message:
-      'An error occurred while processing your response. Please try again via the app.',
+    message: 'An error occurred while processing your response. Please try again via the app.',
   },
 };
 
@@ -93,23 +77,65 @@ const current = computed(() => {
   return config[localStatus.value] ?? config.error;
 });
 
-async function submit(actionToSend?: string) {
-  if (processing.value) return;
+async function loadPreview() {
+  if (!token.value) {
+    localStatus.value = 'invalid';
+    showConfirm.value = false;
+    return;
+  }
+
+  try {
+    processing.value = true;
+    errorMessage.value = '';
+    const data = await $fetch(`/api/emailapproval/preview?token=${encodeURIComponent(token.value)}`, {
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!(data as any).ok) {
+      const err = (data as any).error ?? 'invalid';
+      localStatus.value = err;
+      showConfirm.value = false;
+      transaction.value = null;
+      transactionId.value = ((data as any).transactionId ?? '') + '';
+      return;
+    }
+
+    transaction.value = (data as any).transaction;
+    transactionId.value = transaction.value?.id ?? '';
+    showConfirm.value = true;
+  } catch (err: any) {
+    // network or server error
+    errorMessage.value = err?.data?.error ?? err?.message ?? 'Network error';
+    localStatus.value = 'error';
+    showConfirm.value = false;
+  } finally {
+    processing.value = false;
+  }
+}
+
+async function actToken() {
+  if (processing.value || !token.value) return;
   processing.value = true;
   errorMessage.value = '';
   try {
-    const payload: Record<string, any> = { transactionId: transactionId.value };
-    if (actionToSend || localAction.value) payload.action = actionToSend ?? localAction.value;
-    if (token.value) payload.token = token.value;
-    const data = await $fetch('/api/exemptions/respond', {
-      method: 'POST',
-      body: payload,
+    const data = await $fetch(`/api/emailapproval/act?token=${encodeURIComponent(token.value)}`, {
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
     });
-    localStatus.value = (data as any).status ?? 'error';
-    if ((data as any).action) localAction.value = (data as any).action;
-    showConfirm.value = false;
+
+    if ((data as any).ok) {
+      localStatus.value = 'success';
+      localAction.value = (data as any).result ?? 'approved';
+      transactionId.value = (data as any).transactionId ?? transactionId.value;
+      showConfirm.value = false;
+    } else {
+      const err = (data as any).error ?? 'error';
+      localStatus.value = err;
+      showConfirm.value = false;
+    }
   } catch (err: any) {
-    errorMessage.value = err?.data?.message ?? err?.message ?? 'Network error';
+    errorMessage.value = err?.data?.error ?? err?.message ?? 'Network error';
+    localStatus.value = 'error';
+    showConfirm.value = false;
   } finally {
     processing.value = false;
   }
@@ -125,13 +151,17 @@ function goDashboard() {
 }
 
 function onConfirmApprove() {
-  localAction.value = 'approved';
-  submit('approved');
+  // act endpoint determines action from token; call act
+  actToken();
 }
 function onConfirmDisapprove() {
-  localAction.value = 'disapproved';
-  submit('disapproved');
+  actToken();
 }
+
+onMounted(() => {
+  token.value = rawToken.value || '';
+  loadPreview();
+});
 </script>
 
 <template>
@@ -143,6 +173,14 @@ function onConfirmDisapprove() {
         <p class="text-gray-600">
           You are about to respond to this exemption request. Please confirm your action.
         </p>
+
+        <div v-if="transaction" class="text-left p-4 bg-gray-50 rounded">
+          <div class="font-semibold">Transaction #:</div>
+          <div class="text-sm text-gray-700 mb-2">{{ transaction.number }}</div>
+          <div class="font-semibold">Summary:</div>
+          <div class="text-sm text-gray-700">{{ transaction.summary }}</div>
+        </div>
+
         <div class="flex gap-3">
           <button
             @click="onConfirmApprove"
@@ -169,12 +207,7 @@ function onConfirmDisapprove() {
           </button>
         </div>
         <div v-if="processing" class="text-sm text-gray-600">Processing...</div>
-        <div v-if="errorMessage" class="text-sm text-red-600">
-          {{ errorMessage }}
-          <div class="mt-3">
-            <button @click="submit()" class="px-4 py-2 bg-blue-600 text-white rounded">Retry</button>
-          </div>
-        </div>
+        <div v-if="errorMessage" class="text-sm text-red-600">{{ errorMessage }}</div>
       </div>
 
       <div v-else>

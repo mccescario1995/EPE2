@@ -8,7 +8,7 @@ const props = defineProps<{
     policyid: number;
     policyId: number;
     description: string;
-    shortname?: string;
+    shortName?: string;
   } | null;
 }>();
 
@@ -49,6 +49,7 @@ const { showToast } = useToast();
 const userStore = useUserStore();
 const userId = userStore.profile;
 
+const justOppened = ref(true);
 const loading = ref(false);
 const saving = ref(false);
 const rawApprovers = ref<Approver[]>([]);
@@ -244,12 +245,14 @@ watch(() => newApprover.value.selectedEmployee, (newVal) => {
 function openAddMain() {
   addingAsProxy.value = null;
   showAddForm.value = true;
+  justOppened.value = false;
   resetAddForm();
 }
 
 function openAddProxy(groupSort: number) {
   addingAsProxy.value = groupSort;
   showAddForm.value = true;
+  justOppened.value = false;
   resetAddForm();
 }
 
@@ -495,7 +498,8 @@ function resetState() {
 }
 
 function tryClose() {
-  if (hasUnsavedOrder.value || showAddForm.value) {
+  // justOppened.value = false;
+  if (showAddForm.value) {
     showToast({
       type: "warning",
       title: "Unsaved Changes",
@@ -572,6 +576,8 @@ watch(
     size="lg"
     position="top-center"
     :show-close-button="false"
+    :close-on-esc="false"
+    :close-on-overlay-click="false"
     @update:isOpen="handleModalUpdate"
   >
     <template #header>
@@ -583,9 +589,9 @@ watch(
           <p class="text-sm text-gray-500 mt-0.5">
             {{ policy?.description }}
             <span
-              v-if="policy?.shortname"
+              v-if="policy?.shortName"
               class="ml-1 text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded"
-              >{{ policy.shortname }}</span
+              >{{ policy.shortName }}</span
             >
           </p>
         </div>
@@ -1017,7 +1023,7 @@ watch(
           </button>
           <button
             class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-            :disabled="saving || loading || showAddForm || !hasUnsavedOrder"
+            :disabled="saving || loading || showAddForm || !hasUnsavedOrder || justOppened"
             @click="saveOrder"
           >
             <svg
