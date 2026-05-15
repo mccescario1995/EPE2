@@ -54,103 +54,14 @@ public class EmailNotificationService
             var (approveToken, disapproveToken) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
 
             var apiBase = "https://apps.fastlogistics.com.ph/epe2apidev"; // Change to production API base URL when deploying
-            // var apiBase = "http://localhost:5000";
+             //var apiBase = "http://localhost:5000";
             var approveUrl = $"{apiBase}/api/emailapproval/act?token={approveToken}";
             var disapproveUrl = $"{apiBase}/api/emailapproval/act?token={disapproveToken}";
             var viewUrl = $"https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/view?id={requestId}";
             var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/approve?id=" + requestId;
 
             // toEmail = "mccescario@fastgroup.biz"; // for testing
-
-            //var emailBody = $@"
-            //    <html>
-            //    <body style='margin:0; padding:0;'>
-            //        <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f5f5f5;'>
-            //            <tr>
-            //                <td align='center'>
-
-            //                    <table role='presentation' width='600' cellpadding='0' cellspacing='0' border='0'
-            //                        style='background-color:#ffffff; margin:20px auto; padding:20px; font-family:Arial, Helvetica, sans-serif; color:#333; width:100%; max-width:600px;'>
-
-            //                        <tr>
-            //                            <td style='padding-bottom:30px;'>Dear Ma'am/Sir,</td>
-            //                        </tr>
-
-            //                        <tr>
-            //                            <td style='padding-bottom:15px;'>
-            //                                A new Executive Process Exemption Request requires your approval.
-            //                            </td>
-            //                        </tr>
-
-            //                        <!-- Details Box -->
-            //                        <tr>
-            //                            <td style='padding:15px; background-color:#f4f6f6; border-left:5px solid #2f75b5;'>
-            //                                <p><strong>Transaction Number:</strong> <span style='color:#2f75b5;'>{requestNumber}</span></p>
-            //                                <p><strong>Requested By:</strong> {requestorName}</p>
-            //                                <p><strong>Transaction Details:</strong> {requestDetails}</p>
-            //                            </td>
-            //                        </tr>
-
-            //                        <tr><td height='20'></td></tr>
-
-            //                        <tr>
-            //                            <td>Please review and take action at your earliest convenience.</td>
-            //                        </tr>
-
-            //                        <tr><td height='20'></td></tr>
-
-            //                        <!-- Button -->
-            //                        <tr>
-            //                            <td>
-
-            //                                <!--[if mso]>
-            //                                <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' 
-            //                                    href='{trackUrl}' 
-            //                                    style='height:45px;v-text-anchor:middle;width:220px;' 
-            //                                    arcsize='10%' stroke='f' fillcolor='#2f75b5'>
-            //                                    <center style='color:#ffffff;font-size:14px;font-weight:bold;'>
-            //                                        Review Request
-            //                                    </center>
-            //                                </v:roundrect>
-            //                                <![endif]-->
-
-            //                                <!--[if !mso]><!-- -->
-            //                                <a href='{trackUrl}' 
-            //                                    style='display:inline-block; background-color:#2f75b5; color:#fff;
-            //                                    padding:12px 30px; text-decoration:none; border-radius:5px; font-weight:bold;'>
-            //                                    Review Request
-            //                                </a>
-            //                                <!--<![endif]-->
-
-            //                            </td>
-            //                        </tr>
-
-            //                        <!-- Fallback -->
-            //                        <tr>
-            //                            <td style='padding-top:10px; font-size:12px;'>
-            //                                If the button doesn't work,
-            //                                <a href='{trackUrl}' style='color:#2f75b5;'>click here</a>.
-            //                            </td>
-            //                        </tr>
-
-            //                        <tr><td height='30'></td></tr>
-
-            //                        <!-- Signature -->
-            //                        <tr>
-            //                            <td style='font-family:Courier New; font-size:12px; color:#7f8c8d;'>
-            //                                --<br>
-            //                                Thank you,<br><br>
-            //                                M.I.R.A.<br>
-            //                                <i>FSC - Information Technology</i>
-            //                            </td>
-            //                        </tr>
-
-            //                    </table>
-            //                </td>
-            //            </tr>
-            //        </table>
-            //    </body>
-            //    </html>";
+            
             var emailBody = $@"
                     <html>
                     <body style='margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;'>
@@ -301,8 +212,8 @@ public class EmailNotificationService
     {
         try
         {
-            var trackUrl = $"https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id={requestId}";
-            // var trackUrl = $"http://localhost:3000/epe2dev/exemptions/view?id={requestId}";
+            var trackUrl = $"https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/view?id={requestId}";
+             //var trackUrl = $"http://localhost:3000/epe2dev/exemptions/view?id={requestId}";
 
             // toEmail = "mccescario@fastgroup.biz"; // for testing
 
@@ -453,7 +364,7 @@ public class EmailNotificationService
     {
         try
         {
-            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id=" + requestId;
+            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/view?id=" + requestId;
             //var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestId;
         
 
@@ -609,8 +520,8 @@ public class EmailNotificationService
     {
         try
         {
-            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/exemptions/view?id=" + requestNumber;
-            // var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestNumber;
+            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/view?id=" + requestNumber;
+             //var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestNumber;
 
             // toEmail = "mccescario@fastgroup.biz"; // for testing
 

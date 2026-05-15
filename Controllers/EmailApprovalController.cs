@@ -2,6 +2,7 @@
 using EPEAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data.Entity.Infrastructure.Interception;
 
 namespace EPEAPI.Controllers;
 
@@ -64,6 +65,8 @@ public class EmailApprovalController : ControllerBase
             try
             {
                 var respond = record.Action == "approve" ? 1 : 2;
+
+
 
                 // Process the approval (reuse same logic as ExemptionController.RespondToApproval)
                 await ProcessApproval(record.TransactionId, record.TransApproverId, respond, "Approved via email");
@@ -131,66 +134,215 @@ public class EmailApprovalController : ControllerBase
             await HandleApproval(transactionId, transApproverId);
         else
             await HandleDisapproval(transactionId, transApproverId);
+
+
     }
 
     private async Task HandleApproval(long transactionId, long transApproverId)
     {
-        var allApprovers = await GetApprovers(transactionId);
+        //IDbContextTransaction? transaction = null;
 
-        var current = allApprovers.FirstOrDefault(a => a.Transapproverid == transApproverId);
-        if (current == null) return;
-
-        var groupIds = allApprovers
-            .Where(a => a.Sort == current.Sort && a.Respond == 0)
-            .Select(a => a.Transapproverid)
-            .ToList();
-
-        if (groupIds.Any())
+        try
         {
-            await _context.EpeTransactionapprovers
-                .Where(a => groupIds.Contains(a.Transapproverid))
-                .ExecuteUpdateAsync(b => b
-                    .SetProperty(a => a.Respond, 1)
-                    .SetProperty(a => a.Responddate, DateTime.Now)
-                    .SetProperty(a => a.Remarks, "Auto-approved via group approval"));
+
+            //_logger.LogInformation("Before transaction");
+
+            //var transaction = await _context.Database.BeginTransactionAsync();
+
+            //_logger.LogInformation("Transaction started");
+            var allApprovers = await GetApprovers(transactionId);
+
+            if (!allApprovers.Any())
+            {
+                _logger.LogWarning(
+                    "No approvers found for transaction {TransactionId} during approval handling",
+                    transactionId);
+
+                return;
+            }
+
+            var current = allApprovers
+                .FirstOrDefault(a => a.Transapproverid == transApproverId);
+
+            if (current == null)
+                return;
+
+            _logger.LogInformation(
+                "Current approver line sequence: {LineSequence} and sort: {Sort} for transaction {TransactionId}",
+                current.Linesequence,
+                current.Sort,
+                transactionId);
+
+            var groupIds = allApprovers
+                .Where(a => a.Sort == current.Sort && a.Respond == 0)
+                .Select(a => a.Transapproverid)
+                .ToList();
+
+            _logger.LogInformation(
+                "Found {Count} other approvers in the same group to auto-approve for transaction {TransactionId}",
+                groupIds.Count,
+                transactionId);
+
+            if (groupIds.Any())
+            {
+                var approversToUpdate = await _context.EpeTransactionapprovers
+                    .Where(a => groupIds.Contains(a.Transapproverid))
+                    .ToListAsync();
+
+                foreach (var approver in approversToUpdate)
+                {
+                    approver.Respond = 1;
+                    approver.Responddate = DateTime.Now;
+                    approver.Remarks = "Approved via group approval";
+                }
+            }
+
+            var updated = await GetApprovers(transactionId);
+
+            var hasNext = updated.Any(a =>
+                a.Linesequence > current.Linesequence &&
+                a.Respond == 0);
+
+            var transHeader = await _context.EpeTransactionheaders
+                .FirstOrDefaultAsync(h => h.Transactionid == transactionId);
+
+            if (transHeader != null)
+            {
+                transHeader.Status = hasNext ? "P" : "C";
+                transHeader.Finaldecision = hasNext ? null : "Approved";
+                transHeader.Modifieddate = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+            //await transaction.CommitAsync();
         }
+        catch (Exception e)
+        {
+            //await transaction.RollbackAsync();
 
-        var updated = await GetApprovers(transactionId);
+            _logger.LogError(
+                e,
+                "Error handling approval for transaction {TransactionId} and approver {TransApproverId}",
+                transactionId,
+                transApproverId);
 
-        var hasNext = updated.Any(a =>
-            a.Linesequence > current.Linesequence &&
-            a.Respond == 0);
-
-        await _context.EpeTransactionheaders
-            .Where(h => h.Transactionid == transactionId)
-            .ExecuteUpdateAsync(b => b
-                .SetProperty(h => h.Status, hasNext ? "P" : "C")
-                .SetProperty(h => h.Finaldecision, hasNext ? null : "Approved")
-                .SetProperty(h => h.Modifieddate, DateTime.Now));
+            throw;
+        }
     }
+
+    //private async Task HandleApproval(long transactionId, long transApproverId)
+    //{
+
+    //    var transaction = await _context.Database.BeginTransactionAsync();
+    //    try
+    //    {
+    //        var allApprovers = await GetApprovers(transactionId);
+
+    //        if (!allApprovers.Any())
+    //        {
+    //            _logger.LogWarning("No approvers found for transaction {TransactionId} during approval handling", transactionId);
+    //            return;
+    //        }
+
+
+    //        var current = allApprovers.FirstOrDefault(a => a.Transapproverid == transApproverId);
+    //        if (current == null) return;
+
+    //        _logger.LogInformation("Current approver line sequence: {LineSequence} and sort: {Sort} for transaction {TransactionId}", current.Linesequence, current.Sort, transactionId);
+
+    //        var groupIds = allApprovers
+    //        .Where(a => a.Sort == current.Sort && a.Respond == 0)
+    //        .Select(a => a.Transapproverid)
+    //        .ToList();
+
+    //        _logger.LogInformation("Found {Count} other approvers in the same group to auto-approve for transaction {TransactionId}", groupIds.Count, transactionId);
+
+    //        if (groupIds.Any())
+    //        {
+
+    //            var approversToUpdate = await _context.EpeTransactionapprovers
+    //                .Where(a => groupIds.Contains(a.Transapproverid))
+    //                .ToListAsync();
+
+    //            foreach (var approver in approversToUpdate)
+    //            {
+    //                approver.Respond = 1;
+    //                approver.Responddate = DateTime.Now;
+    //                approver.Remarks = "Approved via group approval";
+    //            }
+    //        }
+
+    //        var updated = await GetApprovers(transactionId);
+
+    //        var hasNext = updated.Any(a =>
+    //            a.Linesequence > current.Linesequence &&
+    //            a.Respond == 0);
+
+    //        var transHeader = await _context.EpeTransactionheaders
+    //            .Where(h => h.Transactionid == transactionId)
+    //            .FirstOrDefaultAsync();
+
+    //        transHeader.Status = hasNext ? "P" : "C";
+    //        transHeader.Finaldecision = hasNext ? null : "Approved";
+    //        transHeader.Modifieddate = DateTime.Now;
+
+    //    }
+    //    catch (Exception e)
+    //    {
+    //        transaction.Rollback();
+    //        _logger.LogError(e, "Error handling approval for transaction {TransactionId} and approver {TransApproverId}", transactionId, transApproverId);
+    //        throw;
+    //    }
+
+    //}
 
     private async Task HandleDisapproval(long transactionId, long transApproverId)
     {
-        var lineSequence = await _context.EpeTransactionapprovers
+        var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var lineSequence = await _context.EpeTransactionapprovers
             .Where(x => x.Transapproverid == transApproverId)
             .Select(x => x.Linesequence)
             .FirstOrDefaultAsync();
 
-        await _context.EpeTransactionapprovers
-            .Where(a => a.Transactionid == transactionId
-                     && a.Linesequence == lineSequence
-                     && a.Respond == 0)
-            .ExecuteUpdateAsync(b => b
-                .SetProperty(a => a.Respond, 2)
-                .SetProperty(a => a.Responddate, DateTime.Now)
-                .SetProperty(a => a.Remarks, "Auto-disapproved via email"));
+            var approver = await _context.EpeTransactionapprovers
+                 .Where(a => a.Transactionid == transactionId
+                          && a.Linesequence == lineSequence
+                          && a.Respond == 0)
+                 .FirstOrDefaultAsync();
 
-        await _context.EpeTransactionheaders
-            .Where(h => h.Transactionid == transactionId)
-            .ExecuteUpdateAsync(b => b
-                .SetProperty(h => h.Status, "C")
-                .SetProperty(h => h.Finaldecision, "Disapproved")
-                .SetProperty(h => h.Modifieddate, DateTime.Now));
+            if (approver != null)
+            {
+                _logger.LogInformation("Disapproving approver with line sequence {LineSequence} for transaction {TransactionId}", lineSequence, transactionId);
+            }
+            else
+            {
+                _logger.LogWarning("No approver found to disapprove with line sequence {LineSequence} for transaction {TransactionId}", lineSequence, transactionId);
+            }
+
+            approver.Respond = 2;
+            approver.Responddate = DateTime.Now;
+            approver.Remarks = "Disapproved via email";         
+
+            var transHeader = await _context.EpeTransactionheaders
+                .Where(h => h.Transactionid == transactionId)
+                .FirstOrDefaultAsync();
+
+            transHeader.Status = "C";
+            transHeader.Finaldecision = "Disapproved";
+            transHeader.Modifieddate = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+        }
+        catch (Exception e)
+        {
+            transaction.Rollback();
+            _logger.LogError(e, "Failed to Disapprove transaction {TransactionId} for approver {TransApproverId}", transactionId, transApproverId);
+        }
+
     }
 
     private Task<List<EpeTransactionapprover>> GetApprovers(long transactionId)

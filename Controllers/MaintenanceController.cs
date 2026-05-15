@@ -4,6 +4,7 @@ using EPEAPI.Models;
 using LinqKit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace EPEAPI.Controllers
 {
@@ -238,28 +239,41 @@ namespace EPEAPI.Controllers
         }
 
         [HttpGet("employees/search")]
-        public async Task<IActionResult> SearchEmployees([FromQuery] string q)
+        public async Task<IActionResult> SearchEmployees([FromQuery] string? q)
         {
             if (string.IsNullOrWhiteSpace(q))
-            {
                 return Ok(new List<object>());
+
+            q = q.Trim();
+
+            var searchWords = q
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            var query = _context.CoreVEmployeeDetails
+                .AsNoTracking(); // IMPORTANT for views / keyless entities
+
+            foreach (var word in searchWords)
+            {
+                var temp = word;
+
+                query = query.Where(e =>
+                    EF.Functions.Like(e.Fname ?? "", $"%{temp}%") ||
+                    EF.Functions.Like(e.Lname ?? "", $"%{temp}%") ||
+                    EF.Functions.Like(e.Mname ?? "", $"%{temp}%") ||
+                    EF.Functions.Like(e.Emailadd ?? "", $"%{temp}%")
+                );
             }
 
-            var result = await _context.CoreVEmployeeDetails
-                .Where(e =>
-                    EF.Functions.Like(e.EmplId, $"%{q}%") ||
-                    EF.Functions.Like(e.Fname, $"%{q}%") ||
-                    EF.Functions.Like(e.Lname, $"%{q}%") ||
-                    EF.Functions.Like(e.Emailadd, $"%{q}%")
-                )
+            var result = query
+                .OrderBy(e => e.Lname)
+                .Take(20)
                 .Select(e => new
                 {
                     id = e.EmplId,
-                    name = e.Employeename2,
+                    label = e.Employeename2,
                     email = e.Emailadd
                 })
-                .Take(20) // limit results for performance
-                .ToListAsync();
+                .ToList();
 
             return Ok(result);
         }
@@ -327,6 +341,38 @@ namespace EPEAPI.Controllers
                 await transaction.RollbackAsync();
                 return StatusCode(500, new { success = false, message = "Error: " + e.Message });
             }
+        }
+
+        [HttpPost("policy/{policyId}/approvers/update/{approverId}")]
+        public async Task<IActionResult> UpdateApprover(int policyId, int approverId, [FromBody] UpdateApproverRequest request)
+        {
+            if (policyId <= 0)
+            {
+                return BadRequest(new { success = false, message = "Invalid policy ID" });
+            }
+
+            if (approverId <= 0)
+            {
+                return BadRequest(new { success = false, message = "Invalid approver ID" });
+            }
+
+            var approver = await _context.EpePolicyapprovers
+                .FirstOrDefaultAsync(a => a.Policyid == policyId && a.Id == approverId);
+
+            if (approver == null)
+            {
+                return NotFound(new { success = false, message = "Approver not found" });
+            }
+
+            approver.Isdelete = request.Isdelete;
+            approver.Sort = request.Sort;
+            approver.Linesequence = request.Linesequence;
+            approver.Modifieddate = DateTime.UtcNow.AddHours(8);
+            approver.Modifiedby = request.ModifiedBy;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, message = "Approver updated successfully", item = approver });
         }
 
     }

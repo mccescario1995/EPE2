@@ -614,7 +614,7 @@ namespace EPEAPI.Controllers
                                     var approverUser = await _context.CoreVUsers
                                         .FirstOrDefaultAsync(u => u.EmplId == approver.Approverid);
 
-                                    _logger.LogWarning("Approve User: " + approverUser);
+                                    _logger.LogWarning("Approve User: " + approverUser.Employeename2);
 
                                     if (approverUser != null)
                                     {
@@ -632,21 +632,23 @@ namespace EPEAPI.Controllers
                                     }
                                 }
 
+                                //var transactApprover = await _context.tra
+
                                 var transApproverRecord = await _context.EpeTransactionapprovers
                                   .Where(a => a.Transactionid == transactionHeader.Transactionid
-                                           && a.Approverid == approver.Approverid.ToString()
+                                           && a.Approverid == approver.Id.ToString()
                                            && a.Isdelete == 0)
                                   .FirstOrDefaultAsync();
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            await _emailService.SendApprovalRequestEmailAsync(
+                               await _emailService.SendApprovalRequestEmailAsync(
                                       approverEmail,
                                       transactionHeader.Transactionid,
                                       transactionHeader.Transactionnumber,
                                       userDetails?.Employeename ?? requesterId,
                                       request.Details ?? "No details provided",
                                       approverUserId,
-                                      transApproverRecord?.Transapproverid ?? 0
-                                  );
+                                      transApproverRecord?.Transapproverid ?? 0             
+                                      );
                             }
                             catch (Exception ex)
                             {
@@ -1033,7 +1035,7 @@ namespace EPEAPI.Controllers
                             );
                     }
 
-                    // ✅ Next sequence = any Linesequence that is NOT in the current group's sequences
+                    // Next sequence = any Linesequence that is NOT in the current group's sequences
                     //    Reload after auto-approve to get fresh state
                     var updatedApprovers = await _context.EpeTransactionapprovers
                         .Where(a => a.Transactionid == request.TransactionId && a.Isdelete == 0)
@@ -1281,7 +1283,7 @@ namespace EPEAPI.Controllers
                     var savedFileName = await _fileUploadService.SaveFile(attachment.File);
                     var epeAttachment = new EpeAttachment
                     {
-                        TaskId = transactionHeader.Transactionid.ToString(),
+                        TaskId = transactionHeader.Transactionnumber,
                         ReferenceType = attachment.ReferenceType,
                         UploadFilename = attachment.File.FileName,
                         Newfilename = savedFileName,
