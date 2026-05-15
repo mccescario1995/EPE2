@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 using System.Text.Json;
 using EPEAPI.Models;
+using Microsoft.Extensions.Options;
 
 namespace EPEAPI.Services;
 
@@ -11,13 +12,16 @@ public class EmailNotificationService
     private readonly ILogger<EmailNotificationService> _logger;
     private readonly EpeDbContext _context;
     private readonly EmailApprovalTokenService _tokenService;
+    private readonly UrlBaseSettings _urlBaseSettings;
 
-    public EmailNotificationService(HttpClient httpClient, ILogger<EmailNotificationService> logger, EpeDbContext context, EmailApprovalTokenService tokenService)
+    public EmailNotificationService(HttpClient httpClient, ILogger<EmailNotificationService> logger, EpeDbContext context, EmailApprovalTokenService tokenService, IOptions<UrlBaseSettings> urlBaseSettings)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _urlBaseSettings = urlBaseSettings.Value;
         _context = context;
         _tokenService = tokenService;
+
     }
 
     private async Task CreateWebNotificationAsync(int userId, string title, string message, string type = "info", string? relatedUrl = null)
@@ -53,12 +57,14 @@ public class EmailNotificationService
             // Generate one-time tokens
             var (approveToken, disapproveToken) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
 
-            var apiBase = "https://apps.fastlogistics.com.ph/epe2apidev"; // Change to production API base URL when deploying
-             //var apiBase = "http://localhost:5000";
+            //var apiBase = "https://apps.fastlogistics.com.ph/epe2apidev"; // Change to production API base URL when deploying
+            var apiBase = _urlBaseSettings.Api;
+            var viewBase = _urlBaseSettings.View;
+            //  var apiBase = "http://localhost:5000";
             var approveUrl = $"{apiBase}/api/emailapproval/act?token={approveToken}";
             var disapproveUrl = $"{apiBase}/api/emailapproval/act?token={disapproveToken}";
-            var viewUrl = $"https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/view?id={requestId}";
-            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/approve?id=" + requestId;
+            var viewUrl = $"{viewBase}/#/exemptions/view?id={requestId}";
+            var trackUrl = $"{viewBase}/#/exemptions/approve?id={requestId}";
 
             // toEmail = "mccescario@fastgroup.biz"; // for testing
             
@@ -213,7 +219,7 @@ public class EmailNotificationService
         try
         {
             var trackUrl = $"https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/view?id={requestId}";
-             //var trackUrl = $"http://localhost:3000/epe2dev/exemptions/view?id={requestId}";
+            //  var trackUrl = $"http://localhost:3000/epe2dev/exemptions/view?id={requestId}";
 
             // toEmail = "mccescario@fastgroup.biz"; // for testing
 
@@ -365,7 +371,7 @@ public class EmailNotificationService
         try
         {
             var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/view?id=" + requestId;
-            //var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestId;
+            // var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestId;
         
 
             // toEmail = "mcccescario@fastgroup.biz"; // for testing
@@ -521,7 +527,7 @@ public class EmailNotificationService
         try
         {
             var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/view?id=" + requestNumber;
-             //var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestNumber;
+            //  var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestNumber;
 
             // toEmail = "mccescario@fastgroup.biz"; // for testing
 

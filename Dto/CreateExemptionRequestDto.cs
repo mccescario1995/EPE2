@@ -27,5 +27,5 @@ public class DraftExemptionRequestDto
 public class AttachmentDto
 {
     public IFormFile File { get; set; }
-    public string ReferenceType { get; set; }
+    public string? ReferenceType { get; set; } = null;
 }

@@ -13,6 +13,9 @@ builder.Services.AddDbContext<EpeDbContext>(options =>
     options.UseSqlServer(connectionString)
 );
 
+builder.Services.Configure<UrlBaseSettings>(
+    builder.Configuration.GetSection("UrlBase"));
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
