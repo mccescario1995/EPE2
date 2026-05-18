@@ -1,4 +1,4 @@
-// Controllers/EmailApprovalController.cs
+﻿// Controllers/EmailApprovalController.cs
 using EPEAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -64,6 +64,7 @@ public class EmailApprovalController : ControllerBase
             {
                 ok = true,
                 token = token,
+                action = record.Action,           // ADD THIS: "approve" or "disapprove"
                 transaction = preview,
                 allowedActions = allowed,
                 expiresAt = record.ExpiresAt
