@@ -469,7 +469,7 @@ namespace EPEAPI.Controllers
                         var epeAttachment = new EpeAttachment
                         {
                             TaskId = transactionHeader.Transactionnumber,
-                            ReferenceType = attachment.ReferenceType,
+                            // ReferenceType = attachment.ReferenceType,
                             UploadFilename = attachment.File.FileName,
                             Newfilename = savedFileName,
                             Filetype = Path.GetExtension(attachment.File.FileName).TrimStart('.'),
@@ -495,15 +495,22 @@ namespace EPEAPI.Controllers
         }
 
         [HttpPost("create")]
+        [Consumes("multipart/form-data")]
         public async Task<IActionResult> CreateExemptionRequest([FromForm] CreateExemptionRequestDto request)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
+
             try
             {
+                // DEBUG (VERY IMPORTANT)
+                _logger.LogWarning("Form keys: {Keys}", string.Join(",", Request.Form.Keys));
+                _logger.LogWarning("Files count: {Count}", Request.Form.Files.Count);
+
                 var createdBy = request.Createdby;
                 var requesterId = request.Requestorid;
 
-                var userDetails = await _context.CoreVEmployeeDetails.Where(e => e.EmplId == requesterId).FirstOrDefaultAsync();
+                var userDetails = await _context.CoreVEmployeeDetails
+                    .FirstOrDefaultAsync(e => e.EmplId == requesterId);
 
                 var transactionHeader = new EpeTransactionheader
                 {
@@ -512,186 +519,76 @@ namespace EPEAPI.Controllers
                     Corporate = userDetails?.Corporate,
                     Requestorid = requesterId,
                     Finaldecision = "Pending",
-                    Createdby = createdBy.HasValue ? createdBy.Value : 0,
+                    Createdby = createdBy ?? 0,
                     Createddate = DateTime.UtcNow.AddHours(8)
                 };
 
-                // Client IP from headers
-                var ipAddress = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
-                                ?? HttpContext.Connection.RemoteIpAddress?.ToString()
-                                ?? "Unknown";
-
-                // MAC address — server's own NIC (not the client's)
-                var macAddress = NetworkInterface.GetAllNetworkInterfaces()
-                    .FirstOrDefault(n =>
-                        n.OperationalStatus == OperationalStatus.Up &&
-                        n.NetworkInterfaceType != NetworkInterfaceType.Loopback)
-                    ?.GetPhysicalAddress()
-                    .ToString() ?? "Unknown";
-
-                request.Ipaddress = ipAddress;
-                request.Macaddress = macAddress;
-
                 _context.EpeTransactionheaders.Add(transactionHeader);
-
                 await _context.SaveChangesAsync();
 
-                // Get policy approvers and create transaction approvers
+                // APPROVERS
                 var policyApprovers = await _context.EpePolicyapprovers
                     .Where(p => p.Policyid == request.Policyid && p.Isdelete == 0)
                     .OrderBy(p => p.Linesequence)
                     .ThenBy(p => p.Sort)
                     .ToListAsync();
 
-                if (policyApprovers.Any())
+                foreach (var policyApprover in policyApprovers)
                 {
-                    foreach (var policyApprover in policyApprovers)
+                    _context.EpeTransactionapprovers.Add(new EpeTransactionapprover
                     {
-                        var transApprover = new EpeTransactionapprover
+                        Transactionid = transactionHeader.Transactionid,
+                        Approverid = policyApprover.Id.ToString(),
+                        Approvertype = policyApprover.Approvertype,
+                        Linesequence = policyApprover.Linesequence,
+                        Sort = policyApprover.Sort,
+                        Respond = 0,
+                        Issent = 0,
+                        Sentcount = 0,
+                        Isdelete = 0,
+                        Createddate = DateTime.UtcNow.AddHours(8)
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+
+                if (request.Attachments != null && request.Attachments.Any())
+                {
+                    foreach (var attachment in request.Attachments)
+                    {
+                        if (attachment?.File == null) continue;
+
+                        var savedFileName = await _fileUploadService.SaveFile(attachment.File);
+
+                        _context.EpeAttachments.Add(new EpeAttachment
                         {
-                            Transactionid = transactionHeader.Transactionid,
-                            Approverid = policyApprover.Id.ToString(),
-                            Approvertype = policyApprover.Approvertype,
-                            Linesequence = policyApprover.Linesequence,
-                            Sort = policyApprover.Sort,
-                            Respond = 0,
-                            Issent = 0,
-                            Sentcount = 0,
-                            Isdelete = 0,
-                            Createddate = DateTime.UtcNow.AddHours(8)
-                        };
-                        _context.EpeTransactionapprovers.Add(transApprover);
+                            TaskId = transactionHeader.Transactionnumber,
+                            UploadFilename = attachment.File.FileName,
+                            Newfilename = savedFileName,
+                            Filetype = Path.GetExtension(attachment.File.FileName).TrimStart('.'),
+                            Createdate = DateTime.UtcNow.AddHours(8),
+                            Computerhost = HttpContext.Request.Host.Host
+                        });
                     }
 
                     await _context.SaveChangesAsync();
-
-                    // Handle attachments
-                    if (request.Attachments != null && request.Attachments.Any())
-                    {
-                        foreach (var attachment in request.Attachments)
-                        {
-                            var savedFileName = await _fileUploadService.SaveFile(attachment.File);
-                            var epeAttachment = new EpeAttachment
-                            {
-                                TaskId = transactionHeader.Transactionnumber,
-                                ReferenceType = attachment.ReferenceType,
-                                UploadFilename = attachment.File.FileName,
-                                Newfilename = savedFileName,
-                                Filetype = Path.GetExtension(attachment.File.FileName).TrimStart('.'),
-                                Createdate = DateTime.UtcNow.AddHours(8),
-                                Computerhost = HttpContext.Request.Host.Host
-                            };
-                            _context.EpeAttachments.Add(epeAttachment);
-                        }
-                        await _context.SaveChangesAsync();
-                    }
-
-                    // Send email to first approver(s)
-                    var firstSequence = policyApprovers.Min(p => p.Linesequence);
-                    var firstApprovers = policyApprovers.Where(p => p.Linesequence == firstSequence).ToList();
-
-                    foreach (var approver in firstApprovers)
-                    {
-                        string approverEmail = approver.Approveremail ?? "";
-                        string approverName = approver.Approvername ?? "";
-                        //int approverId = int.Parse(approver.Approverid);
-
-                        // If approver type is IM (Immediate Manager), get the requester's immediate head
-                        if (approver.Approvertype == "IM" && userDetails != null)
-                        {
-                            approverEmail = userDetails.ImmediateEmail ?? "";
-                            approverName = userDetails.ImmediateName ?? "";
-                        }
-
-                        if (!string.IsNullOrEmpty(approverEmail))
-                        {
-                            try
-                            {
-                                var approverUserId = 0;
-                                // Get the approver's user ID from CoreVUsers using Approverid as EmplId
-                                if (!string.IsNullOrEmpty(approver.Approverid))
-                                {
-                                    var approverUser = await _context.CoreVUsers
-                                        .FirstOrDefaultAsync(u => u.EmplId == approver.Approverid);
-
-                                    _logger.LogWarning("Approve User: " + approverUser.Employeename2);
-
-                                    if (approverUser != null)
-                                    {
-                                        approverUserId = approverUser.UserId;
-                                    }
-                                }
-                                // If we couldn't get it from Approverid and it's an IM type, try from employee details
-                                if (approverUserId == 0 && approver.Approvertype == "IM" && userDetails != null && !string.IsNullOrEmpty(userDetails.EmplId))
-                                {
-                                    var imUser = await _context.CoreVUsers
-                                        .FirstOrDefaultAsync(u => u.EmplId == userDetails.EmplId);
-                                    if (imUser != null)
-                                    {
-                                        approverUserId = imUser.UserId;
-                                    }
-                                }
-
-                                //var transactApprover = await _context.tra
-
-                                var transApproverRecord = await _context.EpeTransactionapprovers
-                                  .Where(a => a.Transactionid == transactionHeader.Transactionid
-                                           && a.Approverid == approver.Id.ToString()
-                                           && a.Isdelete == 0)
-                                  .FirstOrDefaultAsync();
-
-                               await _emailService.SendApprovalRequestEmailAsync(
-                                      approverEmail,
-                                      transactionHeader.Transactionid,
-                                      transactionHeader.Transactionnumber,
-                                      userDetails?.Employeename ?? requesterId,
-                                      request.Details ?? "No details provided",
-                                      approverUserId,
-                                      transApproverRecord?.Transapproverid ?? 0             
-                                      );
-                            }
-                            catch (Exception ex)
-                            {
-                                // Log error but don't fail the request creation
-                                _logger.LogError(ex, "Failed to send approval request email to {Email}", approverEmail);
-                            }
-                        }
-                    }
-
-                    var requester = await _context.CoreVEmployeeDetails
-                        .Where(r => r.EmplId == request.Requestorid)
-                        .FirstOrDefaultAsync();
-
-                    var requesterUserId = 0;
-                    if (requester != null && !string.IsNullOrEmpty(requester.EmplId))
-                    {
-                        var user = await _context.CoreVUsers
-                            .FirstOrDefaultAsync(u => u.EmplId == requester.EmplId);
-                        if (user != null)
-                        {
-                            requesterUserId = user.UserId;
-                        }
-                    }
-
-                    await _emailService.SendRequestCreatedEmailAsync(
-                        requester.Emailadd,
-                        transactionHeader.Transactionid,
-                        transactionHeader.Transactionnumber,
-                        request.Details ?? "No details provided",
-                        requesterUserId
-                    );
                 }
 
                 await transaction.CommitAsync();
 
-                return Ok(new { success = true, message = "Exemption request created successfully", item = transactionHeader });
+                return Ok(new
+                {
+                    success = true,
+                    message = "Exemption request created successfully",
+                    item = transactionHeader
+                });
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return StatusCode(500, "Error " + e.Message);
+                _logger.LogError(ex, "CreateExemptionRequest failed");
+                return StatusCode(500, ex.Message);
             }
-
         }
 
         [HttpPost("update-draft/{id}")]
@@ -1257,13 +1154,65 @@ namespace EPEAPI.Controllers
             }
         }
 
+        //[HttpPost("add-attachment/{transactionId}")]
+        //public async Task<IActionResult> AddAttachment(int transactionId, [FromForm] UploadAttachmentRequest request)
+        //{
+
+        //    //_logger.LogInformation(request.Attachments.ToString());
+
+        //    using var transaction = await _context.Database.BeginTransactionAsync();
+        //    try
+        //    {
+        //        // Get transaction number
+        //        var transactionHeader = await _context.EpeTransactionheaders
+        //            .Where(t => t.Transactionid == transactionId && t.Isdelete == 0)
+        //            .FirstOrDefaultAsync();
+
+        //        if (transactionHeader == null)
+        //        {
+        //            return NotFound(new { success = false, message = "Transaction not found" });
+        //        }
+
+        //        if (request == null)
+        //        {
+        //            return BadRequest(new { success = false, message = "No attachments provided" });
+        //        }
+
+        //        foreach (var attachment in request)
+        //        {
+        //            var savedFileName = await _fileUploadService.SaveFile(attachment.File);
+        //            var epeAttachment = new EpeAttachment
+        //            {
+        //                TaskId = transactionHeader.Transactionnumber,
+        //                // ReferenceType = attachment.ReferenceType,
+        //                UploadFilename = attachment.File.FileName,
+        //                Newfilename = savedFileName,
+        //                Filetype = Path.GetExtension(attachment.File.FileName).TrimStart('.'),
+        //                Createdate = DateTime.UtcNow.AddHours(8),
+        //                Computerhost = HttpContext.Request.Host.Host,
+        //            };
+        //            _context.EpeAttachments.Add(epeAttachment);
+        //        }
+
+        //        await _context.SaveChangesAsync();
+        //        await transaction.CommitAsync();
+
+        //        return Ok(new { success = true, message = "Attachments added successfully" });
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        await transaction.RollbackAsync();
+        //        return StatusCode(500, "Error: " + e.Message);
+        //    }
+        //}
+
         [HttpPost("add-attachment/{transactionId}")]
-        public async Task<IActionResult> AddAttachment(int transactionId, [FromForm] CreateExemptionRequestDto request)
+        public async Task<IActionResult> AddAttachment( int transactionId, [FromForm] UploadAttachmentRequest request)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
+
             try
             {
-                // Get transaction number
                 var transactionHeader = await _context.EpeTransactionheaders
                     .Where(t => t.Transactionid == transactionId && t.Isdelete == 0)
                     .FirstOrDefaultAsync();
@@ -1273,24 +1222,25 @@ namespace EPEAPI.Controllers
                     return NotFound(new { success = false, message = "Transaction not found" });
                 }
 
-                if (request.Attachments == null || !request.Attachments.Any())
+                if (request?.Files == null || !request.Files.Any())
                 {
                     return BadRequest(new { success = false, message = "No attachments provided" });
                 }
 
-                foreach (var attachment in request.Attachments)
+                foreach (var file in request.Files)
                 {
-                    var savedFileName = await _fileUploadService.SaveFile(attachment.File);
+                    var savedFileName = await _fileUploadService.SaveFile(file);
+
                     var epeAttachment = new EpeAttachment
                     {
                         TaskId = transactionHeader.Transactionnumber,
-                        ReferenceType = attachment.ReferenceType,
-                        UploadFilename = attachment.File.FileName,
+                        UploadFilename = file.FileName,
                         Newfilename = savedFileName,
-                        Filetype = Path.GetExtension(attachment.File.FileName).TrimStart('.'),
+                        Filetype = Path.GetExtension(file.FileName).TrimStart('.'),
                         Createdate = DateTime.UtcNow.AddHours(8),
                         Computerhost = HttpContext.Request.Host.Host,
                     };
+
                     _context.EpeAttachments.Add(epeAttachment);
                 }
 
@@ -1302,7 +1252,7 @@ namespace EPEAPI.Controllers
             catch (Exception e)
             {
                 await transaction.RollbackAsync();
-                return StatusCode(500, "Error: " + e.Message);
+                return StatusCode(500, new { success = false, message = e.Message });
             }
         }
 

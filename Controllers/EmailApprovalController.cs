@@ -81,7 +81,7 @@ public class EmailApprovalController : ControllerBase
     [HttpGet("act")]
     public async Task<IActionResult> ActOnToken([FromQuery] string token)
     {
-        var baseUrl = _urlBaseSettings.View; // TODO: Move to config
+        var baseUrl = _urlBaseSettings.View; 
 
         try
         {
