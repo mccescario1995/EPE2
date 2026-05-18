@@ -1,247 +1,406 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-const route = useRoute();
+import { ref, computed, onMounted } from "vue";
+
+// ─── Layout ───────────────────────────────────────────────────────────────────
+definePageMeta({ layout: "empty" });
+
 const router = useRouter();
 
-const rawToken = computed(() => {
-  const t = route.query.token;
-  if (Array.isArray(t)) return t[0] ?? '';
-  return (t ?? '') as string;
-});
+// ─── Hash-mode safe token extraction ─────────────────────────────────────────
+// nuxt.config uses hashMode: true → route is after "#", so route.query is
+// populated from the hash segment. However, on first paint the hash may not
+// be parsed yet — so we also fall back to manual window.location.hash parsing.
+function getHashParam(key: string): string {
+  if (typeof window === "undefined") return "";
 
-const localStatus = ref('');
-const localAction = ref('');
-const transactionId = ref('');
-const token = ref(rawToken.value || '');
-const showConfirm = ref(true);
+  // e.g. /#/email-response?token=abc&status=xyz
+  const hash = window.location.hash; // "#/email-response?token=abc"
+  const queryStart = hash.indexOf("?");
+  if (queryStart === -1) return "";
+
+  const params = new URLSearchParams(hash.slice(queryStart + 1));
+  return params.get(key) ?? "";
+}
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const token = ref("");
+const previewData = ref<any>(null); // full preview response
+const resultStatus = ref(""); // 'success' | error key — set after action
+const resultAction = ref(""); // 'approved' | 'disapproved'
+const resultTxId = ref("");
+
+const stage = ref<"loading" | "confirm" | "result" | "error">("loading");
+const errorKey = ref(""); // key into statusConfig
 const processing = ref(false);
-const errorMessage = ref('');
-const transaction = ref<any>(null);
 
-const config: Record<string, any> = {
+// ─── Status / result display config ──────────────────────────────────────────
+const statusConfig: Record<
+  string,
+  { icon: string; color: string; bg: string; title: string; message: string }
+> = {
   invalid: {
-    icon: '⚠️',
-    color: 'text-red-600',
-    bg: 'bg-red-50',
-    title: 'Invalid Link',
-    message: 'This approval link is invalid or does not exist.',
+    icon: "⚠️",
+    color: "text-red-600",
+    bg: "bg-red-50",
+    title: "Invalid Link",
+    message: "This approval link is invalid or does not exist.",
   },
   expired: {
-    icon: '⏰',
-    color: 'text-orange-600',
-    bg: 'bg-orange-50',
-    title: 'Link Expired',
-    message: 'This approval link has expired (72-hour limit). Please visit the app to respond.',
+    icon: "⏰",
+    color: "text-orange-600",
+    bg: "bg-orange-50",
+    title: "Link Expired",
+    message:
+      "This approval link has expired (72-hour limit). Please visit the app to respond.",
   },
   already_used: {
-    icon: '✅',
-    color: 'text-blue-600',
-    bg: 'bg-blue-50',
-    title: 'Already Responded',
-    message: 'This link has already been used. Your response was recorded.',
+    icon: "✅",
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+    title: "Already Responded",
+    message: "This link has already been used. Your response was recorded.",
   },
   already_closed: {
-    icon: '🔒',
-    color: 'text-gray-600',
-    bg: 'bg-gray-50',
-    title: 'Request Closed',
-    message: 'This request has already been closed.',
+    icon: "🔒",
+    color: "text-gray-600",
+    bg: "bg-gray-50",
+    title: "Request Closed",
+    message: "This request has already been closed.",
   },
   already_responded: {
-    icon: '✅',
-    color: 'text-blue-600',
-    bg: 'bg-blue-50',
-    title: 'Already Responded',
-    message: 'You have already responded to this request.',
+    icon: "✅",
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+    title: "Already Responded",
+    message: "You have already responded to this request.",
   },
   error: {
-    icon: '❌',
-    color: 'text-red-600',
-    bg: 'bg-red-50',
-    title: 'Something Went Wrong',
-    message: 'An error occurred while processing your response. Please try again via the app.',
+    icon: "❌",
+    color: "text-red-600",
+    bg: "bg-red-50",
+    title: "Something Went Wrong",
+    message:
+      "An error occurred while processing your response. Please try again via the app.",
+  },
+  network_error: {
+    icon: "📡",
+    color: "text-red-600",
+    bg: "bg-red-50",
+    title: "Network Error",
+    message:
+      "Could not reach the server. Please check your connection and try again.",
   },
 };
 
-const current = computed(() => {
-  if (localStatus.value === 'success') {
-    const act = localAction.value === 'approved' ? 'approved' : 'disapproved';
+// ─── Derived display ──────────────────────────────────────────────────────────
+type DisplayConfig = {
+  icon: string;
+  color: string;
+  bg: string;
+  title: string;
+  message: string;
+};
+
+const displayConfig = computed<DisplayConfig>(() => {
+  if (stage.value === "result") {
+    const approved = resultAction.value === "approved";
     return {
-      icon: act === 'approved' ? '✅' : '❌',
-      color: act === 'approved' ? 'text-green-600' : 'text-red-600',
-      bg: act === 'approved' ? 'bg-green-50' : 'bg-red-50',
-      title: act === 'approved' ? 'Request Approved!' : 'Request Disapproved',
-      message: `You have successfully ${act} this exemption request.`,
+      icon: approved ? "✅" : "❌",
+      color: approved ? "text-green-600" : "text-red-600",
+      bg: approved ? "bg-green-50" : "bg-red-50",
+      title: approved ? "Request Approved!" : "Request Disapproved",
+      message: `You have successfully ${resultAction.value} this exemption request.`,
     };
   }
-  return config[localStatus.value] ?? config.error;
+  return statusConfig[errorKey.value] ?? statusConfig.error;
 });
 
+// What action does this token represent? Derived from preview.
+const tokenAction = computed<"approve" | "disapprove" | null>(() => {
+  // The backend stores 'approve' or 'disapprove' on the token record.
+  // The preview endpoint returns allowed actions; since each email link
+  // carries only ONE token for ONE action, we infer from previewData if
+  // the backend exposes it — otherwise we let the act endpoint handle it.
+  return previewData.value?.action ?? null; // see backend note below
+});
+
+const actionLabel = computed(() => {
+  if (tokenAction.value === "disapprove")
+    return { verb: "Disapprove", color: "bg-red-600 hover:bg-red-700" };
+  return { verb: "Approve", color: "bg-green-600 hover:bg-green-700" };
+});
+
+// ─── Load preview ─────────────────────────────────────────────────────────────
 async function loadPreview() {
-  if (!token.value) {
-    localStatus.value = 'invalid';
-    console.log('Invalid token provided');
-    showConfirm.value = false;
-    return;
-  }
+  stage.value = "loading";
 
   try {
-    processing.value = true;
-    errorMessage.value = '';
-    const data = await $fetch(`/api/emailapproval/preview?token=${encodeURIComponent(token.value)}`, {
-      headers: { Accept: 'application/json' },
-    });
+    const data: any = await $fetch(
+      `/api/emailapproval/preview?token=${encodeURIComponent(token.value)}`,
+      { headers: { Accept: "application/json" } },
+    );
 
-    console.log('Preview data ok:', (data as any).ok);
-
-    if (!(data as any).ok) {
-      const err = (data as any).error ?? 'invalid';
-      localStatus.value = err;
-      showConfirm.value = false;
-      transaction.value = null;
-      transactionId.value = ((data as any).transactionId ?? '') + '';
+    if (!data?.ok) {
+      errorKey.value = data?.error ?? "error";
+      resultTxId.value = String(data?.transactionId ?? "");
+      stage.value = "error";
       return;
     }
 
-    transaction.value = (data as any).transaction;
-    transactionId.value = transaction.value?.id ?? '';
-    showConfirm.value = true;
+    previewData.value = data;
+    resultTxId.value = String(data.transaction?.id ?? "");
+    stage.value = "confirm";
   } catch (err: any) {
-    // network or server error
-    errorMessage.value = err?.data?.error ?? err?.message ?? 'Network error';
-    localStatus.value = 'error';
-    showConfirm.value = false;
-  } finally {
-    processing.value = false;
+    console.error("Preview fetch failed:", err);
+    errorKey.value = "network_error";
+    stage.value = "error";
   }
 }
 
-async function actToken() {
+// ─── Execute action ───────────────────────────────────────────────────────────
+async function executeAction() {
   if (processing.value || !token.value) return;
-  processing.value = true;
-  errorMessage.value = '';
-  try {
-    const data = await $fetch(`/api/emailapproval/act?token=${encodeURIComponent(token.value)}`, {
-      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-    });
 
-    if ((data as any).ok) {
-      localStatus.value = 'success';
-      localAction.value = (data as any).result ?? 'approved';
-      transactionId.value = (data as any).transactionId ?? transactionId.value;
-      showConfirm.value = false;
+  processing.value = true;
+  try {
+    const data: any = await $fetch(
+      `/api/emailapproval/act?token=${encodeURIComponent(token.value)}`,
+      {
+        headers: {
+          Accept: "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      },
+    );
+
+    if (data?.ok) {
+      resultAction.value = data.result ?? "approved";
+      resultTxId.value = String(data.transactionId ?? resultTxId.value);
+      stage.value = "result";
     } else {
-      const err = (data as any).error ?? 'error';
-      localStatus.value = err;
-      showConfirm.value = false;
+      errorKey.value = data?.error ?? "error";
+      resultTxId.value = String(data?.transactionId ?? resultTxId.value);
+      stage.value = "error";
     }
   } catch (err: any) {
-    errorMessage.value = err?.data?.error ?? err?.message ?? 'Network error';
-    localStatus.value = 'error';
-    showConfirm.value = false;
+    console.error("Act fetch failed:", err);
+    errorKey.value = "network_error";
+    stage.value = "error";
   } finally {
     processing.value = false;
   }
 }
 
+// ─── Navigation helpers ───────────────────────────────────────────────────────
 function viewRequest() {
-  if (!transactionId.value) return;
-  router.push({ path: '/exemptions/view', query: { id: transactionId.value } });
+  if (!resultTxId.value) return;
+  router.push({ path: "/exemptions/view", query: { id: resultTxId.value } });
 }
 
 function goDashboard() {
-  router.push('/exemptions/dashboard');
+  router.push("/exemptions/all");
 }
 
-function onConfirmApprove() {
-  // act endpoint determines action from token; call act
-  actToken();
-}
-function onConfirmDisapprove() {
-  actToken();
-}
-
+// ─── Init ─────────────────────────────────────────────────────────────────────
 onMounted(() => {
-console.log('route.fullPath:', route.fullPath);
- console.log('route.query:', JSON.stringify(route.query));
-  console.log('route.query.token type:', typeof route.query.token, Array.isArray(route.query.token)) ;
-  console.log('window.location.href:', window.location.href) ;
-  console.log('window.location.search:', window.location.search) ;
-  console.log('window.location.hash:', window.location.hash);
+  // Primary: use Nuxt route.query (works when hash routing parsed)
+  const route = useRoute();
+  let t = route.query.token;
+  token.value = Array.isArray(t) ? (t[0] ?? "") : (t ?? "");
 
-  console.log('Email response page loaded with token:', rawToken.value);
-  token.value = rawToken.value || '';
-  console.log('Loaded token:', token.value);
+  // Fallback: manual hash parse (handles edge cases on direct navigation)
+  if (!token.value) {
+    token.value = getHashParam("token");
+  }
+
+  if (!token.value) {
+    errorKey.value = "invalid";
+    stage.value = "error";
+    return;
+  }
+
   loadPreview();
 });
 </script>
 
 <template>
-  <div class="min-h-3/4 bg-gray-50 flex items-center justify-center">
-    <div class="bg-white rounded-2xl shadow-lg max-w-md w-full p-8 text-center">
-      <div v-if="showConfirm" class="space-y-6">
-        <div class="text-2xl font-bold">Confirm Response</div>
-        <p class="text-gray-600">
-          You are about to respond to this exemption request. Please confirm
-          your action.
-        </p>
+  <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-lg max-w-md w-full p-8">
+      <!-- ── Loading ── -->
+      <div
+        v-if="stage === 'loading'"
+        class="flex flex-col items-center gap-4 py-8"
+      >
+        <svg
+          class="animate-spin h-10 w-10 text-blue-500"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
+        </svg>
+        <p class="text-gray-500 text-sm">Verifying your link…</p>
+      </div>
 
-        <div v-if="transaction" class="text-left p-4 bg-gray-50 rounded">
-          <div class="font-semibold">Transaction #:</div>
-          <div class="text-sm text-gray-700 mb-2">{{ transaction.number }}</div>
-          <div class="font-semibold">Summary:</div>
-          <div class="text-sm text-gray-700">{{ transaction.summary }}</div>
+      <!-- ── Confirm ── -->
+      <div v-else-if="stage === 'confirm'" class="space-y-6">
+        <div class="text-center">
+          <!-- Action badge -->
+          <span
+            class="inline-block mb-3 text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full"
+            :class="
+              tokenAction === 'disapprove'
+                ? 'bg-red-100 text-red-700'
+                : 'bg-green-100 text-green-700'
+            "
+          >
+            {{
+              tokenAction === "disapprove" ? "Disapproval" : "Approval"
+            }}
+            Request
+          </span>
+          <h2 class="text-2xl font-bold text-gray-800">
+            Confirm Your Response
+          </h2>
+          <p class="text-gray-500 text-sm mt-1">
+            You are about to
+            <strong>{{
+              tokenAction === "disapprove" ? "disapprove" : "approve"
+            }}</strong>
+            this exemption request. This action cannot be undone.
+          </p>
         </div>
 
-        <div class="flex gap-3">
-          <button
-            @click="onConfirmApprove"
-            :disabled="processing"
-            class="flex-1 py-3 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
-          >
-            Confirm Approve
-          </button>
-          <button
-            @click="onConfirmDisapprove"
-            :disabled="processing"
-            class="flex-1 py-3 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50"
-          >
-            Confirm Disapprove
-          </button>
+        <!-- Transaction details -->
+        <div
+          v-if="previewData?.transaction"
+          class="text-left p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-2"
+        >
+          <div>
+            <span
+              class="text-xs font-medium text-gray-500 uppercase tracking-wide"
+              >Transaction #</span
+            >
+            <p class="text-sm font-semibold text-blue-700 mt-0.5">
+              {{ previewData.transaction.number }}
+            </p>
+          </div>
+          <div v-if="previewData.transaction.summary">
+            <span
+              class="text-xs font-medium text-gray-500 uppercase tracking-wide"
+              >Details</span
+            >
+            <p class="text-sm text-gray-700 mt-0.5 line-clamp-4">
+              {{ previewData.transaction.summary }}
+            </p>
+          </div>
+          <div v-if="previewData.expiresAt">
+            <span
+              class="text-xs font-medium text-gray-500 uppercase tracking-wide"
+              >Link expires</span
+            >
+            <p class="text-sm text-gray-600 mt-0.5">
+              {{ new Date(previewData.expiresAt).toLocaleString() }}
+            </p>
+          </div>
         </div>
-        <div class="flex gap-3">
+
+        <!-- Confirm button (single, matches token action) -->
+        <div class="flex flex-col gap-3">
+          <button
+            @click="executeAction"
+            :disabled="processing"
+            class="w-full py-3 px-4 rounded-lg font-semibold text-white text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            :class="actionLabel.color"
+          >
+            <svg
+              v-if="processing"
+              class="animate-spin h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            {{ processing ? "Processing…" : `Confirm ${actionLabel.verb}` }}
+          </button>
+
           <button
             @click="goDashboard"
             :disabled="processing"
-            class="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
+            class="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
           >
-            Cancel
+            Cancel — Go to Dashboard
           </button>
-        </div>
-        <div v-if="processing" class="text-sm text-gray-600">Processing...</div>
-        <div v-if="errorMessage" class="text-sm text-red-600">
-          {{ errorMessage }}
         </div>
       </div>
 
-      <div v-else>
-        <div class="text-6xl mb-4">{{ current.icon }}</div>
-        <h1 class="text-2xl font-bold mb-2" :class="current.color">
-          {{ current.title }}
-        </h1>
-        <p class="text-gray-600 mb-6">{{ current.message }}</p>
+      <!-- ── Result ── -->
+      <div v-else-if="stage === 'result'" class="text-center space-y-5">
+        <div class="text-5xl">{{ displayConfig.icon }}</div>
+        <div :class="['text-2xl font-bold', displayConfig.color]">
+          {{ displayConfig.title }}
+        </div>
+        <p class="text-gray-500 text-sm">{{ displayConfig.message }}</p>
 
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-3 pt-2">
           <button
-            v-if="transactionId"
+            v-if="resultTxId"
             @click="viewRequest"
-            class="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+            class="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors"
           >
             View Request
           </button>
           <button
             @click="goDashboard"
-            class="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
+            class="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-200 transition-colors"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Error ── -->
+      <div v-else class="text-center space-y-5">
+        <div class="text-5xl">{{ displayConfig.icon }}</div>
+        <div :class="['text-2xl font-bold', displayConfig.color]">
+          {{ displayConfig.title }}
+        </div>
+        <p class="text-gray-500 text-sm">{{ displayConfig.message }}</p>
+
+        <div class="flex flex-col gap-3 pt-2">
+          <button
+            v-if="resultTxId"
+            @click="viewRequest"
+            class="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors"
+          >
+            View Request
+          </button>
+          <button
+            @click="goDashboard"
+            class="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-200 transition-colors"
           >
             Back to Dashboard
           </button>
