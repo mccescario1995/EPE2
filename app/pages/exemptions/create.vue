@@ -12,11 +12,11 @@ const formData = ref({
   policyid: null as number | { id: number; label: string } | null,
   corporate: null as { id: string; label: string } | null,
   details: "",
-  referenceType: "",
+  // referenceType: "",
 });
 
 // Add newAttachments (from edit.vue)
-const newAttachments = ref<{ file: File; referenceType: string }[]>([]);
+const newAttachments = ref<{ file: File /* referenceType: string */ }[]>([]);
 
 // Draft state
 const isDraft = ref(false);
@@ -88,7 +88,7 @@ const errors = ref({
   policyid: "",
   details: "",
   attachments: "",
-  referenceType: "",
+  // referenceType: "",
 });
 
 // Loading state
@@ -242,7 +242,7 @@ watch(
   () => newAttachments.value,
   () => {
     errors.value.attachments = ""; // Clear attachments error when changed
-    errors.value.referenceType = ""; // Clear referenceType error when changed
+    // errors.value.referenceType = ""; // Clear referenceType error when changed
   },
   { deep: true }, // Deep watch for array/object changes
 );
@@ -257,25 +257,25 @@ watch(
 
 // Clear attachment error only when a file is selected
 watch(
-  () => newAttachments.value.map(a => a.file),
+  () => newAttachments.value.map((a) => a.file),
   (newFiles) => {
-    if (newFiles.some(f => f !== null)) {
+    if (newFiles.some((f) => f !== null)) {
       errors.value.attachments = "";
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Clear referenceType error when any referenceType is selected
-watch(
-  () => newAttachments.value.map(a => a.referenceType),
-  (newTypes) => {
-    if (newTypes.some(t => t !== "")) {
-      errors.value.referenceType = "";
-    }
-  },
-  { deep: true }
-);
+// watch(
+//   () => newAttachments.value.map(a => a.referenceType),
+//   (newTypes) => {
+//     if (newTypes.some(t => t !== "")) {
+//       errors.value.referenceType = "";
+//     }
+//   },
+//   { deep: true }
+// );
 
 // Validate form
 const validateForm = (forDraft = false) => {
@@ -284,7 +284,7 @@ const validateForm = (forDraft = false) => {
     policyid: "",
     details: "",
     attachments: "",
-    referenceType: "",
+    // referenceType: "",
   };
 
   // Policy is required only for full submission (not draft)
@@ -312,7 +312,7 @@ const validateForm = (forDraft = false) => {
       attachmentFile: attachment.file,
       fileName: attachment.file?.name,
       fileSize: attachment.file?.size,
-      referenceType: attachment.referenceType,
+      // referenceType: attachment.referenceType,
     });
     if (!attachment.file) {
       errors.value.attachments = "Please select a file for all attachments.";
@@ -326,12 +326,12 @@ const validateForm = (forDraft = false) => {
     //   // break;
     // }
 
-    if (!attachment.referenceType) {
-      errors.value.referenceType =
-        "Please select a reference type for all attachments.";
-      isValid = false;
-      // break;
-    }
+    // if (!attachment.referenceType) {
+    //   errors.value.referenceType =
+    //     "Please select a reference type for all attachments.";
+    //   isValid = false;
+    //   // break;
+    // }
   }
 
   return isValid;
@@ -345,8 +345,7 @@ const isFormValid = computed(() => {
     formData.value.details.trim().length >= 10 &&
     newAttachments.value.length <= 5 &&
     newAttachments.value.every(
-      (att) =>
-        att.file && att.referenceType && att.file.size <= 10 * 1024 * 1024,
+      (att) => att.file && att.file.size <= 10 * 1024 * 1024,
     )
   );
 });
@@ -358,8 +357,7 @@ const isDraftValid = computed(() => {
     formData.value.details.trim().length >= 10 &&
     newAttachments.value.length <= 5 &&
     newAttachments.value.every(
-      (att) =>
-        att.file && att.referenceType && att.file.size <= 10 * 1024 * 1024,
+      (att) => att.file && att.file.size <= 10 * 1024 * 1024,
     )
   );
 });
@@ -426,10 +424,7 @@ const handleSaveDraft = async () => {
       if (attachment.file) {
         formDataToSend.append(`Attachments[${index}].file`, attachment.file);
       }
-      formDataToSend.append(
-        `Attachments[${index}].ReferenceType`,
-        attachment.referenceType,
-      );
+      // formDataToSend.append(`Attachments[${index}].ReferenceType`, attachment.referenceType);
     });
 
     let response;
@@ -492,105 +487,63 @@ const handleSubmit = async () => {
   if (!validateForm()) return;
 
   isSubmitting.value = true;
+
   try {
-    if (draftId.value) {
-      // Submit existing draft
-      const response = await apiFetch(
-        `/api/exemption/submit-draft/${draftId.value}`,
-        {
-          method: "POST",
-        },
-      );
+    const formDataToSend = new FormData();
 
-      if (response) {
-        showToast({
-          type: "success",
-          title: "Success",
-          message: "Draft submitted successfully!",
-          duration: 5000,
-        });
-        router.push("/exemptions/all");
-      } else {
-        showToast({
-          type: "error",
-          title: "Error",
-          message: response.message || "Failed to submit draft",
-          duration: 5000,
-        });
-      }
-    } else {
-      // Create new request
-      // Diagnostic logging
-      console.log("Submitting exemption request with data:", {
-        policyId: getPolicyId(),
-        details: formData.value.details,
-        requestorId: userId.emplId,
-        createdBy: userId.userId,
-        attachments: newAttachments.value.map((a) => ({
-          fileName: a.file?.name,
-          fileSize: a.file?.size,
-          referenceType: a.referenceType,
-        })),
-      });
-
-      const workstation = parseWorkstation();
-      const formDataToSend = new FormData();
-      const policyId = getPolicyId();
-      if (policyId != null) {
-        formDataToSend.append("policyid", String(policyId!));
-      }
-      formDataToSend.append("details", formData.value.details);
-      formDataToSend.append("requestorid", userId.emplId);
-      formDataToSend.append("createdby", userId.userId.toString());
-      formDataToSend.append("computerhost", workstation);
-
-      newAttachments.value.forEach((attachment, index) => {
-        if (attachment.file) {
-          formDataToSend.append(`Attachments[${index}].file`, attachment.file);
-        }
-        formDataToSend.append(
-          `Attachments[${index}].ReferenceType`,
-          attachment.referenceType,
-        );
-      });
-
-      const response = await apiFetch("/api/exemption/create", {
-        method: "POST",
-        body: formDataToSend,
-        // No Content-Type header - let browser set it for FormData
-      });
-
-      if (response) {
-        showToast({
-          type: "success",
-          title: "Success",
-          message: "Exemption request created successfully!",
-          duration: 5000,
-        });
-        // Redirect to exemptions list after success
-        router.push("/exemptions/all");
-      } else {
-        showToast({
-          type: "error",
-          title: "Error",
-          message: response.message || "Failed to create exemption request",
-          duration: 5000,
-        });
-      }
+    const policyId = getPolicyId();
+    if (policyId != null) {
+      formDataToSend.append("policyid", String(policyId));
     }
+
+    formDataToSend.append("details", formData.value.details ?? "");
+    formDataToSend.append("requestorid", userId.emplId);
+    formDataToSend.append("createdby", userId.userId.toString());
+
+    const workstation = parseWorkstation();
+    formDataToSend.append("computerhost", workstation);
+
+    // ✅ FIXED ATTACHMENTS
+    newAttachments.value.forEach((attachment, index) => {
+      if (attachment.file) {
+        formDataToSend.append(
+          `Attachments[${index}].File`,
+          attachment.file
+        );
+      }
+    });
+
+    const response :any = await $fetch("/api/exemption/create", {
+      method: "POST",
+      body: formDataToSend
+    });
+
+    if (response) {
+      showToast({
+        type: "success",
+        title: "Success",
+        message: "Exemption request created successfully!",
+        duration: 5000,
+      });
+
+      router.push("/exemptions/all");
+    } else {
+      throw new Error(response.message || "Failed to create request");
+    }
+
   } catch (error: any) {
-    console.error("Error submitting request:", error);
+    console.error("Submit error:", error);
+
     showToast({
       type: "error",
       title: "Error",
-      message:
-        error.message || "An error occurred while submitting the request",
+      message: error.message || "Submission failed",
       duration: 5000,
     });
   } finally {
     isSubmitting.value = false;
   }
-};
+};            
 
 // Handle cancel
 const handleCancel = () => {
@@ -600,7 +553,7 @@ const handleCancel = () => {
 // Add attachment
 const addAttachment = () => {
   if (newAttachments.value.length < 5) {
-    newAttachments.value.push({ file: null as any, referenceType: "" });
+    newAttachments.value.push({ file: null as any /*, referenceType: "" */ });
   }
 };
 
@@ -609,18 +562,18 @@ const removeAttachment = (index: number) => {
   newAttachments.value.splice(index, 1);
 
   // Re-check referenceType error after deletion
-  const hasEmptyReferenceType = newAttachments.value.some(
-    a => a.file && !a.referenceType
-  );
-  
-  if (hasEmptyReferenceType) {
-    errors.value.referenceType = "Please select a type for all attachments.";
-  } else {
-    errors.value.referenceType = "";
-  }
+  // const hasEmptyReferenceType = newAttachments.value.some(
+  //   a => a.file && !a.referenceType
+  // );
+
+  // if (hasEmptyReferenceType) {
+  //    errors.value.referenceType = "Please select a type for all attachments.";
+  //  } else {
+  //    errors.value.referenceType = "";
+  //  }
 
   // Re-check attachment error after deletion
-  const hasMissingFile = newAttachments.value.some(a => !a.file);
+  const hasMissingFile = newAttachments.value.some((a) => !a.file);
   if (hasMissingFile) {
     errors.value.attachments = "Please select a file for all attachments.";
   } else {
@@ -764,18 +717,7 @@ onMounted(async () => {
                     MB)
                   </p>
                 </div>
-                <div class="w-48">
-                  <select
-                    v-model="attachment.referenceType"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select type</option>
-                    <option value="documentation">Documentation</option>
-                    <option value="email">Email</option>
-                    <option value="supporting">Supporting Document</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
+                <!-- Reference type selection removed per request -->
                 <Button
                   variant="outline-danger"
                   size="sm"
@@ -800,9 +742,9 @@ onMounted(async () => {
             <p v-if="errors.attachments" class="mt-1 text-xs text-red-500">
               {{ errors.attachments }}
             </p>
-            <p v-if="errors.referenceType" class="mt-1 text-xs text-red-500">
+            <!-- <p v-if="errors.referenceType" class="mt-1 text-xs text-red-500">
               {{ errors.referenceType }}
-            </p>
+            </p> -->
           </div>
 
           <!-- Approvers List -->

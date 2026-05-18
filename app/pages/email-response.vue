@@ -80,6 +80,7 @@ const current = computed(() => {
 async function loadPreview() {
   if (!token.value) {
     localStatus.value = 'invalid';
+    console.log('Invalid token provided');
     showConfirm.value = false;
     return;
   }
@@ -90,6 +91,8 @@ async function loadPreview() {
     const data = await $fetch(`/api/emailapproval/preview?token=${encodeURIComponent(token.value)}`, {
       headers: { Accept: 'application/json' },
     });
+
+    console.log('Preview data ok:', (data as any).ok);
 
     if (!(data as any).ok) {
       const err = (data as any).error ?? 'invalid';
@@ -159,7 +162,16 @@ function onConfirmDisapprove() {
 }
 
 onMounted(() => {
+console.log('route.fullPath:', route.fullPath);
+ console.log('route.query:', JSON.stringify(route.query));
+  console.log('route.query.token type:', typeof route.query.token, Array.isArray(route.query.token)) ;
+  console.log('window.location.href:', window.location.href) ;
+  console.log('window.location.search:', window.location.search) ;
+  console.log('window.location.hash:', window.location.hash);
+
+  console.log('Email response page loaded with token:', rawToken.value);
   token.value = rawToken.value || '';
+  console.log('Loaded token:', token.value);
   loadPreview();
 });
 </script>
@@ -167,11 +179,11 @@ onMounted(() => {
 <template>
   <div class="min-h-3/4 bg-gray-50 flex items-center justify-center">
     <div class="bg-white rounded-2xl shadow-lg max-w-md w-full p-8 text-center">
-
       <div v-if="showConfirm" class="space-y-6">
         <div class="text-2xl font-bold">Confirm Response</div>
         <p class="text-gray-600">
-          You are about to respond to this exemption request. Please confirm your action.
+          You are about to respond to this exemption request. Please confirm
+          your action.
         </p>
 
         <div v-if="transaction" class="text-left p-4 bg-gray-50 rounded">
@@ -207,7 +219,9 @@ onMounted(() => {
           </button>
         </div>
         <div v-if="processing" class="text-sm text-gray-600">Processing...</div>
-        <div v-if="errorMessage" class="text-sm text-red-600">{{ errorMessage }}</div>
+        <div v-if="errorMessage" class="text-sm text-red-600">
+          {{ errorMessage }}
+        </div>
       </div>
 
       <div v-else>
@@ -233,7 +247,6 @@ onMounted(() => {
           </button>
         </div>
       </div>
-
     </div>
   </div>
 </template>

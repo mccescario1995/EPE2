@@ -43,7 +43,7 @@ const baseURL = import.meta.env.PROD
   /* ------------------------------------------------------------------
    * 2. Build headers safely
    * ------------------------------------------------------------------ */
-  const buildHeaders = (token?: string) => {
+  const buildHeaders = (token?: string, body?: any) => {
     const headers = new Headers(init.headers);
 
     if (token) {
@@ -58,6 +58,9 @@ const baseURL = import.meta.env.PROD
      * - JSON sets it manually
      * - FormData must NOT set it
      */
+  //   if (body instanceof FormData) {
+  //   headers.delete("Content-Type");
+  // }
 
     return headers;
   };

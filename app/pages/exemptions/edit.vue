@@ -29,7 +29,7 @@ const approversData = ref<any[]>([]);
 const policyName = ref<string>("");
 const policyValue = ref<{ id: number; label: string } | null>(null);
 const attachments = ref<any[]>([]);
-const newAttachments = ref<{ file: File; referenceType: string }[]>([]);
+const newAttachments = ref<{ file: File /* referenceType: string */ }[]>([]);
 
 // Store original data for comparison
 const originalData = ref({
@@ -648,7 +648,7 @@ const currentApproverId = computed(() => {
 // Add new attachment
 const addNewAttachment = () => {
   if (newAttachments.value.length < 5) {
-    newAttachments.value.push({ file: null as any, referenceType: "" });
+    newAttachments.value.push({ file: null as any /*, referenceType: ""*/ });
   }
 };
 
@@ -710,13 +710,21 @@ const deleteAttachment = async (attachId: number) => {
 const addNewAttachments = async () => {
   if (newAttachments.value.length === 0) return;
 
-  const formData = new FormData();
-  newAttachments.value.forEach((attachment, index) => {
-    formData.append(`Attachments[${index}].file`, attachment.file);
-    formData.append(
-      `Attachments[${index}].ReferenceType`,
-      attachment.referenceType,
-    );
+  const validFiles = newAttachments.value.filter((x) => x.file);
+
+  if (validFiles.length === 0) {
+    showToast({
+      type: "error",
+      title: "Error",
+      message: "No valid files selected",
+    });
+    return;
+  }
+
+  const uploadForm = new FormData();
+
+  validFiles.forEach((item) => {
+    uploadForm.append("files", item.file);
   });
 
   try {
@@ -724,13 +732,12 @@ const addNewAttachments = async () => {
       `/api/exemption/add-attachment/${exemptionId.value}`,
       {
         method: "POST",
-        body: formData,
+        body: uploadForm,
       },
     );
 
     if (response) {
       newAttachments.value = [];
-      // await handleBack();
       await fetchAttachments();
 
       showToast({
@@ -743,7 +750,7 @@ const addNewAttachments = async () => {
       showToast({
         type: "error",
         title: "Error",
-        message: response.message || "Failed to add attachments",
+        message: response?.message || "Failed to add attachments",
         duration: 3000,
       });
     }
@@ -1067,7 +1074,7 @@ onMounted(() => {
                           {{ attachment.uploadFilename }}
                         </p>
                         <p class="text-xs text-gray-500">
-                          {{ attachment.referenceType }} •
+                          <!-- // {{ attachment.referenceType }} • -->
                           {{ attachment.filetype }} •
                           {{
                             new Date(attachment.createdate).toLocaleDateString()
@@ -1122,18 +1129,7 @@ onMounted(() => {
                         MB)
                       </p>
                     </div>
-                    <div class="w-48">
-                      <select
-                        v-model="attachment.referenceType"
-                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="">Select type</option>
-                        <option value="documentation">Documentation</option>
-                        <option value="email">Email</option>
-                        <option value="supporting">Supporting Document</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
+                    <!-- Reference type selection removed per request -->
                     <Button
                       variant="outline-danger"
                       size="sm"
@@ -1149,7 +1145,7 @@ onMounted(() => {
                     v-if="newAttachments.length < 5"
                     variant="outline-primary"
                     size="sm"
-                    @onclick="addNewAttachment"
+                    @click="addNewAttachment"
                     icon="plus"
                   >
                     Add Attachment
@@ -1158,7 +1154,7 @@ onMounted(() => {
                     v-if="newAttachments.length > 0"
                     variant="primary"
                     size="sm"
-                    @onclick="addNewAttachments"
+                    @click="addNewAttachments"
                     :loading="isSubmitting"
                   >
                     Save Attachments

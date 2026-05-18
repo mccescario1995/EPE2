@@ -42,7 +42,7 @@ const fetchExemptionDetails = async () => {
       method: "POST",
       parseJson: true,
     });
-
+    console.log("Exemption details response:", response);
     if (response) {
       exemptionData.value = response.item;
       approversData.value = response.approvers || [];
@@ -506,7 +506,8 @@ const resendToApprover = async (transApproverId: number) => {
                         {{ attachment.uploadFilename }}
                       </p>
                       <p class="text-xs text-gray-500">
-                        {{ attachment.referenceType }} • {{ attachment.filetype }} •
+                        <!-- // {{ attachment.referenceType }} • -->
+                        {{ attachment.filetype }} •
                         {{ new Date(attachment.createdate).toLocaleDateString() }}
                       </p>
                     </div>
