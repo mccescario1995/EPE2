@@ -807,7 +807,7 @@ const fetchApprovers = async (policyId: number) => {
         approverName: a.approvername,
         approverEmail: a.approveremail,
         approverRole:
-          a.approvertype === "IM" ? "Immediate Manager" : a.approverRole, // Override for IM
+          a.approvertype === "IM" ? "Immediate Head" : a.approverRole, // Override for IM
         respond: 3,
         sort: a.sort,
         lineSequence: a.linesequence,

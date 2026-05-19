@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const router = useRouter();
 import { IconView, IconEdit, IconDelete, IconUserApprover } from "#components";
+import type { I } from "vue-router/dist/router-CWoNjPRp.mjs";
 // import { ManageApprover } from '../../../../.nuxt/components';
 // import ManageApproversModal from './ManageApproversModal.vue';
 
@@ -432,11 +433,13 @@ onMounted(() => {
           :field-mappings="{
             status: {
               A: 'Active',
+              I: 'Inactive',
             },
           }"
           :field-colors="{
             status: {
-              A: 'bg-green-100 text-green-800 border border-green-900',
+              A: 'bg-green-100 text-green-800 border border-green-900  w-full',
+              I: 'bg-red-50 text-red-800 border border-red-900 w-full',
             },
           }"
           :date-fields="['createdDate']"

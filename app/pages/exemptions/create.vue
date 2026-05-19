@@ -318,20 +318,11 @@ const validateForm = (forDraft = false) => {
       errors.value.attachments = "Please select a file for all attachments.";
       isValid = false;
       // break;
+    } else if (attachment.file.size > 10 * 1024 * 1024) {
+      errors.value.attachments = `File "${attachment.file.name}" exceeds the 10MB size limit.`;
+      isValid = false;
+      // break;
     }
-
-    // if (attachment.file.size > 10 * 1024 * 1024) {
-    //   errors.value.attachments = "Each file must be less than 10MB.";
-    //   isValid = false;
-    //   // break;
-    // }
-
-    // if (!attachment.referenceType) {
-    //   errors.value.referenceType =
-    //     "Please select a reference type for all attachments.";
-    //   isValid = false;
-    //   // break;
-    // }
   }
 
   return isValid;
@@ -488,6 +479,12 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true;
 
+  console.log("Submitting form with data:", {
+    policyid: formData.value.policyid,
+    details: formData.value.details,
+    attachments: newAttachments.value,
+  });
+
   try {
     const formDataToSend = new FormData();
 
@@ -496,12 +493,16 @@ const handleSubmit = async () => {
       formDataToSend.append("policyid", String(policyId));
     }
 
+    console.log("Policy ID to send:", formDataToSend.get("policyid"));
+
     formDataToSend.append("details", formData.value.details ?? "");
     formDataToSend.append("requestorid", userId.emplId);
     formDataToSend.append("createdby", userId.userId.toString());
 
     const workstation = parseWorkstation();
     formDataToSend.append("computerhost", workstation);
+
+    console.log("Workstation to send:", formDataToSend.get("computerhost"));
 
     // ✅ FIXED ATTACHMENTS
     newAttachments.value.forEach((attachment, index) => {
@@ -513,7 +514,7 @@ const handleSubmit = async () => {
       }
     });
 
-    const response :any = await $fetch("/api/exemption/create", {
+    const response :any = await apiFetch("/api/exemption/create", {
       method: "POST",
       body: formDataToSend
     });

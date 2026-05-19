@@ -499,6 +499,7 @@ function resetState() {
 
 function tryClose() {
   // justOppened.value = false;
+  cancelAdd();
   if (showAddForm.value) {
     showToast({
       type: "warning",
@@ -848,11 +849,11 @@ watch(
               ]"
               :disabled="hasIM"
               :title="
-                hasIM ? 'Only one Immediate Manager approver allowed' : ''
+                hasIM ? 'Only one Immediate Head approver allowed' : ''
               "
               @click="!hasIM && (newApprover.approvertype = 'IM')"
             >
-              Immediate Manager
+              Immediate Head
             </button>
           </div>
 
@@ -1086,7 +1087,7 @@ watch(
       Remove
       <strong>{{
         deletingApprover?.approvertype === "IM"
-          ? "Immediate Manager"
+          ? "Immediate Head"
           : deletingApprover?.approvername
       }}</strong>
       from this policy? This cannot be undone.

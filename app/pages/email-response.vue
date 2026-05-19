@@ -13,24 +13,25 @@ const router = useRouter();
 function getHashParam(key: string): string {
   if (typeof window === "undefined") return "";
 
-  // e.g. /#/email-response?token=abc&status=xyz
-  const hash = window.location.hash; // "#/email-response?token=abc"
+  const hash = window.location.hash;
   const queryStart = hash.indexOf("?");
   if (queryStart === -1) return "";
 
   const params = new URLSearchParams(hash.slice(queryStart + 1));
-  return params.get(key) ?? "";
+  const val = params.get(key) ?? "";
+  console.debug("[email-response] getHashParam", { key, hash, value: val });
+  return val;
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const token = ref("");
-const previewData = ref<any>(null); // full preview response
-const resultStatus = ref(""); // 'success' | error key — set after action
-const resultAction = ref(""); // 'approved' | 'disapproved'
+const previewData = ref<any>(null);
+const resultStatus = ref("");
+const resultAction = ref("");
 const resultTxId = ref("");
 
 const stage = ref<"loading" | "confirm" | "result" | "error">("loading");
-const errorKey = ref(""); // key into statusConfig
+const errorKey = ref("");
 const processing = ref(false);
 
 // ─── Status / result display config ──────────────────────────────────────────
@@ -87,21 +88,12 @@ const statusConfig: Record<
     color: "text-red-600",
     bg: "bg-red-50",
     title: "Network Error",
-    message:
-      "Could not reach the server. Please check your connection and try again.",
+    message: "Could not reach the server. Please check your connection and try again.",
   },
 };
 
 // ─── Derived display ──────────────────────────────────────────────────────────
-type DisplayConfig = {
-  icon: string;
-  color: string;
-  bg: string;
-  title: string;
-  message: string;
-};
-
-const displayConfig = computed<DisplayConfig>(() => {
+const displayConfig = computed(() => {
   if (stage.value === "result") {
     const approved = resultAction.value === "approved";
     return {
@@ -115,13 +107,8 @@ const displayConfig = computed<DisplayConfig>(() => {
   return statusConfig[errorKey.value] ?? statusConfig.error;
 });
 
-// What action does this token represent? Derived from preview.
 const tokenAction = computed<"approve" | "disapprove" | null>(() => {
-  // The backend stores 'approve' or 'disapprove' on the token record.
-  // The preview endpoint returns allowed actions; since each email link
-  // carries only ONE token for ONE action, we infer from previewData if
-  // the backend exposes it — otherwise we let the act endpoint handle it.
-  return previewData.value?.action ?? null; // see backend note below
+  return previewData.value?.action ?? null;
 });
 
 const actionLabel = computed(() => {
@@ -133,14 +120,21 @@ const actionLabel = computed(() => {
 // ─── Load preview ─────────────────────────────────────────────────────────────
 async function loadPreview() {
   stage.value = "loading";
+  console.debug("[email-response] loadPreview start", { token: token.value });
 
   try {
-    const data: any = await $fetch(
+    const data: any = await apiFetch(
       `/api/emailapproval/preview?token=${encodeURIComponent(token.value)}`,
-      { headers: { Accept: "application/json" } },
+      {
+        method: "GET",
+        parseJson: true,
+      }
     );
 
+    console.debug("[email-response] preview response", data);
+
     if (!data?.ok) {
+      console.warn("[email-response] preview not ok", data);
       errorKey.value = data?.error ?? "error";
       resultTxId.value = String(data?.transactionId ?? "");
       stage.value = "error";
@@ -151,7 +145,7 @@ async function loadPreview() {
     resultTxId.value = String(data.transaction?.id ?? "");
     stage.value = "confirm";
   } catch (err: any) {
-    console.error("Preview fetch failed:", err);
+    console.error("[email-response] Preview fetch failed:", err);
     errorKey.value = "network_error";
     stage.value = "error";
   }
@@ -162,28 +156,35 @@ async function executeAction() {
   if (processing.value || !token.value) return;
 
   processing.value = true;
+  console.debug("[email-response] executeAction start", {
+    token: token.value,
+    action: tokenAction.value,
+  });
   try {
-    const data: any = await $fetch(
+    const data: any = await apiFetch(
       `/api/emailapproval/act?token=${encodeURIComponent(token.value)}`,
       {
         headers: {
           Accept: "application/json",
           "X-Requested-With": "XMLHttpRequest",
         },
-      },
+      }
     );
+
+    console.debug("[email-response] act response", data);
 
     if (data?.ok) {
       resultAction.value = data.result ?? "approved";
       resultTxId.value = String(data.transactionId ?? resultTxId.value);
       stage.value = "result";
     } else {
+      console.warn("[email-response] act not ok", data);
       errorKey.value = data?.error ?? "error";
       resultTxId.value = String(data?.transactionId ?? resultTxId.value);
       stage.value = "error";
     }
   } catch (err: any) {
-    console.error("Act fetch failed:", err);
+    console.error("[email-response] Act fetch failed:", err);
     errorKey.value = "network_error";
     stage.value = "error";
   } finally {
@@ -203,17 +204,19 @@ function goDashboard() {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 onMounted(() => {
-  // Primary: use Nuxt route.query (works when hash routing parsed)
   const route = useRoute();
   let t = route.query.token;
-  token.value = Array.isArray(t) ? (t[0] ?? "") : (t ?? "");
+  console.debug("[email-response] route.query.token raw", t);
+  token.value = Array.isArray(t) ? t[0] ?? "" : t ?? "";
+  console.debug("[email-response] token after route parse", token.value);
 
-  // Fallback: manual hash parse (handles edge cases on direct navigation)
   if (!token.value) {
     token.value = getHashParam("token");
+    console.debug("[email-response] token after hash parse", token.value);
   }
 
   if (!token.value) {
+    console.warn("[email-response] No token found - marking invalid");
     errorKey.value = "invalid";
     stage.value = "error";
     return;
@@ -227,15 +230,8 @@ onMounted(() => {
   <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-lg max-w-md w-full p-8">
       <!-- ── Loading ── -->
-      <div
-        v-if="stage === 'loading'"
-        class="flex flex-col items-center gap-4 py-8"
-      >
-        <svg
-          class="animate-spin h-10 w-10 text-blue-500"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
+      <div v-if="stage === 'loading'" class="flex flex-col items-center gap-4 py-8">
+        <svg class="animate-spin h-10 w-10 text-blue-500" fill="none" viewBox="0 0 24 24">
           <circle
             class="opacity-25"
             cx="12"
@@ -265,19 +261,12 @@ onMounted(() => {
                 : 'bg-green-100 text-green-700'
             "
           >
-            {{
-              tokenAction === "disapprove" ? "Disapproval" : "Approval"
-            }}
-            Request
+            {{ tokenAction === "disapprove" ? "Disapproval" : "Approval" }} Request
           </span>
-          <h2 class="text-2xl font-bold text-gray-800">
-            Confirm Your Response
-          </h2>
+          <h2 class="text-2xl font-bold text-gray-800">Confirm Your Response</h2>
           <p class="text-gray-500 text-sm mt-1">
             You are about to
-            <strong>{{
-              tokenAction === "disapprove" ? "disapprove" : "approve"
-            }}</strong>
+            <strong>{{ tokenAction === "disapprove" ? "disapprove" : "approve" }}</strong>
             this exemption request. This action cannot be undone.
           </p>
         </div>
@@ -288,8 +277,7 @@ onMounted(() => {
           class="text-left p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-2"
         >
           <div>
-            <span
-              class="text-xs font-medium text-gray-500 uppercase tracking-wide"
+            <span class="text-xs font-medium text-gray-500 uppercase tracking-wide"
               >Transaction #</span
             >
             <p class="text-sm font-semibold text-blue-700 mt-0.5">
@@ -297,8 +285,7 @@ onMounted(() => {
             </p>
           </div>
           <div v-if="previewData.transaction.summary">
-            <span
-              class="text-xs font-medium text-gray-500 uppercase tracking-wide"
+            <span class="text-xs font-medium text-gray-500 uppercase tracking-wide"
               >Details</span
             >
             <p class="text-sm text-gray-700 mt-0.5 line-clamp-4">
@@ -306,8 +293,7 @@ onMounted(() => {
             </p>
           </div>
           <div v-if="previewData.expiresAt">
-            <span
-              class="text-xs font-medium text-gray-500 uppercase tracking-wide"
+            <span class="text-xs font-medium text-gray-500 uppercase tracking-wide"
               >Link expires</span
             >
             <p class="text-sm text-gray-600 mt-0.5">
@@ -359,11 +345,11 @@ onMounted(() => {
 
       <!-- ── Result ── -->
       <div v-else-if="stage === 'result'" class="text-center space-y-5">
-        <div class="text-5xl">{{ displayConfig.icon }}</div>
-        <div :class="['text-2xl font-bold', displayConfig.color]">
-          {{ displayConfig.title }}
+        <div class="text-5xl">{{ displayConfig?.icon }}</div>
+        <div :class="['text-2xl font-bold', displayConfig?.color]">
+          {{ displayConfig?.title }}
         </div>
-        <p class="text-gray-500 text-sm">{{ displayConfig.message }}</p>
+        <p class="text-gray-500 text-sm">{{ displayConfig?.message }}</p>
 
         <div class="flex flex-col gap-3 pt-2">
           <button
@@ -384,11 +370,11 @@ onMounted(() => {
 
       <!-- ── Error ── -->
       <div v-else class="text-center space-y-5">
-        <div class="text-5xl">{{ displayConfig.icon }}</div>
-        <div :class="['text-2xl font-bold', displayConfig.color]">
-          {{ displayConfig.title }}
+        <div class="text-5xl">{{ displayConfig?.icon }}</div>
+        <div :class="['text-2xl font-bold', displayConfig?.color]">
+          {{ displayConfig?.title }}
         </div>
-        <p class="text-gray-500 text-sm">{{ displayConfig.message }}</p>
+        <p class="text-gray-500 text-sm">{{ displayConfig?.message }}</p>
 
         <div class="flex flex-col gap-3 pt-2">
           <button

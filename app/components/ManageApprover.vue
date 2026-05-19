@@ -503,7 +503,7 @@ watch(
                           : 'bg-blue-100 text-blue-700'
                       "
                     >
-                      {{ group.main.approvertype === "IM" ? "Immediate Manager" : "Main" }}
+                      {{ group.main.approvertype === "IM" ? "Immediate Head" : "Main" }}
                     </span>
                   </div>
                   <p v-if="group.main.approvertype !== 'IM'" class="text-xs text-gray-400 truncate mt-0.5">
@@ -682,9 +682,9 @@ watch(
                 hasIM ? 'opacity-50 cursor-not-allowed' : ''
               ]"
               :disabled="hasIM"
-              :title="hasIM ? 'Only one Immediate Manager approver allowed' : ''"
+              :title="hasIM ? 'Only one Immediate Head approver allowed' : ''"
               @click="!hasIM && (newApprover.approvertype = 'IM')"
-            >Immediate Manager</button>
+            >Immediate Head</button>
           </div>
 
           <!-- IM info -->
@@ -831,7 +831,7 @@ watch(
       Remove
       <strong>{{
         deletingApprover?.approvertype === "IM"
-          ? "Immediate Manager"
+          ? "Immediate Head"
           : deletingApprover?.approvername
       }}</strong>
       from this policy? This cannot be undone.
