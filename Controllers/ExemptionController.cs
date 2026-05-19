@@ -576,6 +576,72 @@ namespace EPEAPI.Controllers
 
                 await transaction.CommitAsync();
 
+                // Get the first sequence (lowest Linesequence) from policy approvers
+                var firstSequence = policyApprovers.Min(p => p.Linesequence);
+                var firstApprovers = policyApprovers.Where(p => p.Linesequence == firstSequence).ToList();
+
+                foreach (var policyApprover in firstApprovers)
+                {
+                    string approverEmail = policyApprover.Approveremail ?? "";
+                    string approverName = policyApprover.Approvername ?? "";
+                    int approverUserId = 0;
+
+                    // If approver type is IM (Immediate Head), get the requester's immediate head
+                    if (policyApprover.Approvertype == "IM" && userDetails != null)
+                    {
+                        approverEmail = userDetails.ImmediateEmail ?? "";
+                        approverName = userDetails.ImmediateName ?? "";
+                    }
+
+                    if (!string.IsNullOrEmpty(approverEmail))
+                    {
+                        try
+                        {
+                            // Get the approver's user ID from CoreVUsers using Approverid as EmplId
+                            if (!string.IsNullOrEmpty(policyApprover.Approverid))
+                            {
+                                var approverUser = await _context.CoreVUsers
+                                    .FirstOrDefaultAsync(u => u.EmplId == policyApprover.Approverid);
+                                if (approverUser != null)
+                                {
+                                    approverUserId = approverUser.UserId;
+                                }
+                            }
+                            // If we couldn't get it from Approverid and it's an IM type, try from employee details
+                            if (approverUserId == 0 && policyApprover.Approvertype == "IM" && userDetails != null && !string.IsNullOrEmpty(userDetails.EmplId))
+                            {
+                                var imUser = await _context.CoreVUsers
+                                    .FirstOrDefaultAsync(u => u.EmplId == userDetails.EmplId);
+                                if (imUser != null)
+                                {
+                                    approverUserId = imUser.UserId;
+                                }
+                            }
+
+                            var transApproverRecord = await _context.EpeTransactionapprovers
+                                .Where(a => a.Transactionid == transactionHeader.Transactionid
+                                        && a.Approverid == policyApprover.Id.ToString()
+                                        && a.Isdelete == 0)
+                                .FirstOrDefaultAsync();
+
+                            await _emailService.SendApprovalRequestEmailAsync(
+                                approverEmail,
+                                transactionHeader.Transactionid,
+                                transactionHeader.Transactionnumber,
+                                userDetails?.Employeename,
+                                transactionHeader.Details ?? "No details provided",
+                                approverUserId,
+                                transApproverRecord?.Transapproverid ?? 0
+                            );
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log error but don't fail the request creation
+                            _logger.LogError(ex, "Failed to send approval request email to {Email}", approverEmail);
+                        }
+                    }
+                }
+
                 return Ok(new
                 {
                     success = true,
@@ -695,7 +761,7 @@ namespace EPEAPI.Controllers
                         string approverName = approver.Approvername ?? "";
                         //int approverId = int.Parse(approver.Approverid);
 
-                        // If approver type is IM (Immediate Manager), get the requester's immediate head
+                        // If approver type is IM (Immediate Head), get the requester's immediate head
                         if (approver.Approvertype == "IM" && userDetails != null)
                         {
                             approverEmail = userDetails.ImmediateEmail ?? "";

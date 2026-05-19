@@ -25,6 +25,7 @@ public class EmailApprovalController : ControllerBase
     [HttpGet("preview")]
     public async Task<IActionResult> Preview([FromQuery] string token)
     {
+        var baseUrl = _urlBaseSettings.View;
         try
         {
             if (string.IsNullOrWhiteSpace(token))
@@ -34,19 +35,47 @@ public class EmailApprovalController : ControllerBase
                 .FirstOrDefaultAsync(t => t.Token == token);
 
             if (record == null)
-                return NotFound(new { ok = false, error = "invalid" });
+            {
+                if (IsAjaxRequest())
+                    return NotFound(new { ok = false, error = "invalid" });
+                return Redirect($"{baseUrl}/#/email-response?status=invalid&token={Uri.EscapeDataString(token)}");
+            }
+
+            //if (!IsAjaxRequest() && string.IsNullOrEmpty(Request.Query["confirm"]))
+            //{
+            //    return Redirect($"{baseUrl}/#/email-response?token={Uri.EscapeDataString(token)}&action={Uri.EscapeDataString(record.Action)}");
+            //}
 
             if (record.IsUsed)
-                return BadRequest(new { ok = false, error = "already_used", transactionId = record.TransactionId });
+            {
+                if (IsAjaxRequest())
+                    return BadRequest(new { ok = false, error = "already_used", transactionId = record.TransactionId });
+                return Redirect($"{baseUrl}/#/email-response?status=already_used&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
+            }
 
             if (record.ExpiresAt < DateTime.Now)
-                return BadRequest(new { ok = false, error = "expired", transactionId = record.TransactionId });
+            {
+                if (IsAjaxRequest())
+                    return BadRequest(new { ok = false, error = "expired", transactionId = record.TransactionId });
+                return Redirect($"{baseUrl}/#/email-response?status=expired&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
+            }
 
             var transaction = await _context.EpeTransactionheaders
                 .FirstOrDefaultAsync(t => t.Transactionid == record.TransactionId);
 
             if (transaction == null)
-                return NotFound(new { ok = false, error = "not_found" });
+            {
+                if (IsAjaxRequest())
+                    return NotFound(new { ok = false, error = "not_found" });
+                return Redirect($"{baseUrl}/#/email-response?status=not_found&token={Uri.EscapeDataString(token)}");
+            }
+
+            if (transaction.Status == "C")
+            {
+                if (IsAjaxRequest())
+                    return BadRequest(new { ok = false, error = "already_closed", transactionId = record.TransactionId });
+                return Redirect($"{baseUrl}/#/email-response?status=already_closed&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
+            }
 
             // Get basic transaction preview info
             var preview = new
@@ -60,15 +89,21 @@ public class EmailApprovalController : ControllerBase
 
             var allowed = new List<string> { "approve", "disapprove" };
 
-            return Ok(new
-            {
-                ok = true,
-                token = token,
-                action = record.Action,           // ADD THIS: "approve" or "disapprove"
-                transaction = preview,
-                allowedActions = allowed,
-                expiresAt = record.ExpiresAt
-            });
+            // If opened directly from email in a browser (not an XHR/json request), redirect to the frontend preview page
+            //if (!IsAjaxRequest())
+            //{
+                return Redirect($"{baseUrl}/#/email-response?token={Uri.EscapeDataString(token)}&action={Uri.EscapeDataString(record.Action)}");
+            //}
+
+            //return Ok(new
+            //{
+            //    ok = true,
+            //    token = token,
+            //    action = record.Action,       
+            //    transaction = preview,
+            //    allowedActions = allowed,
+            //    expiresAt = record.ExpiresAt
+            //});
         }
         catch (Exception ex)
         {
@@ -89,44 +124,49 @@ public class EmailApprovalController : ControllerBase
             var record = await _context.EpeEmailApprovalTokens
                 .FirstOrDefaultAsync(t => t.Token == token);
 
-            if (record == null)
-            {
-                if (IsAjaxRequest())
-                    return NotFound(new { ok = false, error = "invalid" });
-                return Redirect($"{baseUrl}/#/email-response?status=invalid");
-            }
+            //if (record == null)
+            //{
+            //    if (IsAjaxRequest())
+            //        return NotFound(new { ok = false, error = "invalid" });
+            //    return Redirect($"{baseUrl}/#/email-response?status=invalid&token={Uri.EscapeDataString(token)}");
+            //}
 
-            if (record.IsUsed)
-            {
-                if (IsAjaxRequest())
-                    return BadRequest(new { ok = false, error = "already_used", transactionId = record.TransactionId });
-                return Redirect($"{baseUrl}/#/email-response?status=already_used&transactionId={record.TransactionId}");
-            }
+            //if (!IsAjaxRequest() && string.IsNullOrEmpty(Request.Query["confirm"]))
+            //{
+            //    return Redirect($"{baseUrl}/#/email-response?token={Uri.EscapeDataString(token)}&action={Uri.EscapeDataString(record.Action)}");
+            //}
 
-            if (record.ExpiresAt < DateTime.Now)
-            {
-                if (IsAjaxRequest())
-                    return BadRequest(new { ok = false, error = "expired", transactionId = record.TransactionId });
-                return Redirect($"{baseUrl}/#/email-response?status=expired&transactionId={record.TransactionId}");
-            }
+            //if (record.IsUsed)
+            //{
+            //    if (IsAjaxRequest())
+            //        return BadRequest(new { ok = false, error = "already_used", transactionId = record.TransactionId });
+            //    return Redirect($"{baseUrl}/#/email-response?status=already_used&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
+            //}
+
+            //if (record.ExpiresAt < DateTime.Now)
+            //{
+            //    if (IsAjaxRequest())
+            //        return BadRequest(new { ok = false, error = "expired", transactionId = record.TransactionId });
+            //    return Redirect($"{baseUrl}/#/email-response?status=expired&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
+            //}
 
             // Get transaction
             var transaction = await _context.EpeTransactionheaders
                 .FirstOrDefaultAsync(t => t.Transactionid == record.TransactionId);
 
-            if (transaction == null)
-            {
-                if (IsAjaxRequest())
-                    return NotFound(new { ok = false, error = "not_found" });
-                return Redirect($"{baseUrl}/#/email-response?status=not_found");
-            }
+            //if (transaction == null)
+            //{
+            //    if (IsAjaxRequest())
+            //        return NotFound(new { ok = false, error = "not_found" });
+            //    return Redirect($"{baseUrl}/#/email-response?status=not_found&token={Uri.EscapeDataString(token)}");
+            //}
 
-            if (transaction.Status == "C")
-            {
-                if (IsAjaxRequest())
-                    return BadRequest(new { ok = false, error = "already_closed", transactionId = record.TransactionId });
-                return Redirect($"{baseUrl}/#/email-response?status=already_closed&transactionId={record.TransactionId}");
-            }
+            //if (transaction.Status == "C")
+            //{
+            //    if (IsAjaxRequest())
+            //        return BadRequest(new { ok = false, error = "already_closed", transactionId = record.TransactionId });
+            //    return Redirect($"{baseUrl}/#/email-response?status=already_closed&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
+            //}
 
             // Get the specific approver record
             var approver = await _context.EpeTransactionapprovers
@@ -136,14 +176,14 @@ public class EmailApprovalController : ControllerBase
             {
                 if (IsAjaxRequest())
                     return NotFound(new { ok = false, error = "invalid" });
-                return Redirect($"{baseUrl}/#/email-response?status=invalid");
+                return Redirect($"{baseUrl}/#/email-response?status=invalid&token={Uri.EscapeDataString(token)}");
             }
 
             if (approver.Respond > 0)
             {
                 if (IsAjaxRequest())
                     return BadRequest(new { ok = false, error = "already_responded", transactionId = record.TransactionId });
-                return Redirect($"{baseUrl}/#/email-response?status=already_responded&transactionId={record.TransactionId}");
+                return Redirect($"{baseUrl}/#/email-response?status=already_responded&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
             }
 
             using var dbTransaction = await _context.Database.BeginTransactionAsync();
@@ -167,7 +207,7 @@ public class EmailApprovalController : ControllerBase
                     return Ok(new { ok = true, result = action, message = $"Transaction {action}", transactionId = record.TransactionId });
                 }
 
-                return Redirect($"{baseUrl}/#/email-response?status=success&action={action}&transactionId={record.TransactionId}");
+                return Redirect($"{baseUrl}/#/email-response?status=success&action={action}&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
             }
             catch (Exception ex)
             {
@@ -175,7 +215,7 @@ public class EmailApprovalController : ControllerBase
                 _logger.LogError(ex, "Failed processing token {Token}", token);
                 if (IsAjaxRequest())
                     return StatusCode(500, new { ok = false, error = "processing_failed", transactionId = record.TransactionId });
-                return Redirect($"{baseUrl}/#/email-response?status=error&transactionId={record.TransactionId}");
+                return Redirect($"{baseUrl}/#/email-response?status=error&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
             }
         }
         catch (Exception ex)
@@ -183,7 +223,7 @@ public class EmailApprovalController : ControllerBase
             _logger.LogError(ex, "Email approval token processing failed for token {Token}", token);
             if (IsAjaxRequest())
                 return StatusCode(500, new { ok = false, error = "server_error" });
-            return Redirect($"{baseUrl}/#/email-response?status=error");
+            return Redirect($"{baseUrl}/#/email-response?status=error&token={Uri.EscapeDataString(token)}");
         }
     }
 

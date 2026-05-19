@@ -55,14 +55,17 @@ public class EmailNotificationService
         try
         {
             // Generate one-time tokens
-            var (approveToken, disapproveToken) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
+            //var (approveToken, disapproveToken) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
+
+       
 
             //var apiBase = "https://apps.fastlogistics.com.ph/epe2apidev"; // Change to production API base URL when deploying
             var apiBase = _urlBaseSettings.Api;
             var viewBase = _urlBaseSettings.View;
-            //  var apiBase = "http://localhost:5000";
-            var approveUrl = $"{apiBase}/api/emailapproval/act?token={approveToken}";
-            var disapproveUrl = $"{apiBase}/api/emailapproval/act?token={disapproveToken}";
+            //var apiBase = "http://localhost:5000";
+            //var approveUrl = $"{apiBase}/api/emailapproval/approve?id={requestId}";
+            //var approveUrl = $"{apiBase}/api/emailapproval/preview?token={approveToken}";
+            //var disapproveUrl = $"{apiBase}/api/emailapproval/preview?token={disapproveToken}";
             var viewUrl = $"{viewBase}/#/exemptions/view?id={requestId}";
             var trackUrl = $"{viewBase}/#/exemptions/approve?id={requestId}";
 
@@ -98,31 +101,16 @@ public class EmailNotificationService
                                 <tr>
                                   <td style='padding-right:10px;'>
                                     <!--[if mso]>
-                                    <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' href='{approveUrl}'
+                                    <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' href='{trackUrl}'
                                       style='height:44px;v-text-anchor:middle;width:140px;' arcsize='10%' fillcolor='#16a34a' stroke='f'>
-                                      <center style='color:#fff;font-size:14px;font-weight:bold;'>Approve</center>
+                                      <center style='color:#fff;font-size:14px;font-weight:bold;'>Respond</center>
                                     </v:roundrect>
                                     <![endif]-->
                                     <!--[if !mso]><!-->
-                                    <a href='{approveUrl}'
+                                    <a href='{trackUrl}'
                                       style='display:inline-block;background:#16a34a;color:#fff;padding:12px 28px;
                                              text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;'>
-                                      Approve
-                                    </a>
-                                    <!--<![endif]-->
-                                  </td>
-                                  <td style='padding-right:10px;'>
-                                    <!--[if mso]>
-                                    <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' href='{disapproveUrl}'
-                                      style='height:44px;v-text-anchor:middle;width:140px;' arcsize='10%' fillcolor='#dc2626' stroke='f'>
-                                      <center style='color:#fff;font-size:14px;font-weight:bold;'>Disapprove</center>
-                                    </v:roundrect>
-                                    <![endif]-->
-                                    <!--[if !mso]><!-->
-                                    <a href='{disapproveUrl}'
-                                      style='display:inline-block;background:#dc2626;color:#fff;padding:12px 28px;
-                                             text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;'>
-                                      Disapprove
+                                      Respond
                                     </a>
                                     <!--<![endif]-->
                                   </td>

@@ -21,7 +21,7 @@ namespace EPEAPI.Controllers
             try
             {
 
-                var query = _context.EpePolicymasters.Where(u => u.Isdelete == 0);
+                var query = _context.EpePolicymasters.Where(u => u.Isdelete == 0 && u.Status == "A");
 
                 var items = await query
                     .OrderByDescending(u => u.Createddate)
