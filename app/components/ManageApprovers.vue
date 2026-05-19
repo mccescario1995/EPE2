@@ -68,22 +68,77 @@ const newApprover = ref({
   selectedEmployee: null as EmployeeOption | null,
 });
 
+// Persist form state per approver type so switching clears the visible inputs
+// but restores values when switching back.
+const savedFormState = ref<Record<"M" | "IM", typeof newApprover.value | null>>({
+  M: null,
+  IM: null,
+});
+
+function setApproverType(type: "M" | "IM") {
+  const currentType = newApprover.value.approvertype;
+  if (currentType === type) return;
+
+  // save current state for currentType
+  savedFormState.value[currentType] = { ...newApprover.value };
+
+  // restore saved state for target type if available, otherwise reset defaults
+  const saved = savedFormState.value[type];
+  if (saved) {
+    newApprover.value = { ...saved, approvertype: type } as typeof newApprover.value;
+  } else {
+    newApprover.value = {
+      approvertype: type,
+      approverid: "",
+      approvername: "",
+      approveremail: "",
+      searchQuery: "",
+      selectedEmployee: null,
+    };
+  }
+
+  // If switching to IM, explicitly clear input-related fields and options so the
+  // input DOM is removed and no residual values remain. For proxies (addingAsProxy
+  // !== null) IM selection is not expected, but handled safely.
+  if (type === "IM") {
+    newApprover.value.approverid = "";
+    newApprover.value.approvername = "";
+    newApprover.value.approveremail = "";
+    newApprover.value.searchQuery = "";
+    newApprover.value.selectedEmployee = null;
+    employeeOptions.value = [];
+  }
+}
+
 const employeeOptions = ref<EmployeeOption[]>([]);
 
 const isDeleteModalOpen = ref(false);
 const deletingApprover = ref<Approver | null>(null);
 const deleteLoading = ref(false);
+const isCloseConfirmOpen = ref(false);
 
 const hasUnsavedOrder = ref(false);
 const isModalOpen = ref(false);
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
-const hasIM = computed(() =>
-  groups.value.some((g) => g.approver.approvertype === "IM"),
-);
+const hasIM = computed(() => groups.value.some((g) => g.approver.approvertype === "IM"));
+
+const hasPendingAdd = computed(() => {
+  if (!showAddForm.value) return false;
+  const na = newApprover.value;
+  const hasFields = !!(
+    na.selectedEmployee ||
+    (na.approverid ?? "")?.toString().trim() !== "" ||
+    (na.approvername ?? "").trim() !== "" ||
+    (na.approveremail ?? "").trim() !== ""
+  );
+  // If adding as proxy, only count as pending when any field is filled
+  if (addingAsProxy.value !== null) return hasFields;
+  return hasFields;
+});
 
 function buildGroups(approvers: Approver[]): TreeNode[] {
-  const activeApprovers = approvers.filter(a => a.isdelete === 0);
+  const activeApprovers = approvers.filter((a) => a.isdelete === 0);
   const sorted = [...activeApprovers].sort((a, b) => {
     const sortA = a.sort ?? 0;
     const sortB = b.sort ?? 0;
@@ -160,7 +215,7 @@ async function fetchApprovers() {
           "Content-Type": "application/json",
         },
         parseJson: true,
-      },
+      }
     );
     rawApprovers.value = response.items ?? [];
     console.log("Fetched approvers ManageApprovers:", rawApprovers.value);
@@ -229,17 +284,20 @@ async function searchEmployees(query: string) {
 }
 
 // Watch for selectedEmployee changes
-watch(() => newApprover.value.selectedEmployee, (newVal) => {
-  if (newVal) {
-    newApprover.value.approverid = newVal.id;
-    newApprover.value.approvername = newVal.label;
-    newApprover.value.approveremail = newVal.email;
-  } else {
-    newApprover.value.approverid = "";
-    newApprover.value.approvername = "";
-    newApprover.value.approveremail = "";
+watch(
+  () => newApprover.value.selectedEmployee,
+  (newVal) => {
+    if (newVal) {
+      newApprover.value.approverid = newVal.id;
+      newApprover.value.approvername = newVal.label;
+      newApprover.value.approveremail = newVal.email;
+    } else {
+      newApprover.value.approverid = "";
+      newApprover.value.approvername = "";
+      newApprover.value.approveremail = "";
+    }
   }
-});
+);
 
 // ─── Add Approver ─────────────────────────────────────────────────────────────
 function openAddMain() {
@@ -263,6 +321,7 @@ function cancelAdd() {
 }
 
 function resetAddForm() {
+  // Clear form and per-type saved state when opening/ cancelling add form
   newApprover.value = {
     approvertype: "M" as "M" | "IM",
     approverid: "",
@@ -272,6 +331,7 @@ function resetAddForm() {
     selectedEmployee: null,
   };
   employeeOptions.value = [];
+  savedFormState.value = { M: null, IM: null };
 }
 
 async function confirmAddApprover() {
@@ -319,7 +379,7 @@ async function confirmAddApprover() {
 
       if (addingAsProxy.value !== null) {
         sort = addingAsProxy.value;
-        const group:any = groups.value[addingAsProxy.value - 1];
+        const group: any = groups.value[addingAsProxy.value - 1];
         linesequence = group.children.length + 2; // Next available proxy position
       } else {
         sort = groups.value.length + 1; // Next main position
@@ -356,7 +416,7 @@ async function confirmAddApprover() {
 
       if (addingAsProxy.value !== null) {
         sort = addingAsProxy.value;
-        const group:any = groups.value[addingAsProxy.value - 1];
+        const group: any = groups.value[addingAsProxy.value - 1];
         linesequence = group.children.length + 2;
       } else {
         sort = groups.value.length + 1;
@@ -421,7 +481,7 @@ async function executeDelete() {
   try {
     await apiFetch(
       `/api/Maintenance/policy/${props.policy.policyId}/approvers/delete/${deletingApprover.value.id}`,
-      { method: "POST", parseJson: true },
+      { method: "POST", parseJson: true }
     );
     showToast({
       type: "success",
@@ -461,10 +521,10 @@ async function saveOrder() {
             id: a.id,
             sort: a.sort,
             linesequence: a.linesequence,
-          })),
+          }))
         ),
         headers: { "Content-Type": "application/json" },
-      },
+      }
     );
 
     showToast({
@@ -498,31 +558,32 @@ function resetState() {
 }
 
 function tryClose() {
-  // justOppened.value = false;
-  cancelAdd();
-  if (showAddForm.value) {
-    showToast({
-      type: "warning",
-      title: "Unsaved Changes",
-      message: "Please save changes before closing",
-      duration: 3000,
-    });
+  // Only show confirmation when there is unsaved order or a non-empty add form
+  if (hasUnsavedOrder.value || hasPendingAdd.value) {
+    isCloseConfirmOpen.value = true;
     return;
   }
+  cancelAdd();
+  resetState();
+  emit("close");
+}
+
+function cancelClose() {
+  isCloseConfirmOpen.value = false;
+}
+
+function confirmClose() {
+  isCloseConfirmOpen.value = false;
+  cancelAdd();
   resetState();
   emit("close");
 }
 
 function handleModalUpdate(newVal: boolean) {
   if (!newVal) {
-    if (hasUnsavedOrder.value || showAddForm.value) {
-      showToast({
-        type: "warning",
-        title: "Unsaved Changes",
-        message: "Please save changes or cancel adding before closing",
-        duration: 3000,
-      });
+    if (hasUnsavedOrder.value || hasPendingAdd.value) {
       isModalOpen.value = true; // Keep modal open
+      isCloseConfirmOpen.value = true;
     } else {
       resetState();
       emit("close");
@@ -536,14 +597,14 @@ watch(
   (newVal) => {
     if (newVal && props.policy) fetchApprovers();
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 watch(
   () => props.policy,
   (val) => {
     if (val && props.show) fetchApprovers();
-  },
+  }
 );
 
 watch(
@@ -551,7 +612,7 @@ watch(
   (newVal) => {
     isModalOpen.value = newVal;
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 watch(
@@ -559,7 +620,7 @@ watch(
   (newVal) => {
     isDeleteModalOpen.value = newVal !== null;
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 watch(
@@ -567,7 +628,7 @@ watch(
   () => {
     hasUnsavedOrder.value = true;
   },
-  { deep: true },
+  { deep: true }
 );
 </script>
 
@@ -582,9 +643,7 @@ watch(
     @update:isOpen="handleModalUpdate"
   >
     <template #header>
-      <div
-        class="flex items-start justify-between border-b border-gray-100 bg-gray-50"
-      >
+      <div class="flex items-start justify-between border-b border-gray-100 bg-gray-50">
         <div>
           <h2 class="text-lg font-semibold text-gray-900">Manage Approvers</h2>
           <p class="text-sm text-gray-500 mt-0.5">
@@ -602,11 +661,7 @@ watch(
     <div class="space-y-4">
       <!-- Loading -->
       <div v-if="loading" class="flex items-center justify-center py-16">
-        <svg
-          class="animate-spin h-7 w-7 text-blue-500"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
+        <svg class="animate-spin h-7 w-7 text-blue-500" fill="none" viewBox="0 0 24 24">
           <circle
             class="opacity-25"
             cx="12"
@@ -647,19 +702,12 @@ watch(
           </svg>
         </div>
         <p class="text-sm font-medium text-gray-700">No approvers yet</p>
-        <p class="text-xs text-gray-400 mt-1">
-          Add the first approver for this policy
-        </p>
+        <p class="text-xs text-gray-400 mt-1">Add the first approver for this policy</p>
         <button
           class="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
           @click="openAddMain"
         >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -688,8 +736,8 @@ watch(
               d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"
             />
           </svg> -->
-          Drag <span class="font-bold px-0.5">⠿</span> handles to reorder
-          approvers and their proxies
+          Drag <span class="font-bold px-0.5">⠿</span> handles to reorder approvers and
+          their proxies
         </div>
 
         <!-- Testing groups -->
@@ -718,10 +766,9 @@ watch(
               >
                 ⠿
               </div>
-              <span
-                class="rounded-full bg-blue-200 h-7 w-7 flex justify-center"
-                >{{ index + 1 }}</span
-              >
+              <span class="rounded-full bg-blue-200 h-7 w-7 flex justify-center">{{
+                index + 1
+              }}</span>
               {{ element.name }}
               <button
                 class="ml-auto text-red-500 hover:text-red-700 transition-colors"
@@ -762,10 +809,9 @@ watch(
                 >
                   ⠿
                 </div>
-                <span
-                class="rounded-full bg-orange-200 h-5 w-5 flex justify-center"
-                >{{ index + 1 }}</span
-              >
+                <span class="rounded-full bg-orange-200 h-5 w-5 flex justify-center">{{
+                  index + 1
+                }}</span>
                 {{ child.name }}
                 <button
                   class="ml-auto text-red-400 hover:text-red-600 transition-colors"
@@ -793,12 +839,7 @@ watch(
               class="mt-2 ml-auto w-full flex items-center justify-center gap-2 py-2 px-4 border-2 border-dashed border-orange-200 rounded text-sm text-orange-400 hover:border-orange-300 hover:text-orange-500 hover:bg-orange-50 transition-all"
               @click="openAddProxy(element.approver.sort)"
             >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -816,9 +857,7 @@ watch(
           v-if="showAddForm"
           class="mt-3 border-2 border-blue-200 border-dashed rounded-xl p-4 bg-blue-50"
         >
-          <p
-            class="text-xs font-semibold text-blue-700 mb-3 uppercase tracking-wide"
-          >
+          <p class="text-xs font-semibold text-blue-700 mb-3 uppercase tracking-wide">
             {{
               addingAsProxy !== null
                 ? `New Proxy for Approver ${addingAsProxy}`
@@ -835,7 +874,7 @@ watch(
                   ? 'border-blue-500 bg-blue-500 text-white'
                   : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
               "
-              @click="newApprover.approvertype = 'M'"
+              @click="setApproverType('M')"
             >
               Main
             </button>
@@ -848,10 +887,8 @@ watch(
                 hasIM ? 'opacity-50 cursor-not-allowed' : '',
               ]"
               :disabled="hasIM"
-              :title="
-                hasIM ? 'Only one Immediate Head approver allowed' : ''
-              "
-              @click="!hasIM && (newApprover.approvertype = 'IM')"
+              :title="hasIM ? 'Only one Immediate Head approver allowed' : ''"
+              @click="!hasIM && setApproverType('IM')"
             >
               Immediate Head
             </button>
@@ -875,13 +912,13 @@ watch(
                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            The immediate head of each requester will be automatically resolved
-            when a request is submitted.
+            The immediate head of each requester will be automatically resolved when a
+            request is submitted.
           </div>
 
           <!-- Main fields (always show, but adjust for proxy) -->
           <div
-            v-if="addingAsProxy === null || newApprover.approvertype !== 'IM'"
+            v-if="addingAsProxy !== null || newApprover.approvertype !== 'IM'"
             class="space-y-2 mb-3"
           >
             <!-- <BaseInput
@@ -916,9 +953,7 @@ watch(
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              <span class="text-green-700 text-xs">{{
-                newApprover.approveremail
-              }}</span>
+              <span class="text-green-700 text-xs">{{ newApprover.approveremail }}</span>
               <button
                 class="ml-auto text-gray-400 hover:text-gray-600"
                 @click="
@@ -989,12 +1024,7 @@ watch(
           class="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-blue-200 rounded-xl text-sm text-blue-400 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-100 transition-all"
           @click="openAddMain"
         >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -1024,7 +1054,9 @@ watch(
           </button>
           <button
             class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-            :disabled="saving || loading || showAddForm || !hasUnsavedOrder || justOppened"
+            :disabled="
+              saving || loading || showAddForm || !hasUnsavedOrder || justOppened
+            "
             @click="saveOrder"
           >
             <svg
@@ -1106,6 +1138,52 @@ watch(
         @click="executeDelete"
       >
         {{ deleteLoading ? "Removing..." : "Remove" }}
+      </button>
+    </div>
+  </Modal>
+
+  <!-- ─── Close Confirmation Modal (similar to delete prompt) ───── -->
+  <Modal
+    v-model:isOpen="isCloseConfirmOpen"
+    size="sm"
+    position="center"
+    :closeOnOverlayClick="true"
+    :closeOnEsc="true"
+    @update:isOpen="cancelClose"
+  >
+    <div
+      class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4"
+    >
+      <svg
+        class="w-6 h-6 text-red-600"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+        />
+      </svg>
+    </div>
+    <h3 class="text-base font-semibold text-gray-900 text-center mb-1">Cancel</h3>
+    <p class="text-sm text-gray-500 text-center mb-5">
+      Are you sure you want to cancel?
+    </p>
+    <div class="flex gap-3">
+      <button
+        class="flex-1 py-2 px-4 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+        @click="cancelClose"
+      >
+        No, Keep Editing
+      </button>
+      <button
+        class="flex-1 py-2 px-4 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+        @click="confirmClose"
+      >
+        Yes, Cancel
       </button>
     </div>
   </Modal>

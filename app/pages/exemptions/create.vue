@@ -696,7 +696,7 @@ onMounted(async () => {
           <!-- Attachments -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Attachments (Optional - Max 5 files, 10MB each)
+              Attachments <span class="text-red-500">*</span> (Max 5 files, 10MB each)
             </label>
             <div
               v-for="(attachment, index) in newAttachments"
