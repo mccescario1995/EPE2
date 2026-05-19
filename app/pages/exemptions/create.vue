@@ -1,4 +1,4 @@
-import { user } from '../../composables/useAuth';
+
 <script setup lang="ts">
 const router = useRouter();
 const { showToast } = useToast();
@@ -284,44 +284,41 @@ const validateForm = (forDraft = false) => {
     policyid: "",
     details: "",
     attachments: "",
-    // referenceType: "",
   };
 
-  // Policy is required only for full submission (not draft)
   if (!forDraft && !formData.value.policyid) {
     errors.value.policyid = "Please select a policy";
     isValid = false;
   }
 
-  // Details required for both draft and submission
   if (!formData.value.details || formData.value.details.trim().length < 10) {
     errors.value.details = "Please provide details (minimum 10 characters).";
     isValid = false;
   }
 
-  // Attachment count limit
   if (newAttachments.value.length > 5) {
     errors.value.attachments = "Maximum 5 attachments allowed.";
     isValid = false;
   }
 
-  // Per-attachment validation
+  if (!forDraft && newAttachments.value.length === 0) {
+    errors.value.attachments = "Please attach at least one file.";
+    isValid = false;
+  }
+
   for (const attachment of newAttachments.value) {
     console.log("Validating attachment:", {
       attachment: attachment,
       attachmentFile: attachment.file,
       fileName: attachment.file?.name,
       fileSize: attachment.file?.size,
-      // referenceType: attachment.referenceType,
     });
     if (!attachment.file) {
       errors.value.attachments = "Please select a file for all attachments.";
       isValid = false;
-      // break;
     } else if (attachment.file.size > 10 * 1024 * 1024) {
       errors.value.attachments = `File "${attachment.file.name}" exceeds the 10MB size limit.`;
       isValid = false;
-      // break;
     }
   }
 
@@ -334,6 +331,7 @@ const isFormValid = computed(() => {
     !!formData.value.policyid &&
     !!formData.value.details &&
     formData.value.details.trim().length >= 10 &&
+    newAttachments.value.length > 0 &&
     newAttachments.value.length <= 5 &&
     newAttachments.value.every(
       (att) => att.file && att.file.size <= 10 * 1024 * 1024,
@@ -413,7 +411,10 @@ const handleSaveDraft = async () => {
 
     newAttachments.value.forEach((attachment, index) => {
       if (attachment.file) {
-        formDataToSend.append(`Attachments[${index}].file`, attachment.file);
+        // Bind to model binder: Attachments[0].File, Attachments[1].File, ...
+        formDataToSend.append(`Attachments[${index}].File`, attachment.file);
+        // Fallback so Request.Form.Files has the parts if model-binding fails
+        formDataToSend.append("files", attachment.file);
       }
       // formDataToSend.append(`Attachments[${index}].ReferenceType`, attachment.referenceType);
     });
@@ -504,20 +505,26 @@ const handleSubmit = async () => {
 
     console.log("Workstation to send:", formDataToSend.get("computerhost"));
 
+    console.log(
+      "Attachments to send:",
+      newAttachments.value.map((a) => a.file?.name || "No file"),
+    );
     // ✅ FIXED ATTACHMENTS
     newAttachments.value.forEach((attachment, index) => {
-      if (attachment.file) {
-        formDataToSend.append(
-          `Attachments[${index}].File`,
-          attachment.file
-        );
-      }
+        formDataToSend.append(`Attachments[${index}].File`, attachment.file);
     });
 
-    const response :any = await apiFetch("/api/exemption/create", {
+    console.log("FormData entries:");
+    for (const pair of formDataToSend.entries()) {
+      console.log(`${pair[0]}:`, pair[1]);
+    }
+
+    const response: any = await apiFetch("/api/exemption/create", {
       method: "POST",
-      body: formDataToSend
+      body: formDataToSend,
     });
+
+    console.log("Create response:", response);
 
     if (response) {
       showToast({
@@ -531,7 +538,6 @@ const handleSubmit = async () => {
     } else {
       throw new Error(response.message || "Failed to create request");
     }
-
   } catch (error: any) {
     console.error("Submit error:", error);
 
@@ -544,7 +550,7 @@ const handleSubmit = async () => {
   } finally {
     isSubmitting.value = false;
   }
-};            
+};
 
 // Handle cancel
 const handleCancel = () => {
@@ -696,7 +702,8 @@ onMounted(async () => {
           <!-- Attachments -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Attachments <span class="text-red-500">*</span> (Max 5 files, 10MB each)
+              Attachments <span class="text-red-500">*</span> (Max 5 files, 10MB
+              each)
             </label>
             <div
               v-for="(attachment, index) in newAttachments"
