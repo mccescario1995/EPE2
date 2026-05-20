@@ -296,10 +296,13 @@ const isPendingApproval = computed(() => {
   // Find previous approvers:
   // 1. Lower lineSequence OR
   // 2. Same lineSequence but lower sort
+  // Note: approvers with the same sort are considered parallel and are NOT previous
   const previousApprovers = approversData.value
     .filter((a) => {
       // Exclude current user
       if (a.employeeId === currentUserApprover.employeeId) return false;
+      // Exclude approvers in the same sort (group) — they are parallel, not previous
+      if (a.sort === currentSort) return false;
       // Previous if: lower lineSequence OR (same lineSequence AND lower sort)
       return a.lineSequence < currentSequence || 
              (a.lineSequence === currentSequence && a.sort < currentSort);
@@ -343,6 +346,8 @@ const pendingApproverName = computed(() => {
     .filter((a) => {
       // Exclude current user
       if (a.employeeId === currentUserApprover.employeeId) return false;
+      // Exclude approvers in the same sort (group)
+      if (a.sort === currentSort) return false;
       // Previous if: lower lineSequence OR (same lineSequence AND lower sort)
       return a.lineSequence < currentSequence || 
              (a.lineSequence === currentSequence && a.sort < currentSort);
@@ -502,11 +507,6 @@ const groupedApprovers = computed(() => {
 
   return { mainApprovers, proxiesMap };
 });
-
-// Helper function to get proxies for a main approver
-const getProxies = (transApproverId: number): any[] => {
-  return groupedApprovers.value.proxiesMap.get(transApproverId) || [];
-};
 
 // Handle back navigation
 const handleBack = () => {
@@ -812,7 +812,7 @@ onMounted(async () => {
                       :class="
                         selectedRespond === 1
                           ? 'border-green-500 bg-green-50 text-green-700'
-                          : 'border-gray-200 hover:border-green-300 hover:bg-gray-50'
+                          : 'border-gray-200 hover:border-green-300 hover:bg-gray-50 '
                       "
                     >
                       <svg
