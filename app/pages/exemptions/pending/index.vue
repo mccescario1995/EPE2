@@ -8,10 +8,13 @@ const userStore = useUserStore();
 const userId = userStore.profile;
 
 const loading = ref(false);
-const exemptionData = ref(null);
+const exemptionData :any = ref(null);
 const showDeleteConfirm = ref(false);
 const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
+
+// reactive length used to force BaseTable to remount when data arrives
+const exemptionDataLength = computed(() => exemptionData.value?.length ?? 0);
 
 const viewProduct = (row: any) => {
   router.push(`/exemptions/view?id=${row.transactionId}`);
@@ -174,8 +177,10 @@ watchEffect(() => {
             },
           }"
           :date-fields="['createdDate']"
+          :total-items="exemptionDataLength"
+          :key="exemptionDataLength"
           :pagination="true"
-          :per-page="10"
+          :per-page="5"
           :show-search="true"
           :actions="[
             {

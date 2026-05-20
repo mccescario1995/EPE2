@@ -8,11 +8,13 @@ const userStore = useUserStore();
 const userId = userStore.profile;
 
 const loading = ref(false);
-const exemptionData = ref<any[]>([]);
-const exemptionDataLength = ref(0);
+const exemptionData :any = ref(null);
 const showDeleteConfirm = ref(false);
 const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
+
+// reactive length used to force BaseTable to remount when data arrives
+const exemptionDataLength = computed(() => exemptionData.value?.length ?? 0);
 
 const viewProduct = (row: any) => {
   router.push(`/exemptions/view?id=${row.transactionId}`);
@@ -90,8 +92,6 @@ const fetchExemptionRequests = async () => {
       parseJson: true,
     });
     exemptionData.value = responseExemptions.items;
-
-    exemptionDataLength.value = responseExemptions.items.length;
   } catch (error) {
     console.error("Error fetching exemption requests:", error);
   } finally {
@@ -140,7 +140,6 @@ watchEffect(() => {
       </div>
     </header>
     <main class="max-w-7xl mx-auto py-6 sm:px-6">
-    {{ exemptionDataLength }}
       <!-- Exemption Requests List -->
       <div class="mb-6 px-2 rounded-lg">
         <base-table
@@ -184,8 +183,10 @@ watchEffect(() => {
           :date-fields="['createdDate']"
           :per-page="5"
           :pagination="true"
-          :totalItems="exemptionDataLength"
+          :total-items="exemptionDataLength"
+          :key="exemptionDataLength"
           :showSearch="true"
+
           :actions="[
             {
               label: IconView,
