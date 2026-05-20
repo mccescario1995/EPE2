@@ -552,43 +552,71 @@ onUnmounted(() => {
   resendIntervals.clear();
 });
 
-const resendToApprover = async (transApproverId: number) => {
-  if (cooldowns.value[transApproverId] && cooldowns.value[transApproverId] > 0) return;
+// const resendToApprover = async (transApproverId: number) => {
+//   if (cooldowns.value[transApproverId] && cooldowns.value[transApproverId] > 0) return;
+//   isResending.value = transApproverId;
+//   try {
+//     const response = await apiFetch(
+//       `/api/exemption/resend/${exemptionId.value}`,
+//       {
+//         method: "POST",
+//         body: JSON.stringify({ transApproverId }),
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//       },
+//     );
+
+//     if (response) {
+//       showToast({
+//         type: "success",
+//         title: "Success",
+//         message: "Notification sent to approver successfully!",
+//         duration: 5000,
+//       });
+//     } else {
+//       showToast({
+//         type: "error",
+//         title: "Error",
+//         message: response?.message || "Failed to resend notification",
+//         duration: 5000,
+//       });
+//     }
+//   } catch (error: any) {
+//     console.error("Error resending notification:", error);
+//     showToast({
+//       type: "error",
+//       title: "Error",
+//       message:
+//         error.message || "An error occurred while resending notification",
+//       duration: 5000,
+//     });
+//   } finally {
+//     isResending.value = null;
+//     startResendCooldown(transApproverId, 10);
+//   }
+// };
+
+const resendToMainApprover = async (transApproverId: number) => {
+  if (cooldowns.value[transApproverId] > 0) return;
   isResending.value = transApproverId;
   try {
-    const response = await apiFetch(
-      `/api/exemption/resend/${exemptionId.value}`,
-      {
-        method: "POST",
-        body: JSON.stringify({ transApproverId }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-
-    if (response) {
-      showToast({
-        type: "success",
-        title: "Success",
-        message: "Notification sent to approver successfully!",
-        duration: 5000,
-      });
-    } else {
-      showToast({
-        type: "error",
-        title: "Error",
-        message: response?.message || "Failed to resend notification",
-        duration: 5000,
-      });
-    }
+    await apiFetch(`/api/exemption/resend-main/${exemptionId.value}`, {
+      method: "POST",
+      body: JSON.stringify({ transApproverId }),
+      headers: { "Content-Type": "application/json" },
+    });
+    showToast({
+      type: "success",
+      title: "Reminder Sent",
+      message: "Reminder email sent to main approver.",
+      duration: 5000,
+    });
   } catch (error: any) {
-    console.error("Error resending notification:", error);
     showToast({
       type: "error",
       title: "Error",
-      message:
-        error.message || "An error occurred while resending notification",
+      message: error.message || "Failed to send reminder",
       duration: 5000,
     });
   } finally {
@@ -597,6 +625,33 @@ const resendToApprover = async (transApproverId: number) => {
   }
 };
 
+const resendToProxyApprover = async (transApproverId: number) => {
+  if (cooldowns.value[transApproverId] > 0) return;
+  isResending.value = transApproverId;
+  try {
+    await apiFetch(`/api/exemption/resend-proxy/${exemptionId.value}`, {
+      method: "POST",
+      body: JSON.stringify({ transApproverId }),
+      headers: { "Content-Type": "application/json" },
+    });
+    showToast({
+      type: "success",
+      title: "Reminder Sent",
+      message: "Reminder email sent to proxy approver.",
+      duration: 5000,
+    });
+  } catch (error: any) {
+    showToast({
+      type: "error",
+      title: "Error",
+      message: error.message || "Failed to send reminder",
+      duration: 5000,
+    });
+  } finally {
+    isResending.value = null;
+    startResendCooldown(transApproverId, 10);
+  }
+};
 
 // Computed property to group main approvers with their proxies
 const groupedApprovers = computed(() => {
@@ -644,35 +699,35 @@ const isGroupSatisfied = (transApproverId: number): boolean => {
 };
 
 // Get the current (active) approver's transApproverId - the first group that hasn't been satisfied
-const currentApproverId = computed(() => {
-  const { mainApprovers, proxiesMap } = groupedApprovers.value;
+// const currentApproverId = computed(() => {
+//   const { mainApprovers, proxiesMap } = groupedApprovers.value;
 
-  for (const approver of mainApprovers) {
-    // Get all approvers in this group (main + proxies)
-    const groupApprovers = [
-      approver,
-      ...(proxiesMap.get(approver.transApproverId) || []),
-    ];
+//   for (const approver of mainApprovers) {
+//     // Get all approvers in this group (main + proxies)
+//     const groupApprovers = [
+//       approver,
+//       ...(proxiesMap.get(approver.transApproverId) || []),
+//     ];
 
-    // Check if ANY in the group has approved
-    const hasApproved = groupApprovers.some((a) => a.respond === 1);
+//     // Check if ANY in the group has approved
+//     const hasApproved = groupApprovers.some((a) => a.respond === 1);
 
-    // Check if ANY in the group is pending
-    const hasPending = groupApprovers.some((a) => a.respond === 0);
+//     // Check if ANY in the group is pending
+//     const hasPending = groupApprovers.some((a) => a.respond === 0);
 
-    // If no one has approved yet and someone is pending, this group is active
-    if (!hasApproved && hasPending) {
-      // Find the first pending one in this group
-      const pending = groupApprovers.find((a) => a.respond === 0);
-      return pending?.transApproverId;
-    }
+//     // If no one has approved yet and someone is pending, this group is active
+//     if (!hasApproved && hasPending) {
+//       // Find the first pending one in this group
+//       const pending = groupApprovers.find((a) => a.respond === 0);
+//       return pending?.transApproverId;
+//     }
 
-    // If someone has approved in this group, skip to next group
-    // Continue to next iteration
-  }
+//     // If someone has approved in this group, skip to next group
+//     // Continue to next iteration
+//   }
 
-  return null;
-});
+//   return null;
+// });
 
 // Add new attachment
 const addNewAttachment = () => {
@@ -848,6 +903,26 @@ const fetchApprovers = async (policyId: number) => {
     isLoadingApprovers.value = false;
   }
 };
+
+const activeGroupSort = computed(() => {
+  const { mainApprovers, proxiesMap } = groupedApprovers.value;
+
+  for (const approver of mainApprovers) {
+    const groupApprovers = [
+      approver,
+      ...(proxiesMap.get(approver.transApproverId) || []),
+    ];
+
+    const hasApproved = groupApprovers.some((a) => a.respond === 1);
+    const hasPending = groupApprovers.some((a) => a.respond === 0);
+
+    // This group is active if no one has approved yet but someone is still pending
+    if (!hasApproved && hasPending) {
+      return approver.sort; // return the sort key of the active group
+    }
+  }
+  return null;
+});
 
 // Fetch policies on mount
 onMounted(() => {
@@ -1273,10 +1348,10 @@ onMounted(() => {
                         <button
                           v-if="
                             approver.respond === 0 &&
-                            approver.transApproverId === currentApproverId &&
+                            approver.sort === activeGroupSort &&
                             !isGroupSatisfied(approver.transApproverId)
                           "
-                          @click="resendToApprover(approver.transApproverId)"
+                          @click="resendToMainApprover(approver.transApproverId)"
                           :disabled="(isResending === approver.transApproverId) || (cooldowns[approver.transApproverId] > 0)"
                           class="flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
                           title="Resend notification to approver"
@@ -1365,11 +1440,11 @@ onMounted(() => {
                           <button
                             v-if="
                               proxy.respond === 0 &&
-                              proxy.transApproverId === currentApproverId &&
+                              proxy.sort === activeGroupSort &&
                               !isGroupSatisfied(approver.transApproverId)
                             "
-                            @click="resendToApprover(proxy.transApproverId)"
-                            :disabled="(isResending === proxy.transApproverId) || (cooldowns[proxy.transApproverId] > 0)"
+                            @click="resendToProxyApprover(proxy.transApproverId)"
+                            :disabled="(isResending === proxy.transApproverId) || ((cooldowns[proxy.transApproverId] ?? 0) > 0)"
                             class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
                             title="Resend notification to proxy"
                           >

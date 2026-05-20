@@ -296,6 +296,26 @@ function startResendCooldown(transApproverId: number, seconds = 10) {
   resendIntervals.set(transApproverId, id);
 }
 
+const activeGroupSort = computed(() => {
+  const { mainApprovers, proxiesMap } = groupedApprovers.value;
+
+  for (const approver of mainApprovers) {
+    const groupApprovers = [
+      approver,
+      ...(proxiesMap.get(approver.transApproverId) || []),
+    ];
+
+    const hasApproved = groupApprovers.some((a) => a.respond === 1);
+    const hasPending = groupApprovers.some((a) => a.respond === 0);
+
+    // This group is active if no one has approved yet but someone is still pending
+    if (!hasApproved && hasPending) {
+      return approver.sort; // return the sort key of the active group
+    }
+  }
+  return null;
+});
+
 onUnmounted(() => {
   resendIntervals.forEach((iv) => clearInterval(iv));
   resendIntervals.clear();
@@ -339,6 +359,62 @@ const resendToApprover = async (transApproverId: number) => {
       title: "Error",
       message:
         error.message || "An error occurred while resending notification",
+      duration: 5000,
+    });
+  } finally {
+    isResending.value = null;
+    startResendCooldown(transApproverId, 10);
+  }
+};
+
+const resendToMainApprover = async (transApproverId: number) => {
+  if (cooldowns.value[transApproverId] > 0) return;
+  isResending.value = transApproverId;
+  try {
+    await apiFetch(`/api/exemption/resend-main/${exemptionId.value}`, {
+      method: "POST",
+      body: JSON.stringify({ transApproverId }),
+      headers: { "Content-Type": "application/json" },
+    });
+    showToast({
+      type: "success",
+      title: "Reminder Sent",
+      message: "Reminder email sent to main approver.",
+      duration: 5000,
+    });
+  } catch (error: any) {
+    showToast({
+      type: "error",
+      title: "Error",
+      message: error.message || "Failed to send reminder",
+      duration: 5000,
+    });
+  } finally {
+    isResending.value = null;
+    startResendCooldown(transApproverId, 10);
+  }
+};
+
+const resendToProxyApprover = async (transApproverId: number) => {
+  if (cooldowns.value[transApproverId] > 0) return;
+  isResending.value = transApproverId;
+  try {
+    await apiFetch(`/api/exemption/resend-proxy/${exemptionId.value}`, {
+      method: "POST",
+      body: JSON.stringify({ transApproverId }),
+      headers: { "Content-Type": "application/json" },
+    });
+    showToast({
+      type: "success",
+      title: "Reminder Sent",
+      message: "Reminder email sent to proxy approver.",
+      duration: 5000,
+    });
+  } catch (error: any) {
+    showToast({
+      type: "error",
+      title: "Error",
+      message: error.message || "Failed to send reminder",
       duration: 5000,
     });
   } finally {
@@ -700,11 +776,11 @@ const resendToApprover = async (transApproverId: number) => {
                         <button
                           v-if="
                             approver.respond === 0 &&
-                            approver.transApproverId === currentApproverId &&
+                            approver.sort === activeGroupSort &&
                             !isGroupSatisfied(approver.transApproverId)
                             // approver.employeeId === userId.emplId // Only show resend button to the pending approver themselves (and not if group is already satisfied by another proxy)
                           "
-                          @click="resendToApprover(approver.transApproverId)"
+                          @click="resendToMainApprover(approver.transApproverId)"
                           :disabled="
                             isResending === approver.transApproverId ||
                             cooldowns[approver.transApproverId] > 0
@@ -812,11 +888,11 @@ const resendToApprover = async (transApproverId: number) => {
                           <button
                             v-if="
                               proxy.respond === 0 &&
-                              proxy.transApproverId === currentApproverId &&
+                              proxy.sort === activeGroupSort &&
                               !isGroupSatisfied(approver.transApproverId) &&
                               proxy.employeeId === userId.emplId
                             "
-                            @click="resendToApprover(proxy.transApproverId)"
+                            @click="resendToProxyApprover(proxy.transApproverId)"
                             :disabled="
                               isResending === proxy.transApproverId ||
                               cooldowns[proxy.transApproverId] > 0
