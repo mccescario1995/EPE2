@@ -526,7 +526,34 @@ const getApproverStatusColor = (respond: number) => {
 
 // Resend notification to approver
 const isResending = ref<number | null>(null);
+const cooldowns = ref<Record<number, number>>({});
+const resendIntervals = new Map<number, number>();
+
+function startResendCooldown(transApproverId: number, seconds = 10) {
+  const existing = resendIntervals.get(transApproverId);
+  if (existing) {
+    clearInterval(existing);
+    resendIntervals.delete(transApproverId);
+  }
+  cooldowns.value[transApproverId] = seconds;
+  const id = window.setInterval(() => {
+    cooldowns.value[transApproverId] -= 1;
+    if (cooldowns.value[transApproverId] <= 0) {
+      clearInterval(id);
+      resendIntervals.delete(transApproverId);
+      delete cooldowns.value[transApproverId];
+    }
+  }, 1000);
+  resendIntervals.set(transApproverId, id);
+}
+
+onUnmounted(() => {
+  resendIntervals.forEach((iv) => clearInterval(iv));
+  resendIntervals.clear();
+});
+
 const resendToApprover = async (transApproverId: number) => {
+  if (cooldowns.value[transApproverId] && cooldowns.value[transApproverId] > 0) return;
   isResending.value = transApproverId;
   try {
     const response = await apiFetch(
@@ -566,8 +593,10 @@ const resendToApprover = async (transApproverId: number) => {
     });
   } finally {
     isResending.value = null;
+    startResendCooldown(transApproverId, 10);
   }
 };
+
 
 // Computed property to group main approvers with their proxies
 const groupedApprovers = computed(() => {
@@ -1248,7 +1277,7 @@ onMounted(() => {
                             !isGroupSatisfied(approver.transApproverId)
                           "
                           @click="resendToApprover(approver.transApproverId)"
-                          :disabled="isResending === approver.transApproverId"
+                          :disabled="(isResending === approver.transApproverId) || (cooldowns[approver.transApproverId] > 0)"
                           class="flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
                           title="Resend notification to approver"
                         >
@@ -1289,7 +1318,8 @@ onMounted(() => {
                               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                             />
                           </svg>
-                          Resend
+                          <span v-if="cooldowns[approver.transApproverId] > 0">Resend ({{ cooldowns[approver.transApproverId] }}s)</span>
+                          <span v-else>Resend</span>
                         </button>
                       </div>
                     </div>
@@ -1339,7 +1369,7 @@ onMounted(() => {
                               !isGroupSatisfied(approver.transApproverId)
                             "
                             @click="resendToApprover(proxy.transApproverId)"
-                            :disabled="isResending === proxy.transApproverId"
+                            :disabled="(isResending === proxy.transApproverId) || (cooldowns[proxy.transApproverId] > 0)"
                             class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
                             title="Resend notification to proxy"
                           >
@@ -1379,7 +1409,8 @@ onMounted(() => {
                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                               />
                             </svg>
-                            Resend
+                            <span v-if="cooldowns[proxy.transApproverId] > 0">Resend ({{ cooldowns[proxy.transApproverId] }}s)</span>
+                            <span v-else>Resend</span>
                           </button>
                         </div>
                       </div>

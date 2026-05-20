@@ -8,7 +8,8 @@ const userStore = useUserStore();
 const userId = userStore.profile;
 
 const loading = ref(false);
-const exemptionData = ref(null);
+const exemptionData = ref<any[]>([]);
+const exemptionDataLength = ref(0);
 const showDeleteConfirm = ref(false);
 const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
@@ -17,7 +18,7 @@ const viewProduct = (row: any) => {
   router.push(`/exemptions/view?id=${row.transactionId}`);
 };
 const editProduct = (row: any) => {
-    router.push(`/exemptions/edit?id=${row.transactionId}`);
+  router.push(`/exemptions/edit?id=${row.transactionId}`);
 };
 const approveRequest = (row: any) => {
   router.push(`/exemptions/approve?id=${row.transactionId}`);
@@ -89,6 +90,8 @@ const fetchExemptionRequests = async () => {
       parseJson: true,
     });
     exemptionData.value = responseExemptions.items;
+
+    exemptionDataLength.value = responseExemptions.items.length;
   } catch (error) {
     console.error("Error fetching exemption requests:", error);
   } finally {
@@ -137,6 +140,7 @@ watchEffect(() => {
       </div>
     </header>
     <main class="max-w-7xl mx-auto py-6 sm:px-6">
+    {{ exemptionDataLength }}
       <!-- Exemption Requests List -->
       <div class="mb-6 px-2 rounded-lg">
         <base-table
@@ -178,9 +182,10 @@ watchEffect(() => {
             },
           }"
           :date-fields="['createdDate']"
+          :per-page="5"
           :pagination="true"
-          :per-page="10"
-          :show-search="true"
+          :totalItems="exemptionDataLength"
+          :showSearch="true"
           :actions="[
             {
               label: IconView,
@@ -197,7 +202,8 @@ watchEffect(() => {
             },
             {
               label: IconEdit,
-              tooltip: (row) => row.status == 'D' ? 'Edit Draft' : 'Edit Request',
+              tooltip: (row) =>
+                row.status == 'D' ? 'Edit Draft' : 'Edit Request',
               handler: editProduct,
               iconClass: 'text-blue-500',
               visible: (row) =>

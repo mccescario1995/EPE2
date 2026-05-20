@@ -38,10 +38,13 @@ const fetchExemptionDetails = async () => {
 
   loading.value = true;
   try {
-    const response = await apiFetch(`/api/exemption/view/${exemptionId.value}`, {
-      method: "POST",
-      parseJson: true,
-    });
+    const response = await apiFetch(
+      `/api/exemption/view/${exemptionId.value}`,
+      {
+        method: "POST",
+        parseJson: true,
+      },
+    );
     console.log("Exemption details response:", response);
     if (response) {
       exemptionData.value = response.item;
@@ -79,10 +82,13 @@ const fetchAttachments = async () => {
   if (!exemptionId.value) return;
 
   try {
-    const response = await apiFetch(`/api/exemption/attachments/${exemptionId.value}`, {
-      method: "GET",
-      parseJson: true,
-    });
+    const response = await apiFetch(
+      `/api/exemption/attachments/${exemptionId.value}`,
+      {
+        method: "GET",
+        parseJson: true,
+      },
+    );
 
     if (response) {
       attachments.value = response.data || [];
@@ -188,7 +194,7 @@ onMounted(() => {
 // Main approvers: linesequence = 1 (regardless of sort value)
 // Proxies: linesequence > 1, grouped under main approvers by matching sort values
 // IM (Immediate Head) can also have proxies
-const groupedApprovers = computed(() => {
+const groupedApprovers: any = computed(() => {
   const mainApprovers: any[] = [];
   const proxiesMap: Map<number, any[]> = new Map();
 
@@ -224,10 +230,15 @@ const getProxies = (transApproverId: number): any[] => {
 // Helper function to check if a group (main + proxies) is satisfied (someone in group approved)
 const isGroupSatisfied = (transApproverId: number): boolean => {
   const { mainApprovers, proxiesMap } = groupedApprovers.value;
-  const mainApprover = mainApprovers.find((a) => a.transApproverId === transApproverId);
+  const mainApprover = mainApprovers.find(
+    (a) => a.transApproverId === transApproverId,
+  );
   if (!mainApprover) return false;
 
-  const groupApprovers = [mainApprover, ...(proxiesMap.get(transApproverId) || [])];
+  const groupApprovers = [
+    mainApprover,
+    ...(proxiesMap.get(transApproverId) || []),
+  ];
   return groupApprovers.some((a) => a.respond === 1);
 };
 
@@ -264,16 +275,47 @@ const currentApproverId = computed(() => {
 
 // Resend notification to approver
 const isResending = ref<number | null>(null);
+const cooldowns: any = ref<Record<number, number>>({});
+const resendIntervals = new Map<number, number>();
+
+function startResendCooldown(transApproverId: number, seconds = 10) {
+  const existing = resendIntervals.get(transApproverId);
+  if (existing) {
+    clearInterval(existing);
+    resendIntervals.delete(transApproverId);
+  }
+  cooldowns.value[transApproverId] = seconds;
+  const id = window.setInterval(() => {
+    cooldowns.value[transApproverId] -= 1;
+    if (cooldowns.value[transApproverId] <= 0) {
+      clearInterval(id);
+      resendIntervals.delete(transApproverId);
+      delete cooldowns.value[transApproverId];
+    }
+  }, 1000);
+  resendIntervals.set(transApproverId, id);
+}
+
+onUnmounted(() => {
+  resendIntervals.forEach((iv) => clearInterval(iv));
+  resendIntervals.clear();
+});
+
 const resendToApprover = async (transApproverId: number) => {
+  if (cooldowns.value[transApproverId] && cooldowns.value[transApproverId] > 0)
+    return;
   isResending.value = transApproverId;
   try {
-    const response = await apiFetch(`/api/exemption/resend/${exemptionId.value}`, {
-      method: "POST",
-      body: JSON.stringify({ transApproverId }),
-      headers: {
-        "Content-Type": "application/json",
+    const response = await apiFetch(
+      `/api/exemption/resend/${exemptionId.value}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ transApproverId }),
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     if (response) {
       showToast({
@@ -295,11 +337,13 @@ const resendToApprover = async (transApproverId: number) => {
     showToast({
       type: "error",
       title: "Error",
-      message: error.message || "An error occurred while resending notification",
+      message:
+        error.message || "An error occurred while resending notification",
       duration: 5000,
     });
   } finally {
     isResending.value = null;
+    startResendCooldown(transApproverId, 10);
   }
 };
 </script>
@@ -363,10 +407,14 @@ const resendToApprover = async (transApproverId: number) => {
       <!-- Content -->
       <div v-else-if="exemptionData">
         <div class="grid grid-cols-4 gap-6">
-          <div class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow p-6">
+          <div
+            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow p-6"
+          >
             <!-- Transaction Info -->
             <div class="mb-8">
-              <div class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b">
+              <div
+                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
+              >
                 <div class="flex justify-between items-center">
                   <h2>Request Information</h2>
                   <div>
@@ -374,7 +422,8 @@ const resendToApprover = async (transApproverId: number) => {
                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                       :class="{
                         'bg-blue-100 text-blue-800 border border-blue-900':
-                          exemptionData.status === 'O' || exemptionData.status === 'P',
+                          exemptionData.status === 'O' ||
+                          exemptionData.status === 'P',
                         'bg-gray-200 text-gray-800 border border-gray-900':
                           exemptionData.status === 'C',
                       }"
@@ -467,7 +516,9 @@ const resendToApprover = async (transApproverId: number) => {
                   <label class="block text-sm font-medium text-gray-500 mb-1">
                     Details
                   </label>
-                  <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 h-[100px]">
+                  <div
+                    class="bg-gray-50 rounded-lg p-4 border border-gray-200 h-[100px]"
+                  >
                     <p class="text-gray-900 whitespace-pre-wrap">
                       {{ exemptionData.details || "No details provided" }}
                     </p>
@@ -478,7 +529,9 @@ const resendToApprover = async (transApproverId: number) => {
 
             <!-- Attachments -->
             <div class="mb-8">
-              <h2 class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b">
+              <h2
+                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
+              >
                 Attachments
               </h2>
               <div v-if="attachments.length > 0" class="space-y-2">
@@ -508,7 +561,9 @@ const resendToApprover = async (transApproverId: number) => {
                       <p class="text-xs text-gray-500">
                         <!-- // {{ attachment.referenceType }} • -->
                         {{ attachment.filetype }} •
-                        {{ new Date(attachment.createdate).toLocaleDateString() }}
+                        {{
+                          new Date(attachment.createdate).toLocaleDateString()
+                        }}
                       </p>
                     </div>
                   </div>
@@ -521,7 +576,9 @@ const resendToApprover = async (transApproverId: number) => {
                   </a>
                 </div>
               </div>
-              <div v-else class="text-gray-500 text-sm">No attachments found.</div>
+              <div v-else class="text-gray-500 text-sm">
+                No attachments found.
+              </div>
             </div>
           </div>
 
@@ -531,7 +588,9 @@ const resendToApprover = async (transApproverId: number) => {
             <!-- Approvers -->
             <div class="mb-8">
               <div class="border-b flex justify-between mb-4">
-                <h2 class="text-xl font-semibold text-gray-800 mb-2">Approvers Status</h2>
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">
+                  Approvers Status
+                </h2>
                 <div>
                   <span
                     v-if="exemptionData.finalDecision"
@@ -550,7 +609,10 @@ const resendToApprover = async (transApproverId: number) => {
                 </div>
               </div>
 
-              <div v-if="approversData && approversData.length > 0" class="space-y-4">
+              <div
+                v-if="approversData && approversData.length > 0"
+                class="space-y-4"
+              >
                 <!-- Loop through main approvers (numbered 1, 2, 3...) -->
                 <template
                   v-for="(approver, index) in groupedApprovers.mainApprovers"
@@ -583,12 +645,30 @@ const resendToApprover = async (transApproverId: number) => {
                               {{ approver.approverRole }}
                             </span>
                           </div>
-                          <div v-if="approver.remarks" class="mt-2 mx-2 w-full">
+                          <!-- <div v-if="approver.remarks" class="mt-2 mx-2 w-full">
                             <label class="block text-sm font-medium text-gray-500 mb-1">
                               Remarks:
                             </label>
                             <div class="ml-3 w-auto">
-                              <p class="text-gray-900 whitespace-pre-wrap">
+                              <p class="text-gray-900 text-wrap ">
+                                {{ approver.remarks || "No remarks provided" }}
+                              </p>
+                            </div>
+                          </div> -->
+                          <div
+                            v-if="approver.remarks"
+                            class="mt-2 mx-2 w-full overflow-hidden"
+                          >
+                            <label
+                              class="block text-sm font-medium text-gray-500 mb-1"
+                            >
+                              Remarks:
+                            </label>
+
+                            <div class="ml-0 sm:ml-3 w-full">
+                              <p
+                                class="text-gray-900 whitespace-pre-wrap break-words sm:break-all"
+                              >
                                 {{ approver.remarks || "No remarks provided" }}
                               </p>
                             </div>
@@ -625,7 +705,10 @@ const resendToApprover = async (transApproverId: number) => {
                             // approver.employeeId === userId.emplId // Only show resend button to the pending approver themselves (and not if group is already satisfied by another proxy)
                           "
                           @click="resendToApprover(approver.transApproverId)"
-                          :disabled="isResending === approver.transApproverId"
+                          :disabled="
+                            isResending === approver.transApproverId ||
+                            cooldowns[approver.transApproverId] > 0
+                          "
                           class="flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
                           title="Resend notification to approver"
                         >
@@ -662,11 +745,15 @@ const resendToApprover = async (transApproverId: number) => {
                               fill="currentColor"
                               fill-rule="evenodd"
                               d="M11.688.103a1.724 1.724 0 0 1 2.208 2.208L10.39 12.816a1.72 1.72 0 0 1-1.242 1.137a1.7 1.7 0 0 1-1.619-.462L5.716 11.69l-1.89.976a.625.625 0 0 1-.911-.571l.08-3.132L.5 6.467a1.7 1.7 0 0 1-.466-1.542A1.72 1.72 0 0 1 1.17 3.61l.005-.002zm.69 1.157a.47.47 0 0 0-.286.026L1.572 4.793a.47.47 0 0 0-.31.363l-.003.014a.45.45 0 0 0 .123.412l1.95 1.948l6.33-4.177a.5.5 0 0 1 .616.783L4.225 9.8l-.033 1.27l1.355-.7a.625.625 0 0 1 .728.111l2.138 2.127l.006.006a.45.45 0 0 0 .433.124l.008-.002a.47.47 0 0 0 .342-.312v-.002l3.511-10.516l.007-.02a.47.47 0 0 0-.342-.626"
-                              clip-rule="evenodd"
                             />
                           </svg>
 
-                          Resend
+                          <span v-if="cooldowns[approver.transApproverId] > 0"
+                            >Resend ({{
+                              cooldowns[approver.transApproverId]
+                            }}s)</span
+                          >
+                          <span v-else>Resend</span>
                         </button>
                       </div>
                     </div>
@@ -682,7 +769,9 @@ const resendToApprover = async (transApproverId: number) => {
                         class="flex items-start justify-between py-2 border-b border-gray-200 last:border-0"
                       >
                         <div class="flex items-start">
-                          <span class="w-2 h-2 rounded-full bg-blue-400 mt-1.5"></span>
+                          <span
+                            class="w-2 h-2 rounded-full bg-blue-400 mt-1.5"
+                          ></span>
                           <!-- <span class="font-bold">></span> -->
                           <div class="ps-3">
                             <p class="text-sm text-gray-700">
@@ -728,7 +817,10 @@ const resendToApprover = async (transApproverId: number) => {
                               proxy.employeeId === userId.emplId
                             "
                             @click="resendToApprover(proxy.transApproverId)"
-                            :disabled="isResending === proxy.transApproverId"
+                            :disabled="
+                              isResending === proxy.transApproverId ||
+                              cooldowns[proxy.transApproverId] > 0
+                            "
                             class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
                             title="Resend notification to proxy"
                           >
@@ -768,7 +860,12 @@ const resendToApprover = async (transApproverId: number) => {
                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                               />
                             </svg>
-                            Resend
+                            <span v-if="cooldowns[proxy.transApproverId] > 0"
+                              >Resend ({{
+                                cooldowns[proxy.transApproverId]
+                              }}s)</span
+                            >
+                            <span v-else>Resend</span>
                           </button>
                         </div>
                       </div>
@@ -786,7 +883,9 @@ const resendToApprover = async (transApproverId: number) => {
 
             <!-- Remarks (if any) -->
             <div v-if="exemptionData.remarks" class="mb-8">
-              <h2 class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b">
+              <h2
+                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
+              >
                 Remarks
               </h2>
               <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -802,7 +901,9 @@ const resendToApprover = async (transApproverId: number) => {
       <!-- Not Found State -->
       <div v-else class="bg-white rounded-lg shadow px-6 py-12 text-center">
         <p class="text-gray-500 text-lg mb-4">No exemption details found.</p>
-        <Button variant="primary" size="lg" @onclick="handleBack"> Back to List </Button>
+        <Button variant="primary" size="lg" @onclick="handleBack">
+          Back to List
+        </Button>
       </div>
     </main>
   </div>

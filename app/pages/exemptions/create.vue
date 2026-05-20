@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 const router = useRouter();
 const { showToast } = useToast();
@@ -505,28 +504,37 @@ const handleSubmit = async () => {
 
     console.log("Workstation to send:", formDataToSend.get("computerhost"));
 
-    console.log(
-      "Attachments to send:",
-      newAttachments.value.map((a) => a.file?.name || "No file"),
-    );
     // ✅ FIXED ATTACHMENTS
-    newAttachments.value.forEach((attachment, index) => {
-        formDataToSend.append(`Attachments[${index}].File`, attachment.file);
+    newAttachments.value.forEach((attachment) => {
+      // formDataToSend.append(`Attachments[${index}].File`, attachment.file);
+      formDataToSend.append("files", attachment.file);
     });
 
-    console.log("FormData entries:");
-    for (const pair of formDataToSend.entries()) {
-      console.log(`${pair[0]}:`, pair[1]);
-    }
+    // console.log("FormData entries:");
+    // for (const pair of formDataToSend.entries()) {
+    //   console.log(`${pair[0]}:`, pair[1]);
+    // }
 
     const response: any = await apiFetch("/api/exemption/create", {
       method: "POST",
       body: formDataToSend,
+      parseJson: true,
     });
 
     console.log("Create response:", response);
 
-    if (response) {
+    const attachmentResponse : any = await apiFetch(
+      "/api/exemption/add-attachment/" + response.item.transactionid,
+      {
+        method: "POST",
+        body: formDataToSend,
+        parseJson: true,
+      },
+    );
+
+    console.log("Attachment response:", attachmentResponse);
+
+    if (response && attachmentResponse) {
       showToast({
         type: "success",
         title: "Success",
