@@ -11,6 +11,14 @@
       "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:appsettings.json||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\models\\epedbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:models\\epedbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\models\\epetransactionapprover.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:models\\epetransactionapprover.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|c:\\users\\user\\documents\\my web sites\\epe\\epeapi\\controllers\\policycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{7EA5ABF4-1311-406C-8F8E-8A59E4D27A48}|EPEAPI.csproj|solutionrelative:controllers\\policycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
@@ -22,7 +30,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 179,
-          "SelectedChildIndex": 11,
+          "SelectedChildIndex": 13,
           "Children": [
             {
               "$type": "Bookmark",
@@ -70,13 +78,37 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "EpeDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Models\\EpeDbContext.cs",
+              "RelativeDocumentMoniker": "Models\\EpeDbContext.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Models\\EpeDbContext.cs",
+              "RelativeToolTip": "Models\\EpeDbContext.cs",
+              "ViewState": "AgIAAA0DAAAAAAAAAAAIwAkDAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-19T10:13:26.776Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "EpeTransactionapprover.cs",
+              "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Models\\EpeTransactionapprover.cs",
+              "RelativeDocumentMoniker": "Models\\EpeTransactionapprover.cs",
+              "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Models\\EpeTransactionapprover.cs",
+              "RelativeToolTip": "Models\\EpeTransactionapprover.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-19T10:13:13.728Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
               "Title": "ExemptionController.cs",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\ExemptionController.cs",
               "RelativeDocumentMoniker": "Controllers\\ExemptionController.cs",
               "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\ExemptionController.cs",
               "RelativeToolTip": "Controllers\\ExemptionController.cs",
-              "ViewState": "AgIAABoCAAAAAAAAAAAkwEACAAAQAAAAAAAAAA==",
+              "ViewState": "AgIAAAUBAAAAAAAAAAAIwO4AAAAlAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-19T07:30:26.341Z",
               "EditorCaption": ""
@@ -89,13 +121,13 @@
               "RelativeDocumentMoniker": "appsettings.json",
               "ToolTip": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\appsettings.json",
               "RelativeToolTip": "appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAIAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAGAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2026-05-18T23:12:17.515Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "PolicyController.cs",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\My Web Sites\\EPE\\EPEAPI\\Controllers\\PolicyController.cs",
               "RelativeDocumentMoniker": "Controllers\\PolicyController.cs",

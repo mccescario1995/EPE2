@@ -599,4 +599,235 @@ public class EmailNotificationService
             throw;
         }
     }
+
+    public async Task SendMainApproverReminderEmailAsync(
+    string toEmail,
+    string approverName,
+    long requestId,
+    string requestNumber,
+    string requestorName,
+    string requestDetails,
+    int userId,
+    long transApproverId)
+    {
+        try
+        {
+            var apiBase = _urlBaseSettings.Api;
+            var viewBase = _urlBaseSettings.View;
+            var viewUrl = $"{viewBase}/#/exemptions/view?id={requestId}";
+            var trackUrl = $"{viewBase}/#/exemptions/approve?id={requestId}";
+
+            var emailBody = $@"
+            <html>
+            <body style='margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;'>
+              <table width='100%' cellpadding='0' cellspacing='0' style='background:#f5f5f5;'>
+                <tr><td align='center'>
+                  <table width='600' cellpadding='0' cellspacing='0'
+                    style='background:#fff;margin:20px auto;padding:30px;max-width:600px;'>
+
+                    <tr><td style='padding-bottom:20px;'>Dear {approverName},</td></tr>
+
+                    <tr><td style='padding-bottom:15px;'>
+                      This is a reminder that the following exemption request is awaiting your approval.
+                    </td></tr>
+
+                    <tr><td style='padding:15px;background:#f4f6f6;border-left:5px solid #2f75b5;margin-bottom:20px;'>
+                      <p><strong>Transaction #:</strong> <span style='color:#2f75b5;'>{requestNumber}</span></p>
+                      <p><strong>Requested By:</strong> {requestorName}</p>
+                      <p><strong>Details:</strong> {requestDetails}</p>
+                    </td></tr>
+
+                    <tr><td height='20'></td></tr>
+
+                    <tr><td>
+                      <p style='font-weight:bold;margin-bottom:12px;'>Action required — please respond:</p>
+                      <table cellpadding='0' cellspacing='0'>
+                        <tr>
+                          <td style='padding-right:10px;'>
+                            <a href='{trackUrl}'
+                              style='display:inline-block;background:#16a34a;color:#fff;padding:12px 28px;
+                                     text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;'>
+                              Respond Now
+                            </a>
+                          </td>
+                          <td>
+                            <a href='{viewUrl}'
+                              style='display:inline-block;background:#2f75b5;color:#fff;padding:12px 28px;
+                                     text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;'>
+                              View Details
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td></tr>
+
+                    <tr><td height='20'></td></tr>
+                    <tr><td style='font-size:12px;color:#6b7280;'>
+                      You are receiving this because you are the designated approver for this request.
+                    </td></tr>
+
+                    <tr><td height='30'></td></tr>
+                    <tr><td style='font-family:Courier New;font-size:12px;color:#7f8c8d;'>
+                      --<br>Thank you,<br><br>M.I.R.A.<br><i>FSC - Information Technology</i>
+                    </td></tr>
+                  </table>
+                </td></tr>
+              </table>
+            </body>
+            </html>";
+
+            var requestBody = new
+            {
+                senderDisplayName = "epe.noreply@fast.com.ph",
+                recipient = toEmail,
+                bccrecipient = "mcccescario@fast.com.ph",
+                mailSubject = $"[Reminder] Approval Required - {requestNumber}",
+                mailBody = emailBody,
+                createdBy = "EPE System"
+            };
+
+            await SendEmailAsync(requestBody);
+
+            await CreateWebNotificationAsync(
+                userId,
+                "Approval Reminder",
+                $"Reminder: Exemption request ({requestNumber}) is awaiting your approval",
+                "warning",
+                $"/exemptions/approve?id={requestId}"
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send main approver reminder to {Email}", toEmail);
+            throw;
+        }
+    }
+
+    public async Task SendProxyApproverReminderEmailAsync(
+        string toEmail,
+        string proxyName,
+        string mainApproverName,
+        long requestId,
+        string requestNumber,
+        string requestorName,
+        string requestDetails,
+        int userId,
+        long transApproverId)
+    {
+        try
+        {
+            var viewBase = _urlBaseSettings.View;
+            var viewUrl = $"{viewBase}/#/exemptions/view?id={requestId}";
+            var trackUrl = $"{viewBase}/#/exemptions/approve?id={requestId}";
+
+            var emailBody = $@"
+            <html>
+            <body style='margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;'>
+              <table width='100%' cellpadding='0' cellspacing='0' style='background:#f5f5f5;'>
+                <tr><td align='center'>
+                  <table width='600' cellpadding='0' cellspacing='0'
+                    style='background:#fff;margin:20px auto;padding:30px;max-width:600px;'>
+
+                    <tr><td style='padding-bottom:20px;'>Dear {proxyName},</td></tr>
+
+                    <tr><td style='padding-bottom:15px;'>
+                      You have been designated as a <strong>proxy approver</strong> for the following exemption request.
+                      The primary approver <strong>{mainApproverName}</strong> is also being notified.
+                      Either of you may respond on behalf of this approval group.
+                    </td></tr>
+
+                    <tr><td style='padding:15px;background:#fff8e1;border-left:5px solid #f59e0b;margin-bottom:20px;'>
+                      <p><strong>Transaction #:</strong> <span style='color:#2f75b5;'>{requestNumber}</span></p>
+                      <p><strong>Requested By:</strong> {requestorName}</p>
+                      <p><strong>Details:</strong> {requestDetails}</p>
+                      <p><strong>Primary Approver:</strong> {mainApproverName}</p>
+                    </td></tr>
+
+                    <tr><td height='20'></td></tr>
+
+                    <tr><td>
+                      <p style='font-weight:bold;margin-bottom:12px;'>You may respond as proxy:</p>
+                      <table cellpadding='0' cellspacing='0'>
+                        <tr>
+                          <td style='padding-right:10px;'>
+                            <a href='{trackUrl}'
+                              style='display:inline-block;background:#f59e0b;color:#fff;padding:12px 28px;
+                                     text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;'>
+                              Respond as Proxy
+                            </a>
+                          </td>
+                          <td>
+                            <a href='{viewUrl}'
+                              style='display:inline-block;background:#2f75b5;color:#fff;padding:12px 28px;
+                                     text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;'>
+                              View Details
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td></tr>
+
+                    <tr><td height='20'></td></tr>
+                    <tr><td style='font-size:12px;color:#6b7280;'>
+                      You are receiving this because you are a designated proxy approver.
+                      If <strong>{mainApproverName}</strong> has already responded, no action is needed.
+                    </td></tr>
+
+                    <tr><td height='30'></td></tr>
+                    <tr><td style='font-family:Courier New;font-size:12px;color:#7f8c8d;'>
+                      --<br>Thank you,<br><br>M.I.R.A.<br><i>FSC - Information Technology</i>
+                    </td></tr>
+                  </table>
+                </td></tr>
+              </table>
+            </body>
+            </html>";
+
+            var requestBody = new
+            {
+                senderDisplayName = "epe.noreply@fast.com.ph",
+                recipient = toEmail,
+                bccrecipient = "mcccescario@fast.com.ph",
+                mailSubject = $"[Proxy Reminder] Approval Required - {requestNumber}",
+                mailBody = emailBody,
+                createdBy = "EPE System"
+            };
+
+            await SendEmailAsync(requestBody);
+
+            await CreateWebNotificationAsync(
+                userId,
+                "Proxy Approval Reminder",
+                $"Reminder: You are a proxy approver for request ({requestNumber})",
+                "warning",
+                $"/exemptions/approve?id={requestId}"
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send proxy approver reminder to {Email}", toEmail);
+            throw;
+        }
+    }
+
+    // Extract shared HTTP sending logic to avoid repetition
+    private async Task SendEmailAsync(object requestBody)
+    {
+        var authHeader = "65d9ec1b-316f-4294-a294-d8d54f-utility";
+        var apiUrl = "https://apps.fastlogistics.com.ph/utilityapi/api/Emailer/send-email";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, apiUrl)
+        {
+            Headers = { { "Authorization", authHeader } },
+            Content = JsonContent.Create(requestBody)
+        };
+
+        using var response = await _httpClient.SendAsync(request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Failed to send email. Status: {response.StatusCode}. Response: {errorContent}");
+        }
+    }
 }

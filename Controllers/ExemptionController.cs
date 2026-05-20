@@ -43,8 +43,8 @@ namespace EPEAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> GetExcemptionList(
             [FromBody] UseridRequest userid,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
+            //[FromQuery] int page = 1,
+            //[FromQuery] int pageSize = 10,
             [FromQuery] string? search = null
 
             )
@@ -85,8 +85,8 @@ namespace EPEAPI.Controllers
 
                 var items = await query
                     .OrderByDescending(u => u.CreatedDate)
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
+                    //.Skip((page - 1) * pageSize)
+                    //.Take(pageSize)
                     .Select(h => new
                     {
                         TransactionId = h.TransactionId,
@@ -119,8 +119,8 @@ namespace EPEAPI.Controllers
         [HttpPost("pending")]
         public async Task<IActionResult> GetExcemptionPendingList(
             [FromBody] UseridRequest userid,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
+            //[FromQuery] int page = 1,
+            //[FromQuery] int pageSize = 10,
             [FromQuery] string? search = null
             )
         {
@@ -160,8 +160,8 @@ namespace EPEAPI.Controllers
 
                 var items = await query
                     .OrderByDescending(u => u.CreatedDate)
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
+                    //.Skip((page - 1) * pageSize)
+                    //.Take(pageSize)
                     .Select(h => new
                     {
                         TransactionId = h.TransactionId,
@@ -194,8 +194,8 @@ namespace EPEAPI.Controllers
         [HttpPost("closed")]
         public async Task<IActionResult> GetExcemptionClosedList(
             [FromBody] UseridRequest userid,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
+            //[FromQuery] int page = 1,
+            //[FromQuery] int pageSize = 10,
             [FromQuery] string? search = null
             )
         {
@@ -235,8 +235,8 @@ namespace EPEAPI.Controllers
 
                 var items = await query
                     .OrderByDescending(u => u.CreatedDate)
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
+                    //.Skip((page - 1) * pageSize)
+                    //.Take(pageSize)
                     .Select(h => new
                     {
                         TransactionId = h.TransactionId,
@@ -1485,6 +1485,183 @@ namespace EPEAPI.Controllers
                 await _context.SaveChangesAsync();
 
                 return Ok(new { success = true, message = "Approval request email resent successfully" });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
+        [HttpPost("resend-main/{id}")]
+        public async Task<IActionResult> ResendToMainApprover(int id, [FromBody] ResendRequest request)
+        {
+            try
+            {
+                var approver = await _context.EpeTransactionapprovers
+                    .Where(a => a.Transapproverid == request.TransApproverId && a.Isdelete == 0)
+                    .FirstOrDefaultAsync();
+
+                if (approver == null)
+                    return NotFound(new { success = false, message = "Approver not found" });
+
+                var transactionHeader = await _context.EpeVTransactionHeaders
+                    .Where(u => u.TransactionId == approver.Transactionid && u.IsDelete == 0)
+                    .FirstOrDefaultAsync();
+
+                if (transactionHeader == null)
+                    return NotFound(new { success = false, message = "Transaction not found" });
+
+                var requester = await _context.CoreVEmployeeDetails
+                    .Where(e => e.EmplId == transactionHeader.RequesterId)
+                    .FirstOrDefaultAsync();
+
+                string approverEmail = "";
+                string approverName = "";
+
+                if (approver.Approvertype == "IM" && requester != null)
+                {
+                    approverEmail = requester.ImmediateEmail ?? "";
+                    approverName = requester.ImmediateName ?? "";
+                }
+                else
+                {
+                    var policyApprover = await _context.EpePolicyapprovers
+                        .Where(e => e.Id == int.Parse(approver.Approverid))
+                        .FirstOrDefaultAsync();
+
+                    approverEmail = policyApprover?.Approveremail ?? "";
+                    approverName = policyApprover?.Approvername ?? "";
+                }
+
+                if (string.IsNullOrEmpty(approverEmail))
+                    return BadRequest(new { success = false, message = "Approver email not found" });
+
+                var approverUserId = 0;
+                if (!string.IsNullOrEmpty(approver.Approverid))
+                {
+                    var approverUser = await _context.CoreVUsers
+                        .FirstOrDefaultAsync(u => u.EmplId == approver.Approverid);
+                    if (approverUser != null)
+                        approverUserId = approverUser.UserId;
+                }
+
+                var transApproverRecord = await _context.EpeTransactionapprovers
+                    .Where(a => a.Transactionid == transactionHeader.TransactionId
+                             && a.Approverid == approver.Approverid
+                             && a.Isdelete == 0)
+                    .FirstOrDefaultAsync();
+
+                await _emailService.SendMainApproverReminderEmailAsync(
+                    approverEmail,
+                    approverName,
+                    transactionHeader.TransactionId,
+                    transactionHeader.TransactionNumber,
+                    requester?.Employeename2 ?? transactionHeader.RequesterId,
+                    transactionHeader.Details ?? "No details provided",
+                    approverUserId,
+                    transApproverRecord?.Transapproverid ?? 0
+                );
+
+                approver.Issent = 1;
+                approver.Sentcount += 1;
+                approver.Lastsentdate = DateTime.UtcNow.AddHours(8);
+                if (approver.Sentdate == null)
+                    approver.Sentdate = DateTime.UtcNow.AddHours(8);
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Reminder sent to main approver" });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
+        [HttpPost("resend-proxy/{id}")]
+        public async Task<IActionResult> ResendToProxyApprover(int id, [FromBody] ResendRequest request)
+        {
+            try
+            {
+                var proxyApprover = await _context.EpeTransactionapprovers
+                    .Where(a => a.Transapproverid == request.TransApproverId && a.Isdelete == 0)
+                    .FirstOrDefaultAsync();
+
+                if (proxyApprover == null)
+                    return NotFound(new { success = false, message = "Proxy approver not found" });
+
+                var transactionHeader = await _context.EpeVTransactionHeaders
+                    .Where(u => u.TransactionId == proxyApprover.Transactionid && u.IsDelete == 0)
+                    .FirstOrDefaultAsync();
+
+                if (transactionHeader == null)
+                    return NotFound(new { success = false, message = "Transaction not found" });
+
+                var requester = await _context.CoreVEmployeeDetails
+                    .Where(e => e.EmplId == transactionHeader.RequesterId)
+                    .FirstOrDefaultAsync();
+
+                // Get the main approver in the same sort group
+                var mainApproverRecord = await _context.EpeTransactionapprovers
+                    .Where(a => a.Transactionid == proxyApprover.Transactionid
+                             && a.Sort == proxyApprover.Sort
+                             && a.Linesequence == 1
+                             && a.Isdelete == 0)
+                    .FirstOrDefaultAsync();
+
+                var policyProxyApprover = await _context.EpePolicyapprovers
+                    .Where(e => e.Id == int.Parse(proxyApprover.Approverid))
+                    .FirstOrDefaultAsync();
+
+                string proxyEmail = policyProxyApprover?.Approveremail ?? "";
+                string proxyName = policyProxyApprover?.Approvername ?? "";
+                string mainApproverName = "Main Approver";
+
+                if (mainApproverRecord != null)
+                {
+                    var policyMainApprover = await _context.EpePolicyapprovers
+                        .Where(e => e.Id == int.Parse(mainApproverRecord.Approverid))
+                        .FirstOrDefaultAsync();
+
+                    if (mainApproverRecord.Approvertype == "IM" && requester != null)
+                        mainApproverName = requester.ImmediateName ?? "Immediate Head";
+                    else
+                        mainApproverName = policyMainApprover?.Approvername ?? "Main Approver";
+                }
+
+                if (string.IsNullOrEmpty(proxyEmail))
+                    return BadRequest(new { success = false, message = "Proxy approver email not found" });
+
+                var proxyUserId = 0;
+                if (!string.IsNullOrEmpty(proxyApprover.Approverid))
+                {
+                    var proxyUser = await _context.CoreVUsers
+                        .FirstOrDefaultAsync(u => u.EmplId == proxyApprover.Approverid);
+                    if (proxyUser != null)
+                        proxyUserId = proxyUser.UserId;
+                }
+
+                await _emailService.SendProxyApproverReminderEmailAsync(
+                    proxyEmail,
+                    proxyName,
+                    mainApproverName,
+                    transactionHeader.TransactionId,
+                    transactionHeader.TransactionNumber,
+                    requester?.Employeename2 ?? transactionHeader.RequesterId,
+                    transactionHeader.Details ?? "No details provided",
+                    proxyUserId,
+                    proxyApprover.Transapproverid
+                );
+
+                proxyApprover.Issent = 1;
+                proxyApprover.Sentcount += 1;
+                proxyApprover.Lastsentdate = DateTime.UtcNow.AddHours(8);
+                if (proxyApprover.Sentdate == null)
+                    proxyApprover.Sentdate = DateTime.UtcNow.AddHours(8);
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Reminder sent to proxy approver" });
             }
             catch (Exception e)
             {
