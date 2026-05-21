@@ -1279,7 +1279,7 @@ namespace EPEAPI.Controllers
                             .ExecuteUpdateAsync(b => b
                                 .SetProperty(a => a.Respond, 1)
                                 .SetProperty(a => a.Responddate, DateTime.UtcNow.AddHours(8))
-                                .SetProperty(a => a.Remarks, "Auto-approved: group member approved")
+                                .SetProperty(a => a.Remarks, "Auto-approved: An Approver Approved")
                             );
                     }
 
@@ -1461,7 +1461,7 @@ namespace EPEAPI.Controllers
                             .ExecuteUpdateAsync(b => b
                                 .SetProperty(a => a.Respond, 2)
                                 .SetProperty(a => a.Responddate, DateTime.UtcNow.AddHours(8))
-                                .SetProperty(a => a.Remarks, "Auto-disapproved: group member disapproved")
+                                .SetProperty(a => a.Remarks, "Auto-disapproved: An Approver Disapproved")
                             );
                     }
 
