@@ -321,7 +321,8 @@
       <!-- Modal -->
       <div
         v-if="show"
-        class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+        class="fixed inset-0 flex items-center justify-center z-50"
+        style="background-color: rgba(0, 0, 0, 0.5);"
       >
         <div
           class="bg-white rounded-xl shadow-lg max-w-4xl w-full p-4 relative"
