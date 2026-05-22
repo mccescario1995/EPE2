@@ -18,7 +18,7 @@ const exemptionId = computed(() => {
 });
 
 // Form data for approval response
-const remarks = ref<string>("");
+const respondRemarks = ref<null | string>(null);
 const selectedRespond = ref<number>(0); // 0 = not selected, 1 = approve, 2 = disapprove
 
 // Fetch current user from auth
@@ -436,9 +436,11 @@ const handleApprove = async () => {
       employeeId:
         currentUser.value?.emplId?.toString() ??
         approverToRespond.employeeId?.toString(),
-      remarks: remarks.value,
+      remarks: respondRemarks.value,
       respond: selectedRespond.value,
     };
+
+    console.log("Submitting approval response with payload:", payload);
 
     const response = await apiFetch("/api/exemption/respond", {
       method: "POST",
@@ -870,7 +872,7 @@ onMounted(async () => {
                     maxlength="250"
                   ></textarea> -->
                   <BaseInput
-                    v-model="remarks"
+                    v-model="respondRemarks"
                     isTextarea
                     :rowCount="4"
                     :maxCharCount="250"

@@ -769,7 +769,7 @@ watch(
               <span class="rounded-full bg-blue-200 h-7 w-7 flex justify-center">{{
                 index + 1
               }}</span>
-              {{ element.name }}
+              <div class="uppercase">{{ element.name }}</div>
               <button
                 class="ml-auto text-red-500 hover:text-red-700 transition-colors"
                 title="Delete approver"

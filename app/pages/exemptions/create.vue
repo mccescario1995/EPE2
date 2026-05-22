@@ -408,14 +408,8 @@ const handleSaveDraft = async () => {
     formDataToSend.append("createdby", userId.userId.toString());
     formDataToSend.append("computerhost", workstation);
 
-    newAttachments.value.forEach((attachment, index) => {
-      if (attachment.file) {
-        // Bind to model binder: Attachments[0].File, Attachments[1].File, ...
-        formDataToSend.append(`Attachments[${index}].File`, attachment.file);
-        // Fallback so Request.Form.Files has the parts if model-binding fails
+    newAttachments.value.forEach((attachment) => {
         formDataToSend.append("files", attachment.file);
-      }
-      // formDataToSend.append(`Attachments[${index}].ReferenceType`, attachment.referenceType);
     });
 
     let response;
@@ -440,8 +434,24 @@ const handleSaveDraft = async () => {
 
     console.log("Draft save response:", response);
 
-    if (response) {
-      draftId.value = response.item.transactionId;
+    const transactionId = response?.item?.transactionId || response?.item?.transactionid;
+    console.log("Transaction ID from response:", transactionId);
+
+    const attachmentResponse : any = await apiFetch(
+      "/api/exemption/add-attachment/" + transactionId,
+      {
+        method: "POST",
+        body: formDataToSend,
+        parseJson: true,
+      },
+    );
+
+    console.log("Attachment response:", attachmentResponse);
+    console.log("Attachment response transaction ID:", transactionId);
+
+    if (attachmentResponse && response) {
+      draftId.value = transactionId.toString();
+      console.log("Draft ID:", draftId.value);
       isDraft.value = true;
       showToast({
         type: "success",

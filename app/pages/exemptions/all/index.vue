@@ -8,7 +8,7 @@ const userStore = useUserStore();
 const userId = userStore.profile;
 
 const loading = ref(false);
-const exemptionData :any = ref(null);
+const exemptionData: any = ref(null);
 const showDeleteConfirm = ref(false);
 const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
@@ -99,14 +99,44 @@ const fetchExemptionRequests = async () => {
   }
 };
 
+const fetchExemptionRequestsServer = async (params: {
+  page: number;
+  limit: number;
+  search: string;
+  filters: Record<string, string>;
+  sortField?: string;
+  sortDirection?: "asc" | "desc";
+}) => {
+  const emplId = parseInt(userId.emplId);
+
+  const response = await apiFetch("/api/exemption", {
+    method: "POST",
+    body: JSON.stringify({
+      EmplId: emplId,
+      Page: params.page,
+      Limit: params.limit,
+      Search: params.search,
+      SortField: params.sortField,
+      SortDirection: params.sortDirection,
+    }),
+    headers: { "Content-Type": "application/json" },
+    parseJson: true,
+  });
+
+  return {
+    data: response.items || [],
+    total: response.total || 0,
+  };
+};
+
 // Handle create navigation
 const handleCreate = () => {
   router.push(`/exemptions/create`);
 };
 
-watchEffect(() => {
-  fetchExemptionRequests();
-});
+// watchEffect(() => {
+//   fetchExemptionRequests();
+// });
 </script>
 
 <template>
@@ -143,6 +173,97 @@ watchEffect(() => {
       <!-- Exemption Requests List -->
       <div class="mb-6 px-2 rounded-lg">
         <base-table
+          server-pagination
+          :fetch-data="fetchExemptionRequestsServer"
+          :pagination="true"
+          :per-page="10"
+          :show-search="true"
+          :showlimitfilter="true"
+          :limitfilter="[5, 10, 20, 30, 40, 50]"
+
+          :sortable-columns="[
+            'transactionNumber',
+            'policyName',
+            'status',
+            'requesterName',
+            'createdDate',
+          ]"
+          :filterable-columns="['status']"
+          :header="[
+            'transactionNumber',
+            'policyName',
+            'status',
+            'requesterName',
+            'createdDate',
+          ]"
+          :badge-fields="['status', 'finalDecision']"
+          :field-mappings="{
+            status: {
+              O: 'Open',
+              P: 'Open',
+              C: 'Closed',
+              D: 'Draft',
+            },
+            finalDecision: {
+              Pending: 'Pending',
+              Approved: 'Approved',
+              Disapproved: 'Disapproved',
+              Draft: 'Draft',
+            },
+          }"
+          :field-colors="{
+            status: {
+              O: 'bg-blue-100 text-blue-800 border border-blue-900',
+              P: 'bg-blue-100 text-blue-800 border border-blue-900',
+              C: 'bg-gray-200 text-gray-800 border border-gray-900',
+              D: 'bg-gray-100 text-gray-800 border border-gray-900',
+            },
+            finalDecision: {
+              Pending: 'bg-yellow-100 text-yellow-800',
+              Approved: 'bg-green-100 text-green-800',
+              Disapproved: 'bg-red-100 text-red-800',
+              Draft: 'bg-gray-100 text-gray-800 border border-gray-900',
+            },
+          }"
+          :date-fields="['createdDate']"
+          
+          :actions="[
+            {
+              label: IconView,
+              tooltip: 'View Details',
+              handler: viewProduct,
+              iconClass: 'text-indigo-500',
+            },
+            {
+              label: IconApproval,
+              tooltip: 'Approve Request',
+              handler: approveRequest,
+              iconClass: 'text-teal-500',
+              visible: (row) => row.canApprove && row.status !== 'C', // This will only be visible to the approver not he requester and for non-completed requests
+            },
+            {
+              label: IconEdit,
+              tooltip: (row) =>
+                row.status == 'D' ? 'Edit Draft' : 'Edit Request',
+              handler: editProduct,
+              iconClass: 'text-blue-500',
+              visible: (row) =>
+                row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
+              disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
+            },
+            {
+              label: IconDelete,
+              tooltip: 'Delete Request',
+              handler: confirmDelete,
+              iconClass: 'text-red-500',
+              visible: (row) =>
+                row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
+              disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
+            },
+          ]"
+        />
+
+        <!-- <base-table
           :table-data="exemptionData"
           :header="[
             'transactionNumber',
@@ -186,7 +307,7 @@ watchEffect(() => {
           :total-items="exemptionDataLength"
           :key="exemptionDataLength"
           :showSearch="true"
-
+          :fetch-data="loadServerData"
           :actions="[
             {
               label: IconView,
@@ -221,7 +342,7 @@ watchEffect(() => {
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
           ]"
-        />
+        /> -->
       </div>
     </main>
 

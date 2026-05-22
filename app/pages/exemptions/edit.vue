@@ -131,13 +131,10 @@ const fetchExemptionDetails = async () => {
 
   isLoading.value = true;
   try {
-    const response = await apiFetch(
-      `/api/exemption/edit/${exemptionId.value}`,
-      {
-        method: "POST",
-        parseJson: true,
-      },
-    );
+    const response = await apiFetch(`/api/exemption/edit/${exemptionId.value}`, {
+      method: "POST",
+      parseJson: true,
+    });
 
     if (response) {
       const item = response.item;
@@ -219,13 +216,10 @@ const fetchAttachments = async () => {
   if (!exemptionId.value) return;
 
   try {
-    const response = await apiFetch(
-      `/api/exemption/attachments/${exemptionId.value}`,
-      {
-        method: "GET",
-        parseJson: true,
-      },
-    );
+    const response = await apiFetch(`/api/exemption/attachments/${exemptionId.value}`, {
+      method: "GET",
+      parseJson: true,
+    });
 
     if (response) {
       attachments.value = response.data || [];
@@ -303,7 +297,7 @@ const handleCancel = () => {
 
 // Handle back (go to view page)
 const handleBack = () => {
-  router.push(`/exemptions/view?id=${exemptionId.value}`);
+  router.back();
 };
 
 // Submit form
@@ -320,16 +314,13 @@ const handleSubmit = async () => {
       modifiedby: userId.userId,
     };
 
-    const response = await apiFetch(
-      `/api/exemption/update/${exemptionId.value}`,
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: {
-          "Content-Type": "application/json",
-        },
+    const response = await apiFetch(`/api/exemption/update/${exemptionId.value}`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+    });
 
     if (response) {
       showToast({
@@ -367,12 +358,9 @@ const handleSubmitDraft = async () => {
 
   isSubmitting.value = true;
   try {
-    const response = await apiFetch(
-      `/api/exemption/submit-draft/${exemptionId.value}`,
-      {
-        method: "POST",
-      },
-    );
+    const response = await apiFetch(`/api/exemption/submit-draft/${exemptionId.value}`, {
+      method: "POST",
+    });
 
     if (response) {
       showToast({
@@ -418,16 +406,13 @@ const handleUpdateDraft = async () => {
       modifiedby: userId.userId,
     };
 
-    const response = await apiFetch(
-      `/api/exemption/update-draft/${exemptionId.value}`,
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: {
-          "Content-Type": "application/json",
-        },
+    const response = await apiFetch(`/api/exemption/update-draft/${exemptionId.value}`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+    });
 
     if (response) {
       showToast({
@@ -488,7 +473,7 @@ watch(
     if (newVal && exemptionDetails.value?.status === "D") {
       fetchApprovers(newVal.id);
     }
-  },
+  }
 );
 
 // Get final decision display
@@ -686,15 +671,10 @@ const getProxies = (transApproverId: number): any[] => {
 const isGroupSatisfied = (transApproverId: number): boolean => {
   console.log(" Group approvers for transApproverId", groupedApprovers.value);
   const { mainApprovers, proxiesMap } = groupedApprovers.value;
-  const mainApprover = mainApprovers.find(
-    (a) => a.transApproverId === transApproverId,
-  );
+  const mainApprover = mainApprovers.find((a) => a.transApproverId === transApproverId);
   if (!mainApprover) return false;
 
-  const groupApprovers = [
-    mainApprover,
-    ...(proxiesMap.get(transApproverId) || []),
-  ];
+  const groupApprovers = [mainApprover, ...(proxiesMap.get(transApproverId) || [])];
   return groupApprovers.some((a) => a.respond === 1);
 };
 
@@ -755,12 +735,9 @@ const deleteAttachment = async (attachId: number) => {
   if (!confirm("Are you sure you want to delete this attachment?")) return;
 
   try {
-    const response = await apiFetch(
-      `/api/exemption/delete-attachment/${attachId}`,
-      {
-        method: "POST",
-      },
-    );
+    const response = await apiFetch(`/api/exemption/delete-attachment/${attachId}`, {
+      method: "POST",
+    });
 
     if (response) {
       showToast({
@@ -817,7 +794,7 @@ const addNewAttachments = async () => {
       {
         method: "POST",
         body: uploadForm,
-      },
+      }
     );
 
     if (response) {
@@ -861,18 +838,15 @@ const fetchApprovers = async (policyId: number) => {
 
   isLoadingApprovers.value = true;
   try {
-    const response = await apiFetch(
-      `/api/Maintenance/policy/${policyId}/approvers`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ UserId: userId.userId }),
-        credentials: "include",
-        parseJson: true,
+    const response = await apiFetch(`/api/Maintenance/policy/${policyId}/approvers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({ UserId: userId.userId }),
+      credentials: "include",
+      parseJson: true,
+    });
 
     const items = response.success ? response.items : response;
 
@@ -890,8 +864,7 @@ const fetchApprovers = async (policyId: number) => {
         transApproverId: a.id,
         approverName: a.approvername,
         approverEmail: a.approveremail,
-        approverRole:
-          a.approvertype === "IM" ? "Immediate Head" : a.approverRole, // Override for IM
+        approverRole: a.approvertype === "IM" ? "Immediate Head" : a.approverRole, // Override for IM
         respond: 3,
         sort: a.sort,
         lineSequence: a.linesequence,
@@ -934,9 +907,7 @@ onMounted(() => {
 <template>
   <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh">
     <header class="bg-white shadow">
-      <div
-        class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
-      >
+      <div class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <div class="flex items-center">
           <!-- v-if="row.requesterId === userId.emplId && exemptionDetails.status !== 'C'" -->
           <Button
@@ -948,9 +919,7 @@ onMounted(() => {
             @onclick="handleBack"
           />
           <h1 class="text-2xl ps-5 font-bold text-gray-900">
-            {{
-              exemptionDetails?.status === "D" ? "Edit Draft" : "Edit Request"
-            }}
+            {{ exemptionDetails?.status === "D" ? "Edit Draft" : "Edit Request" }}
           </h1>
         </div>
         <div class="flex items-center gap-3">
@@ -1043,22 +1012,18 @@ onMounted(() => {
             </div>
             <div class="ml-3">
               <p class="text-sm text-blue-700">
-                Note: Request Status and Approver Status cannot be edited. These
-                are managed automatically.
+                Note: Request Status and Approver Status cannot be edited. These are
+                managed automatically.
               </p>
             </div>
           </div>
         </div>
         <div class="grid grid-cols-4 gap-6">
           <!-- Left Column -->
-          <div
-            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow p-6"
-          >
+          <div class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow p-6">
             <!-- Transaction Info -->
             <div class="mb-8">
-              <div
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
-              >
+              <div class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b">
                 <div class="flex justify-between items-center">
                   <h2>Request Information</h2>
                   <div v-if="exemptionDetails">
@@ -1107,9 +1072,7 @@ onMounted(() => {
                   <div>
                     <label class="block text-sm font-medium text-gray-500 mb-1">
                       Policy To Override
-                      <span
-                        v-if="exemptionDetails?.status !== 'D'"
-                        class="text-red-500"
+                      <span v-if="exemptionDetails?.status !== 'D'" class="text-red-500"
                         >*</span
                       >
                     </label>
@@ -1142,9 +1105,7 @@ onMounted(() => {
 
             <!-- Attachments -->
             <div class="mb-8">
-              <h2
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
-              >
+              <h2 class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b">
                 Attachments
               </h2>
 
@@ -1180,9 +1141,7 @@ onMounted(() => {
                         <p class="text-xs text-gray-500">
                           <!-- // {{ attachment.referenceType }} • -->
                           {{ attachment.filetype }} •
-                          {{
-                            new Date(attachment.createdate).toLocaleDateString()
-                          }}
+                          {{ new Date(attachment.createdate).toLocaleDateString() }}
                         </p>
                       </div>
                     </div>
@@ -1223,10 +1182,7 @@ onMounted(() => {
                         accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
                         class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                       />
-                      <p
-                        v-if="attachment.file"
-                        class="mt-1 text-xs text-gray-500"
-                      >
+                      <p v-if="attachment.file" class="mt-1 text-xs text-gray-500">
                         Selected: {{ attachment.file.name }} ({{
                           (attachment.file.size / 1024 / 1024).toFixed(2)
                         }}
@@ -1275,9 +1231,7 @@ onMounted(() => {
             <!-- Approvers Status -->
             <div class="mb-8">
               <div class="border-b flex justify-between">
-                <h2 class="text-xl font-semibold text-gray-800 mb-2">
-                  Approvers Status
-                </h2>
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">Approvers Status</h2>
                 <div>
                   <span
                     v-if="exemptionDetails"
@@ -1293,17 +1247,12 @@ onMounted(() => {
                         exemptionDetails.finalDecision === 'Draft',
                     }"
                   >
-                    {{
-                      getFinalDecisionDisplay(exemptionDetails.finalDecision)
-                    }}
+                    {{ getFinalDecisionDisplay(exemptionDetails.finalDecision) }}
                   </span>
                 </div>
               </div>
 
-              <div
-                v-if="approversData && approversData.length > 0"
-                class="space-y-4"
-              >
+              <div v-if="approversData && approversData.length > 0" class="space-y-4">
                 <template
                   v-for="(approver, index) in groupedApprovers.mainApprovers"
                   :key="approver.transApproverId"
@@ -1352,7 +1301,10 @@ onMounted(() => {
                             !isGroupSatisfied(approver.transApproverId)
                           "
                           @click="resendToMainApprover(approver.transApproverId)"
-                          :disabled="(isResending === approver.transApproverId) || (cooldowns[approver.transApproverId] > 0)"
+                          :disabled="
+                            isResending === approver.transApproverId ||
+                            cooldowns[approver.transApproverId] > 0
+                          "
                           class="flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
                           title="Resend notification to approver"
                         >
@@ -1393,7 +1345,9 @@ onMounted(() => {
                               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                             />
                           </svg>
-                          <span v-if="cooldowns[approver.transApproverId] > 0">Resend ({{ cooldowns[approver.transApproverId] }}s)</span>
+                          <span v-if="cooldowns[approver.transApproverId] > 0"
+                            >Resend ({{ cooldowns[approver.transApproverId] }}s)</span
+                          >
                           <span v-else>Resend</span>
                         </button>
                       </div>
@@ -1409,9 +1363,7 @@ onMounted(() => {
                         class="flex items-start justify-between py-2 border-b border-gray-200 last:border-0"
                       >
                         <div class="flex items-start">
-                          <span
-                            class="w-2 h-2 rounded-full bg-blue-400 mt-1.5"
-                          ></span>
+                          <span class="w-2 h-2 rounded-full bg-blue-400 mt-1.5"></span>
                           <div class="ps-3">
                             <p class="text-sm text-gray-700">
                               {{ proxy.approverName }}
@@ -1444,7 +1396,10 @@ onMounted(() => {
                               !isGroupSatisfied(approver.transApproverId)
                             "
                             @click="resendToProxyApprover(proxy.transApproverId)"
-                            :disabled="(isResending === proxy.transApproverId) || ((cooldowns[proxy.transApproverId] ?? 0) > 0)"
+                            :disabled="
+                              isResending === proxy.transApproverId ||
+                              (cooldowns[proxy.transApproverId] ?? 0) > 0
+                            "
                             class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
                             title="Resend notification to proxy"
                           >
@@ -1484,7 +1439,9 @@ onMounted(() => {
                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                               />
                             </svg>
-                            <span v-if="cooldowns[proxy.transApproverId] > 0">Resend ({{ cooldowns[proxy.transApproverId] }}s)</span>
+                            <span v-if="cooldowns[proxy.transApproverId] > 0"
+                              >Resend ({{ cooldowns[proxy.transApproverId] }}s)</span
+                            >
                             <span v-else>Resend</span>
                           </button>
                         </div>
@@ -1500,8 +1457,7 @@ onMounted(() => {
                 <span
                   v-if="exemptionDetails?.status === 'D'"
                   class="text-black bg-amber-200 p-2 rounded-md"
-                  >Please submit request to send email notifications to
-                  approvers.</span
+                  >Please submit request to send email notifications to approvers.</span
                 >
                 <span v-else>No approvers assigned yet.</span>
               </div>
@@ -1509,9 +1465,7 @@ onMounted(() => {
 
             <!-- Remarks (if any) -->
             <div v-if="exemptionDetails?.remarks" class="mb-8">
-              <h2
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
-              >
+              <h2 class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b">
                 Remarks
               </h2>
               <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">

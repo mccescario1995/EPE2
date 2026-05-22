@@ -9,16 +9,26 @@ export function useAuth() {
   const userStore = useUserStore();
 
   async function login(email: string, password: string) {
+
+    const payload = {
+      email: email,
+      password: password,
+    };
+
     const data = await apiFetch("/api/Access", {
       method: "post",
-      body: JSON.stringify({ email: email, password: password }),
+      body: JSON.stringify(payload),
       headers: {
         "Content-Type": "application/json",
       },
     });
 
+    console.log("Login response:", data); // Log the raw response for debugging
+
     //Parse response (required)
     const dataJson = await data.json();
+
+    console.log("Parsed login response:", dataJson); // Log the parsed response for debugging
 
     //Check for login failure
     if (dataJson.status === "FAILURE")

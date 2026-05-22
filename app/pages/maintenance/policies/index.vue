@@ -18,7 +18,9 @@ const userStore = useUserStore();
 const userId = userStore.profile;
 
 const loading = ref(false);
-const policyData = ref(null);
+const policyData :any = ref(null);
+
+const policyDataLength = computed(() => policyData.value?.length ?? 0);
 const showDeleteConfirm = ref(false);
 const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
@@ -445,6 +447,8 @@ onMounted(() => {
           :date-fields="['createdDate']"
           :pagination="true"
           :per-page="10"
+          :totalItems="policyDataLength"
+          :key="policyDataLength"
           :show-search="true"
           :actions="[
             {

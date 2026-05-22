@@ -382,6 +382,8 @@ async function Login() {
   //Use you own API logic here
   const user = await login(username.value, password.value);
 
+  console.log(user);
+
   if (user.status === "FAILURE") {
     showToast({
       title: "Login Failed",
