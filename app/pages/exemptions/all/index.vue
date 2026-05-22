@@ -98,34 +98,62 @@ const fetchExemptionRequests = async () => {
     loading.value = false;
   }
 };
+// 
+// const fetchExemptionRequestsServer = async (params: {
+  // page: number;
+  // limit: number;
+  // search: string;
+  // filters: Record<string, string>;
+  // sortField?: string;
+  // sortDirection?: "asc" | "desc";
+// }) => {
+  // const emplId = parseInt(userId.emplId);
+// 
+  // const response = await apiFetch("/api/exemption", {
+    // method: "POST",
+    // body: JSON.stringify({
+      // EmplId: emplId,
+      // Page: params.page,
+      // Limit: params.limit,
+      // Search: params.search,
+      // SortField: params.sortField,
+      // SortDirection: params.sortDirection,
+    // }),
+    // headers: { "Content-Type": "application/json" },
+    // parseJson: true,
+  // });
+// 
+  // return {
+    // data: response.items || [],
+    // total: response.total || 0,
+  // };
+// };
 
-const fetchExemptionRequestsServer = async (params: {
+const fetchExemptionData = async (params: {
   page: number;
   limit: number;
   search: string;
   filters: Record<string, string>;
   sortField?: string;
-  sortDirection?: "asc" | "desc";
+  sortDirection?: 'asc' | 'desc';
 }) => {
-  const emplId = parseInt(userId.emplId);
-
-  const response = await apiFetch("/api/exemption", {
-    method: "POST",
+  const response = await apiFetch('/api/exemption', {
+    method: 'POST',
     body: JSON.stringify({
-      EmplId: emplId,
-      Page: params.page,
-      Limit: params.limit,
-      Search: params.search,
-      SortField: params.sortField,
-      SortDirection: params.sortDirection,
+      UserId: parseInt(userId.emplId),
+      page: params.page,
+      pageSize: params.limit,
+      search: params.search,
+      sortField: params.sortField,
+      sortDirection: params.sortDirection,
     }),
-    headers: { "Content-Type": "application/json" },
+    headers: { 'Content-Type': 'application/json' },
     parseJson: true,
   });
 
   return {
-    data: response.items || [],
-    total: response.total || 0,
+    data: response.items ?? [],
+    total: response.totalCount ?? 0,
   };
 };
 
@@ -173,10 +201,10 @@ const handleCreate = () => {
       <!-- Exemption Requests List -->
       <div class="mb-6 px-2 rounded-lg">
         <base-table
-          server-pagination
-          :fetch-data="fetchExemptionRequestsServer"
+          :server-pagination="true"
+          :fetch-data="fetchExemptionData"
           :pagination="true"
-          :per-page="10"
+          :per-page="5"
           :show-search="true"
           :showlimitfilter="true"
           :limitfilter="[5, 10, 20, 30, 40, 50]"
@@ -184,7 +212,6 @@ const handleCreate = () => {
           :sortable-columns="[
             'transactionNumber',
             'policyName',
-            'status',
             'requesterName',
             'createdDate',
           ]"

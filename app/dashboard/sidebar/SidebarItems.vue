@@ -39,52 +39,52 @@ async function refreshAll() {
 
 onMounted(async () => {
   const staticMenus = [
-    {
-      id: 1,
-      title: "Activity",
-      isopen: false,
-      isActive: false,
-      submenu: [
-        {
-          id: "A1",
-          title: "Notification",
-          route: "/activity/notificationpage",
-        },
-        { id: "A2", title: "Modal", route: "/activity/modal" },
-        { id: "A3", title: "Buttons", route: "/activity/buttons" },
-        { id: "A4", title: "Table", route: "/activity/table" },
-        { id: "A5", title: "Cards", route: "/activity/cards" },
-        { id: "A6", title: "Forms", route: "/activity/forms" },
-        { id: "A7", title: "Nested Modal", route: "/activity/nestedmodal" },
-      ],
-    },
-    {
-      id: 2,
-      title: "Documentation",
-      isopen: false,
-      isActive: false,
-      submenu: [
-        { id: "D1", title: "Table", route: "/documentation/table" },
-        { id: "D2", title: "Sidebar", route: "/documentation/sidebar" },
-        {
-          id: "D3",
-          title: "Notification",
-          route: "/documentation/notification",
-        },
-        { id: "D4", title: "Cards", route: "/documentation/card" },
-        { id: "D5", title: "Modals", route: "/documentation/modal" },
-        { id: "D6", title: "Dropdown", route: "/documentation/dropdown" },
-        { id: "D7", title: "Input", route: "/documentation/input" },
-      ],
-    },
-    {
-      id: 3,
-      title: "Report",
-      route: "/dashboard",
-      iswithfunction: true,
-      isopen: false,
-      isActive: true,
-    },
+    // {
+    //   id: 1,
+    //   title: "Activity",
+    //   isopen: false,
+    //   isActive: false,
+    //   submenu: [
+    //     {
+    //       id: "A1",
+    //       title: "Notification",
+    //       route: "/activity/notificationpage",
+    //     },
+    //     { id: "A2", title: "Modal", route: "/activity/modal" },
+    //     { id: "A3", title: "Buttons", route: "/activity/buttons" },
+    //     { id: "A4", title: "Table", route: "/activity/table" },
+    //     { id: "A5", title: "Cards", route: "/activity/cards" },
+    //     { id: "A6", title: "Forms", route: "/activity/forms" },
+    //     { id: "A7", title: "Nested Modal", route: "/activity/nestedmodal" },
+    //   ],
+    // },
+    // {
+    //   id: 2,
+    //   title: "Documentation",
+    //   isopen: false,
+    //   isActive: false,
+    //   submenu: [
+    //     { id: "D1", title: "Table", route: "/documentation/table" },
+    //     { id: "D2", title: "Sidebar", route: "/documentation/sidebar" },
+    //     {
+    //       id: "D3",
+    //       title: "Notification",
+    //       route: "/documentation/notification",
+    //     },
+    //     { id: "D4", title: "Cards", route: "/documentation/card" },
+    //     { id: "D5", title: "Modals", route: "/documentation/modal" },
+    //     { id: "D6", title: "Dropdown", route: "/documentation/dropdown" },
+    //     { id: "D7", title: "Input", route: "/documentation/input" },
+    //   ],
+    // },
+    // {
+    //   id: 3,
+    //   title: "Report",
+    //   route: "/dashboard",
+    //   iswithfunction: true,
+    //   isopen: false,
+    //   isActive: true,
+    // },
     {
       id: 2,
       title: "Maintenance",

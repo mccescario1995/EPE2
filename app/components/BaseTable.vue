@@ -757,11 +757,21 @@ watch(
   { immediate: true },
 );
 
-watch([currentPage, globalSearch], () => {
-  if (props.serverPagination && props.fetchData) {
-    fetchTable();
+//watch([currentPage, globalSearch], () => {
+//  if (props.serverPagination && props.fetchData) {
+//    fetchTable();
+//  }
+//});
+
+// Replace the existing watch
+watch(
+  [currentPage, globalSearch, sortField, sortDirection],
+  () => {
+    if (props.serverPagination && props.fetchData) {
+      fetchTable();
+    }
   }
-});
+);
 
 // Methods
 function formatHeader(headerKey: string): string {
@@ -945,30 +955,66 @@ function toggleSort(key: string) {
   }
 }
 
-async function fetchTable() {
+//async function fetchTable() {
+//  if (!props.fetchData) return;
+//
+//  loading.value = true;
+//  try {
+//    startLoading();
+//    const res = await props.fetchData({
+//      page: currentPage.value,
+//      limit: limit.value,
+//      search: globalSearch.value,
+//      filters: {},
+//      sortField: sortField.value,
+//      sortDirection: sortDirection.value,
+//    });
+//
+//    internalData.value = res.data;
+//    totalItemsInternal.value = res.total;
+//  } catch (e) {
+//    console.error("Error fetching data:", e);
+//  } finally {
+//    loading.value = false;
+//    stopLoading();
+//  }
+//}
+
+// In BaseTable.vue — replace the existing fetchTable
+const fetchTable = async () => {
   if (!props.fetchData) return;
 
   loading.value = true;
   try {
     startLoading();
+
+    // Build active column + dynamic filters
+    const activeFilters: Record<string, string> = {};
+    Object.entries(columnFilters).forEach(([key, val]) => {
+      if (val) activeFilters[key] = val;
+    });
+    Object.entries(dynamicFilters.value).forEach(([key, val]) => {
+      if (val) activeFilters[key] = val as string;
+    });
+
     const res = await props.fetchData({
       page: currentPage.value,
       limit: limit.value,
       search: globalSearch.value,
-      filters: {},
-      sortField: sortField.value,
-      sortDirection: sortDirection.value,
+      filters: activeFilters,          // ← was always {} before
+      sortField: sortField.value || undefined,
+      sortDirection: sortField.value ? sortDirection.value : undefined,
     });
 
     internalData.value = res.data;
     totalItemsInternal.value = res.total;
   } catch (e) {
-    console.error("Error fetching data:", e);
+    console.error('Error fetching data:', e);
   } finally {
     loading.value = false;
     stopLoading();
   }
-}
+};
 
 // Lifecycle hooks
 onMounted(() => {
