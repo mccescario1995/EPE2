@@ -314,3 +314,4 @@ C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\EPEAPI.pdb
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\EPEAPI.genruntimeconfig.cache
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\ref\EPEAPI.dll
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\bin\Debug\net8.0\appsettings.Production.json

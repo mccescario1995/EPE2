@@ -195,9 +195,9 @@ public class EmailNotificationService
     {
         return status.ToLower() switch
         {
-            "Approved" => ("#16A34A", "#16A34A", "#ECFDF5", "Approved"),
-            "Disapproved" => ("#DC2626", "#DC2626", "#FEF2F2", "Disapproved"),
-            "Pending" => ("#F59E0B", "#F59E0B", "#FFFBEB", "Pending"),
+            "approved" => ("#16A34A", "#16A34A", "#ECFDF5", "Approved"),
+            "disapproved" => ("#DC2626", "#DC2626", "#FEF2F2", "Disapproved"),
+            "pending" => ("#F59E0B", "#F59E0B", "#FFFBEB", "Pending"),
             _ => ("#2563EB", "#2563EB", "#F3F4F6", "Submitted")
         };
     }
@@ -235,10 +235,10 @@ public class EmailNotificationService
 
                                     <!-- Status Box -->
                                     <tr>
-                                        <td style='padding:15px; background-color:#f4f6f6; border-left:5px solid #2f75b5;'>
+                                        <td style='padding:15px; background-color:{theme.LightBg}; border-left:5px solid {theme.Border};'>
                                             <p><strong>Transaction Number:</strong> <span style='color:#2f75b5;'>{requestNumber}</span></p>
                                             <p><strong>Previous Status:</strong> {oldStatus}</p>
-                                            <p><strong>New Status:</strong> <strong style='color:#27ae60;'>{newStatus}</strong></p>
+                                            <p><strong>New Status:</strong> <strong style='color:{theme.Primary};'>{newStatus}</strong></p>
                                             <p><strong>Updated By:</strong> {changedBy}</p>
                                         </td>
                                     </tr>
@@ -432,7 +432,7 @@ public class EmailNotificationService
                                         </td>
                                     </tr>
 
-                                    <tr>
+                                    <tr>cd..
                                         <td style='padding-top:10px; font-size:12px;'>
                                             If the button doesn't work,
                                             <a href='{trackUrl}' style='color:#2f75b5;'>click here</a>.
@@ -640,7 +640,7 @@ public class EmailNotificationService
                     <tr><td height='20'></td></tr>
 
                     <tr><td>
-                      <p style='font-weight:bold;margin-bottom:12px;'>Action required — please respond:</p>
+                      <p style='font-weight:bold;margin-bottom:12px;'>Action required ï¿½ please respond:</p>
                       <table cellpadding='0' cellspacing='0'>
                         <tr>
                           <td style='padding-right:10px;'>

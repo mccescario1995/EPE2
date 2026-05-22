@@ -46,8 +46,6 @@ namespace EPEAPI.Controllers
                 .AsNoTracking()
                 .FirstOrDefault();
 
-        
-
             if (user == null)
             {
                 response.status = "FAILURE";
@@ -62,11 +60,20 @@ namespace EPEAPI.Controllers
                 return BadRequest(response);
             }
 
+            // ✅ Actually verify the password using TokenManager
+            bool isAuthenticated = tokenManager.Authenticate(login.email, login.password);
+
+            if (!isAuthenticated)
+            {
+                response.status = "FAILURE";
+                response.message = "Invalid username or password";
+                return BadRequest(response);
+            }
+
             var employee = _context.CoreVEmployeeDetails
                 .Where(e => e.EmplId == user.EmplId)
                 .Select(e => new
                 {
-                   
                     e.Employeename2,
                     e.Corporate,
                     e.Positionname,
@@ -76,11 +83,8 @@ namespace EPEAPI.Controllers
                 .AsNoTracking()
                 .FirstOrDefault();
 
-            //var token = tokenManager.tokensresult();
-
             var profile = new
-            {              
-                
+            {
                 user.UserId,
                 user.Username,
                 user.EmplId,
@@ -92,10 +96,8 @@ namespace EPEAPI.Controllers
                 user.Hashcode,
             };
 
-            // First, access the session to initialize it (this creates the session ID)
             var sessionId = HttpContext.Session.Id;
 
-            // STORE SESSION
             HttpContext.Session.SetInt32("UserId", user.UserId);
             HttpContext.Session.SetString("Username", user.Username);
             HttpContext.Session.SetString("UserRole", user.Userrole);
@@ -104,7 +106,6 @@ namespace EPEAPI.Controllers
                 JsonSerializer.Serialize(profile)
             );
 
-            // Explicitly set session cookie options to ensure it's sent properly
             HttpContext.Response.Cookies.Append(".AspNetCore.Session", sessionId, new CookieOptions
             {
                 HttpOnly = true,
@@ -114,39 +115,23 @@ namespace EPEAPI.Controllers
                 Expires = DateTimeOffset.Now.AddMinutes(30)
             });
 
-            // DEBUG: Verify session was set
-            var sessionTest = HttpContext.Session.GetInt32("UserId");
-            var cookieTest = HttpContext.Response.Cookies;
-
-            try {
-                tokenManager.Authenticate(login.email, login.password);
-            } catch (Exception ex) {
-                response.message = "Token Error: " + ex.Message;
-            }
+            // Token was already generated inside Authenticate()
             var token = tokenManager.tokensresult();
 
-            response.stringParam1 = token; // thiss should be token
+            response.stringParam1 = token;
             response.objParam1 = user.Username;
             response.status = "SUCCESS";
             response.Profile = profile;
             response.UserId = user.UserId;
             response.Username = user.Username;
             response.UserRole = user.Userrole;
-
-            // DEBUG: Add session info to response (only if no error message)
-            if (string.IsNullOrEmpty(response.message))
-            {
-                var sessionIdBefore = HttpContext.Session.Id;
-                var sessionKeysBefore = HttpContext.Session.Keys.ToList();
-                response.message = $"Session ID: {sessionIdBefore}, Keys: {string.Join(",", sessionKeysBefore)}";
-            }
-
+            response.message = null; // clear debug message
 
             return Ok(response);
         }
     }
 
-    public class Login
+        public class Login
     {
         [Required]
         public string email { get; set; }

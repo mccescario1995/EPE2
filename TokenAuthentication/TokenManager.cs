@@ -72,14 +72,14 @@ namespace EPEAPI.TokenAuthentication
             byte[] byteToken = Encoding.UTF8.GetBytes(userId + ":" + token.validtoken + String.Concat("tsaf") + ":" + token.expirydate);
             string ConvertedToken = Convert.ToBase64String(byteToken).ToString();
 
-            var toAddtoken = _dbContext.Tokens.Add(new Token
-            {
-                UserId = userId.ToString(),
-                AuthToken = ConvertedToken,
-                ExpiresOn = token.expirydate,
-                IssuedOn = DateTime.Now,
+            //var toAddtoken = _dbContext.Tokens.Add(new Token
+            //{
+            //    UserId = userId.ToString(),
+            //    AuthToken = ConvertedToken,
+            //    ExpiresOn = token.expirydate,
+            //    IssuedOn = DateTime.Now,
 
-            });
+            //});
 
             tokenresult = ConvertedToken;
             tokensresult();

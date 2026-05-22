@@ -1,6 +1,7 @@
 D:\Private\Sites\IIS\API\EPEAPI.exe
 D:\Private\Sites\IIS\API\appsettings.Development.json
 D:\Private\Sites\IIS\API\appsettings.json
+D:\Private\Sites\IIS\API\appsettings.Production.json
 D:\Private\Sites\IIS\API\EPEAPI.dll
 D:\Private\Sites\IIS\API\EPEAPI.runtimeconfig.json
 D:\Private\Sites\IIS\API\EPEAPI.pdb

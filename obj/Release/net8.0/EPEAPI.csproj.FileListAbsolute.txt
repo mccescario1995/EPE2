@@ -156,3 +156,4 @@ C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Release\net8.0\refint\EPEAPI
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Release\net8.0\EPEAPI.pdb
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Release\net8.0\EPEAPI.genruntimeconfig.cache
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Release\net8.0\ref\EPEAPI.dll
+C:\Users\user\Documents\My Web Sites\EPE\epeapi\bin\Release\net8.0\appsettings.Production.json

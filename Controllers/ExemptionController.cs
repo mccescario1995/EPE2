@@ -32,61 +32,82 @@ namespace EPEAPI.Controllers
             _env = env;
         }
 
+        //public class ExemptionListRequest
+        //{
+        //    public int Page { get; set; } = 1;
+        //    public int PageSize { get; set; } = 10;
+        //    public string? Search { get; set; }
+        //    public int EmplId { get; set; }
+        //}
         public class ExemptionListRequest
         {
+            public int UserId { get; set; }           // or EmplId – we'll support both
+            public int? EmplId { get; set; }
             public int Page { get; set; } = 1;
-            public int PageSize { get; set; } = 10;
+            public int Limit { get; set; } = 10;
             public string? Search { get; set; }
-            public int EmplId { get; set; }
+            public string? SortField { get; set; }
+            public string? SortDirection { get; set; } = "desc";
         }
 
+        // Replace the existing GetExcemptionList method
         [HttpPost]
-        public async Task<IActionResult> GetExcemptionList(
-            [FromBody] UseridRequest userid,
-            //[FromQuery] int page = 1,
-            //[FromQuery] int pageSize = 10,
-            [FromQuery] string? search = null
-
-            )
+        public async Task<IActionResult> GetExcemptionList([FromBody] ExemptionListRequest request)
         {
             try
             {
-                var currentUserEmplId = userid.UserId;
-                var query = _context.EpeVTransactionHeaders.Where(u => u.IsDelete == 0);
+                var currentUserEmplId = request.EmplId ?? request.UserId;
 
-                if (!string.IsNullOrWhiteSpace(search))
+                var query = _context.EpeVTransactionHeaders
+                    .Where(u => u.IsDelete == 0);
+
+                // Search (works on the columns shown in the table)
+                if (!string.IsNullOrWhiteSpace(request.Search))
                 {
-                    var searchWords = search.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-                    var predicate = PredicateBuilder.New<EpeVTransactionHeader>(true);
-                    foreach (var word in searchWords)
-                    {
-                        predicate = predicate.And(u =>
-                            u.TransactionId.ToString().Contains(word) ||
-                            u.TransactionNumber.ToString().ToLower().Contains(word) ||
-                            u.RequesterName.ToString().Contains(word) ||
-                            u.FinalDecision.ToString().Contains(word) ||
-                            u.PolicyName.ToString().Contains(word)
-                        );
-                    }
-
-                    query = query.Where(predicate);
+                    var search = request.Search.ToLower().Trim();
+                    query = query.Where(u =>
+                        (u.TransactionNumber != null && u.TransactionNumber.ToLower().Contains(search)) ||
+                        (u.PolicyName != null && u.PolicyName.ToLower().Contains(search)) ||
+                        (u.RequesterName != null && u.RequesterName.ToLower().Contains(search)) ||
+                        (u.Status != null && u.Status.ToLower().Contains(search)) ||
+                        (u.FinalDecision != null && u.FinalDecision.ToLower().Contains(search)) ||
+                        u.TransactionId.ToString().Contains(search)
+                    );
                 }
 
-                var totalCount = await query.CountAsync();
+                // Total count **before** paging
+                var total = await query.CountAsync();
 
-                var approvableTransactionIds = await _context.EpeVTransactionApprovers
-                    .Where(a =>
-                        a.EmployeeId == currentUserEmplId.ToString() &&
-                        a.Respond == 0 &&
-                        a.IsDelete == 0)
-                    .Select(a => a.TransactionId)
-                    .ToListAsync();
+                // Dynamic sorting (only allow known columns for safety)
+                var sortField = request.SortField?.ToLower() switch
+                {
+                    "transactionnumber" or "transactionNumber" => "TransactionNumber",
+                    "policyname" or "policyName" => "PolicyName",
+                    "status" => "Status",
+                    "requestername" or "requesterName" => "RequesterName",
+                    "createddate" or "createdDate" => "CreatedDate",
+                    _ => "CreatedDate"
+                };
+
+                var isAsc = request.SortDirection?.ToLower() == "asc";
+
+                query = sortField switch
+                {
+                    "TransactionNumber" => isAsc ? query.OrderBy(x => x.TransactionNumber) : query.OrderByDescending(x => x.TransactionNumber),
+                    "PolicyName" => isAsc ? query.OrderBy(x => x.PolicyName) : query.OrderByDescending(x => x.PolicyName),
+                    "Status" => isAsc ? query.OrderBy(x => x.Status) : query.OrderByDescending(x => x.Status),
+                    "RequesterName" => isAsc ? query.OrderBy(x => x.RequesterName) : query.OrderByDescending(x => x.RequesterName),
+                    "CreatedDate" => isAsc ? query.OrderBy(x => x.CreatedDate) : query.OrderByDescending(x => x.CreatedDate),
+                    _ => query.OrderByDescending(x => x.CreatedDate)
+                };
+
+                // Pagination
+                var page = Math.Max(1, request.Page);
+                var limit = Math.Clamp(request.Limit, 5, 100);
 
                 var items = await query
-                    .OrderByDescending(u => u.CreatedDate)
-                    //.Skip((page - 1) * pageSize)
-                    //.Take(pageSize)
+                    .Skip((page - 1) * limit)
+                    .Take(limit)
                     .Select(h => new
                     {
                         TransactionId = h.TransactionId,
@@ -98,22 +119,29 @@ namespace EPEAPI.Controllers
                         RequesterId = h.RequesterId,
                         FinalDecision = h.FinalDecision,
 
-                        CanApprove = approvableTransactionIds.Contains(h.TransactionId)
+                        // CanApprove logic (same as before)
+                        CanApprove = _context.EpeVTransactionApprovers.Any(a =>
+                            a.EmployeeId == currentUserEmplId.ToString() &&
+                            a.TransactionId == h.TransactionId &&
+                            a.Respond == 0 &&
+                            a.IsDelete == 0)
                     })
                     .ToListAsync();
 
                 return Ok(new
                 {
                     success = true,
-                    items = items,
-
+                    items,
+                    total,
+                    page,
+                    limit
                 });
             }
             catch (Exception e)
             {
-                return StatusCode(500, "Error" + e.Message);
+                _logger.LogError(e, "GetExcemptionList failed");
+                return StatusCode(500, new { success = false, message = e.Message });
             }
-
         }
 
         [HttpPost("pending")]

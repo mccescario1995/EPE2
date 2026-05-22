@@ -230,7 +230,7 @@ namespace EPEAPI.Controllers
                     ApproverRole = a.Linesequence == 1 ? "Main" : "Proxy"
                 }).ToList();
 
-                //Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
+                //    Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
                 //    Approveremail = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateEmail : a.Approveremail,
 
                 return Ok(new { success = true, items = itemsWithRole });
