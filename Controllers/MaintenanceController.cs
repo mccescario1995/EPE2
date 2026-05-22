@@ -219,8 +219,8 @@ namespace EPEAPI.Controllers
                     a.Id,
                     a.Policyid,
                     a.Approverid,
-                    Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
-                    Approveremail = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateEmail : a.Approveremail,
+                    Approvername = a.Approvername,
+                    Approveremail = a.Approveremail,
                     a.Approvertype,
                     a.Sort,
                     a.Linesequence,
@@ -229,6 +229,9 @@ namespace EPEAPI.Controllers
                     IsMainApprover = a.Linesequence == 1,
                     ApproverRole = a.Linesequence == 1 ? "Main" : "Proxy"
                 }).ToList();
+
+                //Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
+                //    Approveremail = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateEmail : a.Approveremail,
 
                 return Ok(new { success = true, items = itemsWithRole });
             }
