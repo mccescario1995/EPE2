@@ -352,6 +352,8 @@
 <script setup>
 definePageMeta({
   layout: "empty",
+  middleware: "auth",
+  // alias: "/dashboard"
 });
 
 const username = ref("test@fastgroup.biz");
@@ -363,6 +365,7 @@ const focusedField = ref(null);
 const emailInputRef = ref(null);
 
 const router = useRouter();
+const route = useRoute();
 
 const { login } = useAuth();
 
@@ -404,7 +407,8 @@ async function Login() {
     });
   }
 
-  router.push("/dashboard");
+  const redirectTo = route.query.redirect || "/dashboard";
+  router.push(redirectTo);
 }
 
 function forgot() {

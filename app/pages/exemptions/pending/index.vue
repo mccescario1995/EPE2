@@ -104,9 +104,37 @@ const handleCreate = () => {
   router.push(`/exemptions/create`);
 };
 
-watchEffect(() => {
-  fetchExemptionRequests();
-});
+const fetchExemptionData = async (params: {
+  page: number;
+  limit: number;
+  search: string;
+  filters: Record<string, string>;
+  sortField?: string;
+  sortDirection?: 'asc' | 'desc';
+}) => {
+
+  loading.value = true;
+  const response = await apiFetch('/api/exemption/pending', {
+    method: 'POST',
+    body: JSON.stringify({
+      UserId: parseInt(userId.emplId),
+      page: params.page,
+      pageSize: params.limit,
+      search: params.search,
+      sortField: params.sortField,
+      sortDirection: params.sortDirection,
+    }),
+    headers: { 'Content-Type': 'application/json' },
+    parseJson: true,
+  });
+  loading.value = false;
+
+  return {
+    data: response.items ?? [],
+    total: response.totalCount ?? 0,
+  };
+};
+
 </script>
 
 <template>
@@ -128,7 +156,6 @@ watchEffect(() => {
         </div>
 
         <Button
-          v-if="exemptionData"
           variant="primary"
           size="md"
           icon="add"
@@ -143,7 +170,20 @@ watchEffect(() => {
       <!-- Exemption Requests List -->
       <div class="mb-6 px-2 rounded-lg">
         <base-table
-          :table-data="exemptionData"
+          :server-pagination="true"
+          :fetch-data="fetchExemptionData"
+          :pagination="true"
+          :per-page="5"
+          :show-search="true"
+          :showlimitfilter="true"
+          :limitfilter="[5, 10, 20, 30, 40, 50]"
+          :sortable-columns="[
+            'transactionNumber',
+            'policyName',
+            'requesterName',
+            'createdDate',
+          ]"
+          :filterable-columns="['status']"
           :header="[
             'transactionNumber',
             'policyName',
@@ -177,11 +217,6 @@ watchEffect(() => {
             },
           }"
           :date-fields="['createdDate']"
-          :total-items="exemptionDataLength"
-          :key="exemptionDataLength"
-          :pagination="true"
-          :per-page="5"
-          :show-search="true"
           :actions="[
             {
               label: IconView,

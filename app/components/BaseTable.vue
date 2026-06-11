@@ -649,9 +649,7 @@ const computedHeaderKeys = computed(() => {
 const hasActions = computed(() => props.actions && props.actions.length > 0);
 
 const displayData = computed(() => {
-  if (props.serverPagination) {
-    return internalData.value;
-  }
+  if (props.serverPagination) return internalData.value;
   return props.tableData || [];
 });
 
@@ -659,14 +657,13 @@ const resolvedHeaders = computed(() => {
   if (props.header && props.header.length > 0) {
     return props.header.filter((key) => !props.hiddenFields?.includes(key));
   }
-
+  // Use displayData so it reacts to internalData changes
   const sampleRow = displayData.value?.[0];
   if (sampleRow) {
     return Object.keys(sampleRow).filter(
       (key) => !props.hiddenFields?.includes(key),
     );
   }
-
   return [];
 });
 
@@ -688,6 +685,7 @@ const showFilterControls = computed(
 );
 
 const paginatedData = computed(() => {
+  if (props.serverPagination) return filteredData.value;  // ← already paginated
   if (!props.pagination || !filteredData.value) return filteredData.value || [];
   const start = (currentPage.value - 1) * limit.value;
   const end = start + limit.value;
@@ -695,12 +693,17 @@ const paginatedData = computed(() => {
 });
 
 const filteredData = computed(() => {
-  let data = props.tableData || internalData.value || [];
+  // When server handles pagination, just return internalData as-is
+  // No client-side filtering/sorting — server already did it
+  let data = props.serverPagination
+    ? internalData.value
+    : (props.tableData || []);
+
+  if (props.serverPagination) return data;  // ← skip all client-side logic
+
   const search = globalSearch.value?.toLowerCase() ?? "";
 
-  // Apply filtering
   data = data.filter((row) => {
-    // Global Search
     const matchesSearch =
       !search ||
       Object.entries(row).some(([key, val]) => {
@@ -708,7 +711,6 @@ const filteredData = computed(() => {
         return String(displayValue).toLowerCase().includes(search);
       });
 
-    // Column Filters
     const matchesColumnFilters = resolvedHeaders.value.every((key) => {
       const filterValue = columnFilters[key]?.toLowerCase?.() ?? "";
       const displayValue = formatValue(key, row[key]);
@@ -718,7 +720,6 @@ const filteredData = computed(() => {
       );
     });
 
-    // Dynamic Filters
     const matchesDynamicFilters = Object.entries(dynamicFilters.value).every(
       ([key, value]) => {
         if (!value) return true;
@@ -730,12 +731,10 @@ const filteredData = computed(() => {
     return matchesSearch && matchesColumnFilters && matchesDynamicFilters;
   });
 
-  // Apply client-side sorting if not using server pagination
-  if (!props.serverPagination && sortField.value) {
+  if (sortField.value) {
     data = [...data].sort((a, b) => {
       const aValue = formatValue(sortField.value, a[sortField.value]);
       const bValue = formatValue(sortField.value, b[sortField.value]);
-
       if (aValue < bValue) return sortDirection.value === "asc" ? -1 : 1;
       if (aValue > bValue) return sortDirection.value === "asc" ? 1 : -1;
       return 0;
@@ -771,6 +770,16 @@ watch(
       fetchTable();
     }
   }
+);
+
+watch(
+  () => props.totalItems,
+  (val) => {
+    if (!props.serverPagination) {
+      totalItemsInternal.value = val;
+    }
+  },
+  { immediate: true }
 );
 
 // Methods

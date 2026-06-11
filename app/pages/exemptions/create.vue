@@ -17,6 +17,40 @@ const formData = ref({
 // Add newAttachments (from edit.vue)
 const newAttachments = ref<{ file: File /* referenceType: string */ }[]>([]);
 
+const MAX_FILES = 5;
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
+const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB total
+
+const ALLOWED_EXTENSIONS = [
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".txt",
+  ".jpg",
+  ".jpeg",
+  ".png",
+]; // Allowed file types
+
+const isFileTypeAllowed = (file: File): boolean => {
+  const extension = "." + file.name.split(".").pop()?.toLowerCase();
+  return ALLOWED_EXTENSIONS.includes(extension);
+};
+
+const totalNewAttachmentsSize = computed(() =>
+  newAttachments.value.reduce((sum, a) => sum + (a.file?.size || 0), 0),
+);
+const totalNewAttachmentsSizeMB = computed(() =>
+  (totalNewAttachmentsSize.value / 1024 / 1024).toFixed(2),
+);
+
+const totalAttachmentsCount = computed(() => newAttachments.value.length);
+
+const remainingAttachmentSlots = computed(() =>
+  Math.max(0, MAX_FILES - newAttachments.value.length),
+);
+
 // Draft state
 const isDraft = ref(false);
 const draftId = ref<number | null>(null);
@@ -141,19 +175,19 @@ const fetchApprovers = async (policyId: number) => {
   isLoadingApprovers.value = true;
   try {
     const response = await apiFetch(
-      `/api/Maintenance/policy/${policyId}/approvers`,
+      `/api/Maintenance/create/policy/${policyId}/approvers`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ UserId: userId.userId }),
-        credentials: "include",
+        // credentials: "include",
         parseJson: true,
       },
     );
 
-    const items = response.success ? response.items : response;
+    const items = response ? response.items : response;
 
     console.log("Fetched approvers in Create Page", items);
 
@@ -295,7 +329,7 @@ const validateForm = (forDraft = false) => {
     isValid = false;
   }
 
-  if (newAttachments.value.length > 5) {
+  if (newAttachments.value.length > MAX_FILES) {
     errors.value.attachments = "Maximum 5 attachments allowed.";
     isValid = false;
   }
@@ -305,20 +339,24 @@ const validateForm = (forDraft = false) => {
     isValid = false;
   }
 
-  for (const attachment of newAttachments.value) {
-    console.log("Validating attachment:", {
-      attachment: attachment,
-      attachmentFile: attachment.file,
-      fileName: attachment.file?.name,
-      fileSize: attachment.file?.size,
-    });
-    if (!attachment.file) {
-      errors.value.attachments = "Please select a file for all attachments.";
-      isValid = false;
-    } else if (attachment.file.size > 10 * 1024 * 1024) {
-      errors.value.attachments = `File "${attachment.file.name}" exceeds the 10MB size limit.`;
-      isValid = false;
-    }
+  if (totalNewAttachmentsSize.value > MAX_TOTAL_SIZE) {
+    errors.value.attachments = "Total attachment size exceeds 50MB limit.";
+    isValid = false;
+  }
+
+  const hasInvalid = newAttachments.value.some((a) => !a.file);
+  if (hasInvalid) {
+    errors.value.attachments = "Please select a file for all attachments.";
+    isValid = false;
+  }
+
+  const hasInvalidType = newAttachments.value.some(
+    (a) => a.file && !isFileTypeAllowed(a.file),
+  );
+  if (hasInvalidType) {
+    errors.value.attachments =
+      "Some attachments have invalid file types. Allowed: PDF, DOC, DOCX, XLS, XLSX, TXT, JPG, JPEG, PNG.";
+    isValid = false;
   }
 
   return isValid;
@@ -331,10 +369,9 @@ const isFormValid = computed(() => {
     !!formData.value.details &&
     formData.value.details.trim().length >= 10 &&
     newAttachments.value.length > 0 &&
-    newAttachments.value.length <= 5 &&
-    newAttachments.value.every(
-      (att) => att.file && att.file.size <= 10 * 1024 * 1024,
-    )
+    newAttachments.value.length <= MAX_FILES &&
+    totalNewAttachmentsSize.value <= MAX_TOTAL_SIZE &&
+    newAttachments.value.every((att) => att.file && isFileTypeAllowed(att.file))
   );
 });
 
@@ -343,10 +380,10 @@ const isDraftValid = computed(() => {
   return (
     !!formData.value.details &&
     formData.value.details.trim().length >= 10 &&
-    newAttachments.value.length <= 5 &&
-    newAttachments.value.every(
-      (att) => att.file && att.file.size <= 10 * 1024 * 1024,
-    )
+    newAttachments.value.length > 0 &&
+    newAttachments.value.length <= MAX_FILES &&
+    totalNewAttachmentsSize.value <= MAX_TOTAL_SIZE &&
+    newAttachments.value.every((att) => att.file && isFileTypeAllowed(att.file))
   );
 });
 
@@ -409,7 +446,7 @@ const handleSaveDraft = async () => {
     formDataToSend.append("computerhost", workstation);
 
     newAttachments.value.forEach((attachment) => {
-        formDataToSend.append("files", attachment.file);
+      formDataToSend.append("files", attachment.file);
     });
 
     let response;
@@ -434,10 +471,11 @@ const handleSaveDraft = async () => {
 
     console.log("Draft save response:", response);
 
-    const transactionId = response?.item?.transactionId || response?.item?.transactionid;
+    const transactionId =
+      response?.item?.transactionId || response?.item?.transactionid;
     console.log("Transaction ID from response:", transactionId);
 
-    const attachmentResponse : any = await apiFetch(
+    const attachmentResponse: any = await apiFetch(
       "/api/exemption/add-attachment/" + transactionId,
       {
         method: "POST",
@@ -533,7 +571,7 @@ const handleSubmit = async () => {
 
     console.log("Create response:", response);
 
-    const attachmentResponse : any = await apiFetch(
+    const attachmentResponse: any = await apiFetch(
       "/api/exemption/add-attachment/" + response.item.transactionid,
       {
         method: "POST",
@@ -575,43 +613,97 @@ const handleCancel = () => {
   router.push("/exemptions/all");
 };
 
-// Add attachment
-const addAttachment = () => {
-  if (newAttachments.value.length < 5) {
-    newAttachments.value.push({ file: null as any /*, referenceType: "" */ });
+// Multi-file selection with immediate 10MB + 50MB total validation
+const handleMultipleFileSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (!target.files || target.files.length === 0) return;
+
+  const selectedFiles = Array.from(target.files);
+  const validFiles: File[] = [];
+  const rejectedOversize: string[] = [];
+  const rejectedType: string[] = [];
+
+  for (const file of selectedFiles) {
+    if (file.size > MAX_FILE_SIZE) {
+      rejectedOversize.push(file.name);
+      continue;
+    }
+
+    if (!isFileTypeAllowed(file)) {
+      rejectedType.push(file.name);
+      continue;
+    }
+
+    validFiles.push(file);
   }
+
+  if (rejectedType.length > 0) {
+    errors.value.attachments = `Rejected (invalid type): ${rejectedType.join(", ")}`;
+    showToast({
+      type: "error",
+      title: "Invalid File Type",
+      message: `${rejectedType.length} file(s) have invalid type. Allowed: PDF, DOC, DOCX, XLS, XLSX, TXT, JPG, JPEG, PNG.`,
+    });
+  }
+
+  if (rejectedOversize.length > 0) {
+    errors.value.attachments = `Rejected (exceeds 10MB): ${rejectedOversize.join(", ")}`;
+    showToast({
+      type: "error",
+      title: "File Too Large",
+      message: `${rejectedOversize.length} file(s) exceed the 10MB limit and were not added.`,
+    });
+  }
+
+  const remaining = remainingAttachmentSlots.value;
+  const canAddBySize = MAX_TOTAL_SIZE - totalNewAttachmentsSize.value;
+
+  // STRICT REJECTION — no truncation, no partial attach
+  if (validFiles.length > remaining) {
+    errors.value.attachments = `Maximum ${MAX_FILES} files allowed. You selected ${validFiles.length} but only ${remaining} more can be added.`;
+    showToast({
+      type: "error",
+      title: "Limit Reached",
+      message: `You can only add ${remaining} more file(s). You selected ${validFiles.length}. Please select ${remaining} or fewer.`,
+    });
+    target.value = "";
+    return;
+  }
+
+  // Size check (only reached if count is valid)
+  let addedSize = 0;
+  const filesToAdd = validFiles.filter((file) => {
+    if (addedSize + file.size <= canAddBySize) {
+      addedSize += file.size;
+      return true;
+    }
+    return false;
+  });
+
+  if (
+    addedSize <
+    validFiles.reduce((s, f) => s + f.size, 0) -
+      (filesToAdd.reduce((s, f) => s + f.size, 0) || 0)
+  ) {
+    errors.value.attachments = "Total size would exceed 50MB limit.";
+    showToast({
+      type: "error",
+      title: "Size Limit",
+      message: "Adding these files would exceed the 50MB total limit.",
+    });
+  }
+
+  filesToAdd.forEach((file) => {
+    newAttachments.value.push({ file });
+  });
+
+  target.value = "";
 };
 
 // Remove attachment
 const removeAttachment = (index: number) => {
   newAttachments.value.splice(index, 1);
-
-  // Re-check referenceType error after deletion
-  // const hasEmptyReferenceType = newAttachments.value.some(
-  //   a => a.file && !a.referenceType
-  // );
-
-  // if (hasEmptyReferenceType) {
-  //    errors.value.referenceType = "Please select a type for all attachments.";
-  //  } else {
-  //    errors.value.referenceType = "";
-  //  }
-
-  // Re-check attachment error after deletion
-  const hasMissingFile = newAttachments.value.some((a) => !a.file);
-  if (hasMissingFile) {
-    errors.value.attachments = "Please select a file for all attachments.";
-  } else {
-    errors.value.attachments = "";
-  }
-};
-
-// Handle file selection
-const handleFileChange = (index: number, event: Event) => {
-  const target = event.target as HTMLInputElement;
-  if (target.files && target.files[0] && newAttachments.value[index]) {
-    newAttachments.value[index].file = target.files[0];
-  }
+  errors.value.attachments = "";
 };
 
 // Load draft if draftId is provided
@@ -723,54 +815,86 @@ onMounted(async () => {
               Attachments <span class="text-red-500">*</span> (Max 5 files, 10MB
               each)
             </label>
-            <div
-              v-for="(attachment, index) in newAttachments"
-              :key="index"
-              class="mb-4 p-4 border border-gray-200 rounded-lg"
+
+            <p
+              v-if="errors.attachments"
+              class="mt-1 text-xs text-red-500 border border-red-500 rounded px-2 py-3 mb-3"
             >
-              <div class="flex items-center gap-4">
-                <div class="flex-1">
-                  <input
-                    type="file"
-                    @change="(e) => handleFileChange(index, e)"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
-                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  />
-                  <p v-if="attachment.file" class="mt-1 text-xs text-gray-500">
-                    Selected: {{ attachment.file.name }} ({{
-                      (attachment.file.size / 1024 / 1024).toFixed(2)
-                    }}
-                    MB)
-                  </p>
+              {{ errors.attachments }}
+            </p>
+
+            <!-- Multi-select input
+             <input
+               type="file"
+               multiple
+               accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
+               @change="handleMultipleFileSelect"
+               :disabled="remainingAttachmentSlots <= 0 || totalNewAttachmentsSize >= MAX_TOTAL_SIZE"
+               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+             />
+             <p class="text-xs text-gray-500 mt-1 ps-2">
+               Select the exact number of files you are allowed to add.
+               You can currently add up to {{ remainingAttachmentSlots }} more file(s).
+               Maximum 5 files total per exemption (10 MB each, 50 MB combined).
+             </p> -->
+
+            <!-- Multi-select input -->
+
+            <!-- Selected files list -->
+            <div v-if="newAttachments.length > 0" class="mt-4 space-y-2 mb-3">
+              <div
+                v-for="(attachment, index) in newAttachments"
+                :key="index"
+                class="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg"
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="text-sm font-medium text-gray-900 truncate">{{
+                    attachment.file.name
+                  }}</span>
+                  <span class="text-xs text-gray-500 whitespace-nowrap">
+                    ({{ (attachment.file.size / 1024 / 1024).toFixed(2) }} MB)
+                  </span>
                 </div>
-                <!-- Reference type selection removed per request -->
                 <Button
                   variant="outline-danger"
                   size="sm"
-                  @onclick="removeAttachment(index)"
+                  @onclick="() => removeAttachment(index)"
                   icon="trash"
                   icon-position="center"
-                >
-                </Button>
+                />
               </div>
             </div>
-            <div class="flex gap-3">
-              <Button
-                v-if="newAttachments.length < 5"
-                variant="outline-primary"
-                size="sm"
-                @onclick="addAttachment"
-                icon="plus"
-              >
-                Add Attachment
-              </Button>
-            </div>
-            <p v-if="errors.attachments" class="mt-1 text-xs text-red-500">
-              {{ errors.attachments }}
+
+            <input
+              v-if="newAttachments.length < MAX_FILES"
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
+              @change="handleMultipleFileSelect"
+              :disabled="
+                remainingAttachmentSlots <= 0 ||
+                totalNewAttachmentsSize >= MAX_TOTAL_SIZE
+              "
+              class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+            <p
+              v-if="newAttachments.length < MAX_FILES"
+              class="text-xs text-gray-500 mt-1 ps-2 py-2"
+            >
+              Select multiple files at once. Max 5 files / 50MB total.
             </p>
-            <!-- <p v-if="errors.referenceType" class="mt-1 text-xs text-red-500">
-              {{ errors.referenceType }}
-            </p> -->
+
+            <!-- Live usage counter -->
+            <div
+              v-if="newAttachments.length > 0"
+              class="mt-2 text-xs text-gray-600 ps-2"
+            >
+              {{ totalNewAttachmentsSizeMB }} MB of new files
+              <span class="text-gray-400">
+                ({{ newAttachments.length }} new •
+                {{ totalAttachmentsCount }}/{{ MAX_FILES }} total)
+              </span>
+            </div>
           </div>
 
           <!-- Approvers List -->

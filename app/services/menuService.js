@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../services/config";
+﻿import { API_BASE_URL } from "../services/config";
 import { useRoute, useRouter } from "vue-router";
 import { startLoading, stopLoading } from "~/stores/globalvar";
 
@@ -8,43 +8,38 @@ export const useMenuService = () => {
     const router = useRouter();
     const userStore = useUserStore();
 
-    // const token = decrypt(localStorage.getItem("user_lor2"));
-
     try {
       startLoading();
+      
+      const profile = userStore?.profile || {};
+      const userid = parseInt(profile?.UserId) || 79023;
+      const sysid = parseInt(profile?.SysId) || 101;
       const response = await apiFetch(
-        "/api/account/get-app-menu-v2/?sysid=17&userid=70002",
+        '/api/account/get-app-menu',
         {
-          method: "GET",
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sysid, userid }),
         },
       );
-      const data = response;
-      const routeMap = {};
-      data.forEach((menuGroup) => {
-        (menuGroup.pages || []).forEach((page) => {
-          if (page.stage) {
-            routeMap[page.stage] = `/main/${menuGroup.name}/${page.stage}`;
-          }
-        });
-      });
-      // Map API response to our menu structure
-      // return null
+      
+      const data = await response.json();
       return data.map((menuGroup) => ({
-        title: menuGroup.name,
+        title: menuGroup.title,
         isopen: false,
         isActive: false,
-        submenu: menuGroup.pages.map((page) => ({
-          title: page.name,
+        submenu: menuGroup.submenu.map((page) => ({
+          title: page.title,
           isclick: false,
-          route: routeMap[page.stage] || `/main/${page.stage}`,
-          icon: page.icon, // Optional icon mapping
+          route: page.route || '/' + page.stage,
+          icon: page.icon || page.ChildIcon || '',
         })),
       }));
     } catch (error) {
-      console.error("Error fetching menu:", error);
-      /* alert("Unauthorized!");
-     
-      return navigateTo("/"); */
+      console.error('Error fetching menu:', error);
+      return [];
     } finally {
       stopLoading();
     }

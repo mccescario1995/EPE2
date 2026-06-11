@@ -83,7 +83,6 @@ const fetchExemptionDetails = async () => {
       if (response.item.policyid) {
         fetchPolicyName(response.item.policyid);
       }
-
     } else {
       showToast({
         type: "error",
@@ -181,10 +180,35 @@ const isDisapproved = computed(() => {
   return approversData.value.some((a) => a.respond === 2);
 });
 
+const isApproved = computed(() => {
+  const currentUserId = currentUser.value?.emplId?.toString();
+  const currentUserApprover = approversData.value.find(
+    (a) => String(a.employeeId ?? a.EmployeeId) === currentUserId,
+  );
+
+  console.log("Checking isApproved - currentUserId:", currentUserId);
+  console.log(
+    "Checking isApproved - currentUserApprover:",
+    currentUserApprover,
+  );
+  console.log("Checking isApproved - approversData:", approversData.value);
+  console.log(
+    "isApproved result:",
+    approversData.value.some((a) => a.respond === 1),
+  );
+
+  return currentUserApprover && currentUserApprover.respond === 1;
+});
+
 // Check if current user can still respond (not disapproved yet)
 const canRespond = computed(() => {
   // If already disapproved, no one can respond
   if (isDisapproved.value) {
+    return false;
+  }
+
+  // If already approved, no one can respond
+  if (isApproved.value) {
     return false;
   }
 
@@ -271,7 +295,7 @@ const satisfiedByApproverName = computed(() => {
   return approvedApprover?.approverName || "another approver";
 });
 
-// Check if user is an approver but it's not their turn yet (previous approvers haven't approved)
+// Check if user is an approver but it's not their turn yet (previous approver groups haven't approved)
 const isPendingApproval = computed(() => {
   // Find current user's approver record
   const currentUserId = currentUser.value?.emplId?.toString();
@@ -289,42 +313,31 @@ const isPendingApproval = computed(() => {
     return false;
   }
 
-  // Get the current user's lineSequence and sort
-  const currentSequence = currentUserApprover.lineSequence;
   const currentSort = currentUserApprover.sort;
 
-  // Find previous approvers:
-  // 1. Lower lineSequence OR
-  // 2. Same lineSequence but lower sort
-  // Note: approvers with the same sort are considered parallel and are NOT previous
-  const previousApprovers = approversData.value
-    .filter((a) => {
-      // Exclude current user
-      if (a.employeeId === currentUserApprover.employeeId) return false;
-      // Exclude approvers in the same sort (group) — they are parallel, not previous
-      if (a.sort === currentSort) return false;
-      // Previous if: lower lineSequence OR (same lineSequence AND lower sort)
-      return a.lineSequence < currentSequence || 
-             (a.lineSequence === currentSequence && a.sort < currentSort);
-    })
-    .sort((a, b) => {
-      // Sort by lineSequence first, then by sort
-      if (a.lineSequence !== b.lineSequence) {
-        return a.lineSequence - b.lineSequence;
-      }
-      return a.sort - b.sort;
-    });
+  // Get all unique sort values (approver groups) sorted by their minimum lineSequence
+  const groupSorts = [...new Set(approversData.value.map((a) => a.sort))]
+    .map((sort) => ({
+      sort,
+      minSequence: Math.min(...approversData.value.filter((a) => a.sort === sort).map((a) => a.lineSequence)),
+    }))
+    .sort((a, b) => a.minSequence - b.minSequence);
 
-  // If there are no previous approvers, it's user's turn
-  if (previousApprovers.length === 0) {
-    return false;
-  }
+  // Find the current user's group index
+  const currentUserGroupIndex = groupSorts.findIndex((g) => g.sort === currentSort);
+  if (currentUserGroupIndex === -1) return false;
 
-  // Check if ALL previous approvers have approved
-  const allPreviousApproved = previousApprovers.every((a) => a.respond === 1);
+  // Get all groups that come before the current user's group
+  const previousGroups = groupSorts.slice(0, currentUserGroupIndex);
 
-  // If previous approvers haven't all approved, it's not user's turn yet
-  return !allPreviousApproved;
+  // Check if ALL previous groups have at least one approver who approved
+  const allPreviousGroupsApproved = previousGroups.every((group) => {
+    const groupApprovers = approversData.value.filter((a) => a.sort === group.sort);
+    return groupApprovers.some((a) => a.respond === 1);
+  });
+
+  // If previous groups haven't all approved, it's not user's turn yet
+  return !allPreviousGroupsApproved;
 });
 
 // Get the name of the pending previous approver
@@ -349,8 +362,10 @@ const pendingApproverName = computed(() => {
       // Exclude approvers in the same sort (group)
       if (a.sort === currentSort) return false;
       // Previous if: lower lineSequence OR (same lineSequence AND lower sort)
-      return a.lineSequence < currentSequence || 
-             (a.lineSequence === currentSequence && a.sort < currentSort);
+      return (
+        a.lineSequence < currentSequence ||
+        (a.lineSequence === currentSequence && a.sort < currentSort)
+      );
     })
     .sort((a, b) => {
       // Sort by lineSequence first, then by sort
@@ -584,8 +599,9 @@ onMounted(async () => {
                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                       :class="{
                         'bg-blue-100 text-blue-800':
-                          exemptionData.status === 'O' || exemptionData.status === 'P',
-                                                                                                                                                                                                                                                                                                                                                                        
+                          exemptionData.status === 'O' ||
+                          exemptionData.status === 'P',
+
                         'bg-green-100 text-green-800':
                           exemptionData.status === 'C',
                       }"
@@ -876,7 +892,7 @@ onMounted(async () => {
                     isTextarea
                     :rowCount="4"
                     :maxCharCount="250"
-                    />
+                  />
                 </div>
 
                 <div class="flex gap-4">
@@ -901,6 +917,42 @@ onMounted(async () => {
                 </div>
               </div>
 
+              <!-- Approval Status -->
+              <div
+                v-else-if="isApproved"
+                class="rounded-lg border-l-4 border-green-500 bg-green-50 p-4 shadow-sm"
+                role="alert"
+              >
+                <div class="flex items-center">
+                  <svg
+                    class="h-5 w-5 text-green-500 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.172 7.707 8.879a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+
+                  <span class="font-semibold text-green-800"> Approved </span>
+                </div>
+
+                <p class="mt-2 text-sm text-green-700">
+                  You already approved this exemption request.
+                </p>
+
+                <Button
+                  variant="primary"
+                  size="lg"
+                  @onclick="handleBack"
+                  class="mt-4"
+                >
+                  Back to List
+                </Button>
+              </div>
+
               <!-- Debug fallback - shows when none of the above conditions match -->
               <div v-else class="text-center py-8 bg-gray-50 rounded-lg">
                 <p class="text-gray-600 mb-2">
@@ -922,7 +974,12 @@ onMounted(async () => {
                   </div>
                   <div>=== END DEBUG ===</div>
                 </div> -->
-                <Button variant="primary" size="lg" @onclick="handleBack" class="mt-4">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  @onclick="handleBack"
+                  class="mt-4"
+                >
                   Back to List
                 </Button>
               </div>

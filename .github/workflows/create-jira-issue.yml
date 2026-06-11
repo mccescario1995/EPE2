@@ -1,0 +1,69 @@
+name: Create Jira Issue for EPE
+
+on:
+  create:
+
+jobs:
+  create-epe-issue:
+    if: github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Extract branch name
+        id: branch
+        run: |
+          BRANCH="${{ github.event.ref }}"
+          # Convert branch name to readable summary
+          # e.g., "epe-fix-login-page" → "EPE: fix login page"
+          CLEAN=$(echo "$BRANCH" | sed 's/-/ /g' | sed 's/epe //i')
+          echo "name=$BRANCH" >> $GITHUB_OUTPUT
+          echo "summary=EPE: $CLEAN" >> $GITHUB_OUTPUT
+
+      - name: Create Jira Issue
+        id: create-issue
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.EPE2_JIRA_BASE_URL }}/rest/api/3/issue" \
+            -H "Authorization: Basic $(echo -n '${{ secrets.EPE2_JIRA_USER_EMAIL }}:${{ secrets.EPE2_JIRA_API_TOKEN }}' | base64)" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "fields": {
+                "project": { "key": "DC" },
+                "summary": "${{ steps.branch.outputs.summary }}",
+                "issuetype": { "id": "10009" },
+                "customfield_10033": { "id": "10069" },
+                "assignee": { "id": "${{ secrets.EPE2_JIRA_ASSIGNEE_ID }}" }
+              }
+            }')
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          echo "Issue created: $BODY"
+          ISSUE_KEY=$(echo "$BODY" | jq -r '.key')
+          ISSUE_ID=$(echo "$BODY" | jq -r '.id')
+          echo "key=$ISSUE_KEY" >> $GITHUB_OUTPUT
+          echo "id=$ISSUE_ID" >> $GITHUB_OUTPUT
+
+      - name: Transition to DOING
+        run: |
+          # First, get the transition ID for DOING
+          TRANSITIONS=$(curl -s \
+            "${{ secrets.EPE2_JIRA_BASE_URL }}/rest/api/3/issue/${{ steps.create-issue.outputs.key }}/transitions" \
+            -H "Authorization: Basic $(echo -n '${{ secrets.EPE2_JIRA_USER_EMAIL }}:${{ secrets.EPE2_JIRA_API_TOKEN }}' | base64)" \
+            -H "Content-Type: application/json")
+
+          echo "Available transitions: $TRANSITIONS"
+
+          # Extract the transition ID for DOING
+          DOING_ID=$(echo "$TRANSITIONS" | jq -r '.transitions[] | select(.name == "DOING") | .id')
+
+          if [ -n "$DOING_ID" ]; then
+            curl -s -X POST \
+              "${{ secrets.EPE2_JIRA_BASE_URL }}/rest/api/3/issue/${{ steps.create-issue.outputs.key }}/transitions" \
+              -H "Authorization: Basic $(echo -n '${{ secrets.EPE2_JIRA_USER_EMAIL }}:${{ secrets.EPE2_JIRA_API_TOKEN }}' | base64)" \
+              -H "Content-Type: application/json" \
+              -d "{\"transition\": {\"id\": \"$DOING_ID\"}}"
+            echo "Transitioned ${{ steps.create-issue.outputs.key }} to DOING"
+          else
+            echo "DOING transition not found. Available: $TRANSITIONS"
+          fi

@@ -1,4 +1,11 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: "auth",
+  // alias: "/637262075600163869",                                                                                                                                                                                                                                                                                                                                                                                                                
+  name: "Policies",
+  // path: "/maintenance/policies/index"
+})
+
 const router = useRouter();
 import { IconView, IconEdit, IconDelete, IconUserApprover } from "#components";
 import type { I } from "vue-router/dist/router-CWoNjPRp.mjs";

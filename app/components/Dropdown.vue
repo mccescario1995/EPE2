@@ -379,13 +379,24 @@ const handleKeyDown = (e: KeyboardEvent) => {
     <div
       v-if="isOpen"
       ref="dropdownMenuRef"
-      class="absolute z-50 w-full min-w-max bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden transition-all"
+      class="z-50 min-w-max bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden transition-all"
       :class="{
         'right-0': !dropdownPosition.left,
         'left-0': dropdownPosition.left,
       }"
       :style="{ 'max-height': maxHeight }"
     >
+
+    <!-- <div
+      v-if="isOpen"
+      ref="dropdownMenuRef"
+      class="absolute z-50 w-full min-w-max bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden transition-all"
+      :class="{
+        'right-0': !dropdownPosition.left,
+        'left-0': dropdownPosition.left,
+      }"
+      :style="{ 'max-height': maxHeight }"
+    > -->
       <!-- Search Input -->
       <div class="p-2 border-b border-gray-200 sticky top-0 bg-white z-10">
         <input

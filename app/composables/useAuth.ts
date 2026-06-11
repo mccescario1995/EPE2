@@ -16,7 +16,7 @@ export function useAuth() {
     };
 
     const data = await apiFetch("/api/Access", {
-      method: "post",
+      method: "POST",
       body: JSON.stringify(payload),
       headers: {
         "Content-Type": "application/json",
@@ -45,7 +45,7 @@ export function useAuth() {
   //Use it to refresh token (if needed)
   async function refresh() {
     const response = await apiFetch("/api/auth/refresh", {
-      method: "post",
+      method: "POST",
     });
 
     //Parse response (required)
@@ -63,9 +63,6 @@ export function useAuth() {
   async function logout() {
     accessToken.value = null;
     user.value = null;
-
-    //modify if needed
-    userStore.logout();
   }
 
   return { login, logout, refresh, accessToken, user };

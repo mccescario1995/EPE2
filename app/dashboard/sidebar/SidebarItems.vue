@@ -19,6 +19,14 @@ const checkMobile = () => {
 
 const refreshing = ref(false);
 
+const routeAliasMap = {
+  "/637262075600163869": "/maintenance/policies",
+  "/637951116932400418": "/exemptions/pending",
+  "/637120010759985872": "/exemptions/all",
+  "/637951226932433418": "/exemptions/closed",
+  // add more mappings here as needed
+};
+
 async function refreshAll() {
   const { data, refresh } = useAsyncData(
     "dataKey",
@@ -85,99 +93,13 @@ onMounted(async () => {
     //   isopen: false,
     //   isActive: true,
     // },
-    {
-      id: 2,
-      title: "Maintenance",
-      isopen: false,
-      submenu: [
-        {
-          id: "M1",
-          title: "Policy",
-          route: "/maintenance/policies",
-        },
-      ],
-    },
-    {
-      id: 3,
-      title: "Requests",
-      isopen: true,
-      submenu: [
-        {
-          id: "E1",
-          title: "All",
-          route: "/exemptions/all",
-        },
-        // {
-        //   id: "E2",
-        //   title: "Create Request",
-        //   route: "/exemptions/create",
-        // },
-        {
-          id: "E3",
-          title: "Pending",
-          route: "/exemptions/pending",
-        },
-        {
-          id: "E4",
-          title: "Closed",
-          route: "/exemptions/closed",
-        },
-      ],
-    },
-    // {
-    //   id: 4,
-    //   title: "Policies",
-    //   isopen: false,
-    //   submenu: [
-    //     {
-    //       id: "P1",
-    //       title: "All Policies",
-    //       route: "/policies",
-    //     },
-    //     {
-    //       id: "P2",
-    //       title: "Create Policy",
-    //       route: "/policies/create",
-    //     },
-    //     {
-    //       id: "P3",
-    //       title: "Pending Approvals",
-    //       route: "/policies/edit",
-    //     },
-    //     {
-    //       id: "P4",
-    //       title: "Closed Policies",
-    //       route: "/policies/approvers",
-    //     },
-    //   ],
-    // }
-
-    // =============================================================
-
-    // {
-    //   id: 4,
-    //   title: "Excemption Requests",
-    //   route: "/exemptions/",
-    // },
-    // {
-    //   id: 5,
-    //   title: "Create Request",
-    //   route: "/exemptions/create",
-    // },
-    // {
-    //   id: 5,
-    //   title: "Pending Approvals",
-    //   route: "/exemptions/pending",
-    // },
-    // {
-    //   id: 5,
-    //   title: "Closed Requests",
-    //   route: "/exemptions/closed",
-    // },
   ];
 
   const dynamicmenu = await fetchMenuList();
-  menulist.value = [...staticMenus];
+  console.log("Fetched Dynamic Menu:", dynamicmenu);
+  // console.log("Fetched Static Menus:", staticMenus);
+  menulist.value = [...dynamicmenu];
+  // menulist.value = [...dynamicmenu, ...staticMenus];
   checkMobile();
   window.addEventListener("resize", checkMobile);
 });
@@ -187,23 +109,32 @@ onBeforeUnmount(() => {
 });
 
 const updateActiveStates = (path) => {
+  // Resolve alias to canonical path
+  const resolvedPath = routeAliasMap[path] || path;
+
   menulist.value.forEach((menu) => {
     menu.isActive = false;
     menu.isopen = false;
     if (menu.submenu) {
-      // Check if any submenu route matches current path (exact match)
-      const hasActiveSubmenu = menu.submenu.some((sub) => sub.route === path);
+      const hasActiveSubmenu = menu.submenu.some(
+        (sub) =>
+          routeAliasMap[sub.route] === resolvedPath ||
+          sub.route === resolvedPath,
+      );
 
-      // Set isclick for each submenu item
-      menu.submenu.forEach((sub) => (sub.isclick = sub.route === path));
+      menu.submenu.forEach(
+        (sub) =>
+          (sub.isclick =
+            routeAliasMap[sub.route] === resolvedPath ||
+            sub.route === resolvedPath),
+      );
 
-      // Open dropdown if sidebar is open and has active submenu
       menu.isopen = sidebarOpen.value && hasActiveSubmenu;
-
-      // Parent is active when any child is active (for highlighting)
       menu.isActive = hasActiveSubmenu;
     } else {
-      menu.isActive = path === menu.route;
+      menu.isActive =
+        resolvedPath === menu.route ||
+        routeAliasMap[menu.route] === resolvedPath;
     }
   });
 };

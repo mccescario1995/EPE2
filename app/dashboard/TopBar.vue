@@ -11,12 +11,7 @@
             aria-expanded="false"
             aria-label="Toggle navigation"
           >
-            <svg
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -97,7 +92,7 @@
                   >
                 </div>
 
-                <div class="overflow-y-auto max-h-83 ">
+                <div class="overflow-y-auto max-h-83">
                   <template v-if="notificationStore.notifications.length === 0">
                     <div class="px-4 py-3 text-center text-sm text-gray-500">
                       No notifications
@@ -110,7 +105,7 @@
                     >
                       <div
                         class="px-4 py-3 sm:px-4"
-                        :class="{                                                 
+                        :class="{
                           'bg-gray-50': !notification.isRead,
                           'bg-gray-300': notification.isRead,
                           'cursor-pointer': true,
@@ -191,10 +186,9 @@
                 src="../static/images/UserIcon.png"
                 alt="User profile"
               />
-              <span
-                class="ml-2 hidden text-sm font-medium text-gray-700 md:block"
-                >{{ profile.employeename2 }}</span
-              >
+              <span class="ml-2 hidden text-sm font-medium text-gray-700 md:block">{{
+                profile.employeename2
+              }}</span>
               <svg
                 class="ml-1 h-4 w-4 text-gray-400"
                 :class="{ 'transform rotate-180': isDropdownOpen }"
@@ -267,7 +261,7 @@
               <li
                 @click="
                   storeEncryptedDataInCookie(
-                    'https://apps.fastlogistics.com.ph/utility/#/Setting/Account',
+                    'https://apps.fastlogistics.com.ph/utility/#/Setting/Account'
                   )
                 "
                 class="py-2.5 px-5 flex items-center hover:bg-gray-100 text-[#333] text-sm cursor-pointer"
@@ -322,11 +316,9 @@
       <div
         v-if="show"
         class="fixed inset-0 flex items-center justify-center z-50"
-        style="background-color: rgba(0, 0, 0, 0.5);"
+        style="background-color: rgba(0, 0, 0, 0.5)"
       >
-        <div
-          class="bg-white rounded-xl shadow-lg max-w-4xl w-full p-4 relative"
-        >
+        <div class="bg-white rounded-xl shadow-lg max-w-4xl w-full p-4 relative">
           <!-- Close Button -->
           <button
             @click="show = false"
@@ -358,9 +350,11 @@ import { getKey, encryptData } from "../../encrypt";
 import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import BellIcon from "../components/icon/Bell.vue";
+import { useAuth } from "~/composables/useAuth";
 const router = useRouter();
 const userStore = useUserStore();
 const notificationStore = useNotificationStore();
+const auth = useAuth();
 const profile = userStore.profile;
 const userDATA = userStore.profile;
 
@@ -421,8 +415,36 @@ function markAllAsRead() {
   closeNotificationDropdown();
 }
 
-function Logout() {
+async function Logout() {
+  try {
+    await apiFetch("/api/access/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+  } catch (error) {
+    console.error("Logout API error:", error);
+  }
+
+  const utilityCookie = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("utility="));
+  if (utilityCookie) {
+    document.cookie =
+      "utility=; path=/; secure; samesite=strict; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  }
+
+  notificationStore.clearNotifications();
+  userStore.logout();
+  auth.logout();
   closeDropdown();
+  closeNotificationDropdown();
+  showToast({
+    title: "Logout",
+    message: "Logged out successfully",
+    type: "success",
+    duration: 3000,
+    
+  })
   router.push("/");
 }
 
@@ -434,7 +456,7 @@ const show = ref(false);
 const link = ref("");
 async function storeEncryptedDataInCookie(iframeUrl) {
   const payload = {
-    systemid: 50,
+    systemid: 101,
     userhashcode: userDATA.hashcode,
     token: userStore.token,
     userid: userDATA.userid ?? userDATA.userId, //userId
