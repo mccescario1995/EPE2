@@ -28,13 +28,23 @@ jobs:
         run: |
           AUTH=$(echo -n "${JIRA_USER_EMAIL}:${JIRA_API_TOKEN}" | base64 -w 0)
 
-          JQL="project = DC AND summary ~ \"${ISSUE_SUMMARY}\" AND cf[10033] = EPE ORDER BY created DESC"
-          ENCODED_JQL=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1]))" "$JQL")
+          # Build the JQL and payload using jq for safe escaping
+          PAYLOAD=$(jq -n \
+            --arg summary "$ISSUE_SUMMARY" \
+            '{
+              jql: ("project = DC AND summary ~ \"" + $summary + "\" AND cf[10033] = EPE ORDER BY created DESC"),
+              maxResults: 1,
+              fields: ["key", "summary"]
+            }')
+
+          echo "Search payload: $PAYLOAD"
 
           RESPONSE=$(curl -s \
-            "${JIRA_BASE_URL}/rest/api/3/search?jql=${ENCODED_JQL}&maxResults=1" \
+            -X POST \
+            "${JIRA_BASE_URL}/rest/api/3/search/jql" \
             -H "Authorization: Basic ${AUTH}" \
-            -H "Content-Type: application/json")
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
 
           echo "Search response: $RESPONSE"
 
