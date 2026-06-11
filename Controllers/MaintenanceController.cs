@@ -241,6 +241,65 @@ namespace EPEAPI.Controllers
             }
         }
 
+        [HttpPost("create/policy/{policyId}/approvers")]
+        public async Task<IActionResult> GetPolicyApproverCreate(int policyId, ApproverRequest request)
+        {
+            try
+            {
+                var userId = request.UserId;
+
+                var empId = await _context.CoreVUsers
+                        .Where(u => u.UserId == userId)
+                        .FirstOrDefaultAsync();
+
+                if (empId == null)
+                {
+                    return BadRequest(new { success = false, message = "User not found", userId = request });
+                }
+
+                var items = await _context.EpePolicyapprovers
+                    .Where(a => a.Policyid == policyId && a.Isdelete == 0)
+                    .OrderBy(u => u.Linesequence)
+                    .ThenBy(u => u.Sort)
+                    .ToListAsync();
+
+                var imHead = await _context.CoreVEmployeeDetails
+                        .Where(e => e.EmplId == empId.EmplId)
+                        .Select(e => new
+                        {
+                            e.ImmediateId,
+                            e.ImmediateName,
+                            e.ImmediateEmail
+                        })
+                        .FirstOrDefaultAsync();
+
+                var itemsWithRole = items.Select(a => new
+                {
+                    a.Id,
+                    a.Policyid,
+                    a.Approverid,
+                    Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
+                    Approveremail = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateEmail : a.Approveremail,
+                    a.Approvertype,
+                    a.Sort,
+                    a.Linesequence,
+                    a.Status,
+                    a.Isdelete,
+                    IsMainApprover = a.Linesequence == 1,
+                    ApproverRole = a.Linesequence == 1 ? "Main" : "Proxy"
+                }).ToList();
+
+                //    Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
+                //    Approveremail = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateEmail : a.Approveremail,
+
+                return Ok(new { success = true, items = itemsWithRole });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
         [HttpGet("employees/search")]
         public async Task<IActionResult> SearchEmployees([FromQuery] string? q)
         {

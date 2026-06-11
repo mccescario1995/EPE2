@@ -6,5 +6,6 @@
         TokenList NewToken(string userId);
         string tokensresult();
         bool VerifyToken(string token);
+        bool Logout(string token);
     }
 }

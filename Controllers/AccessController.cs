@@ -87,6 +87,7 @@ namespace EPEAPI.Controllers
             {
                 user.UserId,
                 user.Username,
+                user.Userrole,
                 user.EmplId,
                 employee?.Employeename2,
                 employee?.Corporate,
@@ -129,9 +130,26 @@ namespace EPEAPI.Controllers
 
             return Ok(response);
         }
+
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            var response = new Response();
+
+            var token = Request.Headers["Token"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(token))
+            {
+                tokenManager.Logout(token);
+            }
+
+            HttpContext.Session.Clear();
+            response.status = "SUCCESS";
+            response.message = "Logged out successfully";
+            return Ok(response);
+        }
     }
 
-        public class Login
+    public class Login
     {
         [Required]
         public string email { get; set; }

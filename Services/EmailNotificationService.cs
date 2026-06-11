@@ -59,17 +59,11 @@ public class EmailNotificationService
 
        
 
-            //var apiBase = "https://apps.fastlogistics.com.ph/epe2apidev"; // Change to production API base URL when deploying
             var apiBase = _urlBaseSettings.Api;
             var viewBase = _urlBaseSettings.View;
-            //var apiBase = "http://localhost:5000";
-            //var approveUrl = $"{apiBase}/api/emailapproval/approve?id={requestId}";
-            //var approveUrl = $"{apiBase}/api/emailapproval/preview?token={approveToken}";
-            //var disapproveUrl = $"{apiBase}/api/emailapproval/preview?token={disapproveToken}";
             var viewUrl = $"{viewBase}/#/exemptions/view?id={requestId}";
             var trackUrl = $"{viewBase}/#/exemptions/approve?id={requestId}";
 
-            // toEmail = "mccescario@fastgroup.biz"; // for testing
             
             var emailBody = $@"
                     <html>
@@ -828,6 +822,43 @@ public class EmailNotificationService
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             throw new Exception($"Failed to send email. Status: {response.StatusCode}. Response: {errorContent}");
+        }
+    }
+
+    /// <summary>
+    /// Sends notification to the next approval group after current group responds
+    /// </summary>
+    public async Task SendNextApprovalGroupNotificationAsync(
+        List<(string Email, string Name, int UserId, long TransApproverId, bool IsProxy)> nextApprovers,
+        long requestId,
+        string requestNumber,
+        string requestorName,
+        string requestDetails)
+    {
+        foreach (var (email, name, userId, transApproverId, isProxy) in nextApprovers)
+        {
+            try
+            {
+                if (isProxy)
+                {
+                    // For proxy, we need the main approver's name
+                    await SendProxyApproverReminderEmailAsync(
+                        email, name, requestorName, // mainApproverName would be passed differently
+                        requestId, requestNumber, requestorName, requestDetails,
+                        userId, transApproverId);
+                }
+                else
+                {
+                    await SendMainApproverReminderEmailAsync(
+                        email, name,
+                        requestId, requestNumber, requestorName, requestDetails,
+                        userId, transApproverId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send next approval group notification to {Email}", email);
+            }
         }
     }
 }

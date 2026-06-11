@@ -1,6 +1,7 @@
 ﻿using EPEAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace EPEAPI.Controllers
 {
@@ -18,36 +19,104 @@ namespace EPEAPI.Controllers
         [HttpGet("analytics")]
         public async Task<IActionResult> GetAnalytics(
             [FromQuery] int year = 0,
-            [FromQuery] int months = 6)
+            [FromQuery] int months = 6,
+            [FromQuery] string period = "daily",
+            [FromQuery] int count = 12)
         {
             try
             {
-                if (year == 0) year = DateTime.Now.Year;
-                var fromDate = DateTime.Now.AddMonths(-months);
+                if (year != 0)
+                {
+                    var fromYear = DateTime.Now.AddYears(1 - (year / 1000)); // Handle year input
+                    months = (DateTime.Now.Year - fromYear.Year) * 12 + (DateTime.Now.Month - fromYear.Month);
+                }
 
-                // 1. Approval rates over time (monthly)
+                DateTime fromDate;
+                string periodLabel;
+
+                switch (period.ToLower())
+                {
+                    case "daily":
+                        fromDate = DateTime.Now.AddDays(-count);
+                        periodLabel = "day";
+                        break;
+                    case "weekly":
+                        fromDate = DateTime.Now.AddDays(-7 * count);
+                        periodLabel = "week";
+                        break;
+                    case "monthly":
+                    default:
+                        fromDate = DateTime.Now.AddMonths(-count);
+                        periodLabel = "month";
+                        break;
+                }
+
+                // 1. Approval rates over time
                 var transactions = await _context.EpeTransactionheaders
                     .Where(t => t.Isdelete == 0 && t.Createddate >= fromDate)
                     .ToListAsync();
 
-                var approvalRates = transactions
-                    .GroupBy(t => new { t.Createddate.Year, t.Createddate.Month })
-                    .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
-                    .Select(g => new
-                    {
-                        month = new DateTime(g.Key.Year, g.Key.Month, 1)
-                            .ToString("MMM yyyy"),
-                        total = g.Count(),
-                        approved = g.Count(t => t.Finaldecision == "Approved"),
-                        disapproved = g.Count(t => t.Finaldecision == "Disapproved"),
-                        pending = g.Count(t => t.Finaldecision == "Pending"),
-                        approvalRate = g.Count() == 0 ? 0 :
-                            Math.Round((double)g.Count(t => t.Finaldecision == "Approved")
-                            / g.Count() * 100, 1)
-                    })
-                    .ToList();
+                //var approvalRates = new List<object>();
+                List<ApprovalRateDto> approvalRates = new();
 
-                // 2. Common policy overrides
+                switch (period.ToLower())
+                {
+                    case "daily":
+                        approvalRates = transactions.GroupBy(t => t.Createddate.Date)
+                            .Select(g => new ApprovalRateDto
+                            {
+                                Period = g.Key.ToString("MMM dd, yyyy"),
+                                Total = g.Count(),
+                                Approved = g.Count(t => t.Finaldecision == "Approved"),
+                                Disapproved = g.Count(t => t.Finaldecision == "Disapproved"),
+                                Pending = g.Count(t => t.Finaldecision == "Pending"),
+                                ApprovalRate = g.Count() == 0 ? 0 :
+                                    Math.Round((double)g.Count(t => t.Finaldecision == "Approved")
+                                    / g.Count() * 100, 1)
+                            })
+                            .ToList();
+                        break;
+
+                    case "weekly":
+                        var weekGroups = transactions
+                            .GroupBy(t => CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(
+                                t.Createddate, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday))
+                            .Select(g => new ApprovalRateDto
+                            {
+                                Period = $"Week {g.Key}",
+                                Total = g.Count(),
+                                Approved = g.Count(t => t.Finaldecision == "Approved"),
+                                Disapproved = g.Count(t => t.Finaldecision == "Disapproved"),
+                                Pending = g.Count(t => t.Finaldecision == "Pending"),
+                                ApprovalRate = g.Count() == 0 ? 0 :
+                                    Math.Round((double)g.Count(t => t.Finaldecision == "Approved")
+                                    / g.Count() * 100, 1)
+                            })
+                            .ToList();
+                        approvalRates = weekGroups;
+                        break;
+
+                    default:
+                        approvalRates = transactions
+                            .GroupBy(t => new { t.Createddate.Year, t.Createddate.Month })
+                            .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
+                            .Select(g => new ApprovalRateDto
+                            {
+                                Period = new DateTime(g.Key.Year, g.Key.Month, 1)
+                                    .ToString("MMM yyyy"),
+                                Total = g.Count(),
+                                Approved = g.Count(t => t.Finaldecision == "Approved"),
+                                Disapproved = g.Count(t => t.Finaldecision == "Disapproved"),
+                                Pending = g.Count(t => t.Finaldecision == "Pending"),
+                                ApprovalRate = g.Count() == 0 ? 0 :
+                                    Math.Round((double)g.Count(t => t.Finaldecision == "Approved")
+                                    / g.Count() * 100, 1)
+                            })
+                            .ToList();
+                        break;
+                }
+
+                // 2. Common policy overrides (unchanged - all time data)
                 var policyOverrides = await _context.EpeVTransactionHeaders
                     .Where(t => t.IsDelete == 0)
                     .GroupBy(t => new { t.PolicyId, t.PolicyName })
@@ -64,7 +133,7 @@ namespace EPEAPI.Controllers
                     .Take(10)
                     .ToListAsync();
 
-                // 3. Average processing times (approved transactions only)
+                // 3. Average processing times (approved transactions only, filtered by period)
                 var approvedTrans = await _context.EpeTransactionheaders
                     .Where(t => t.Isdelete == 0
                         && t.Finaldecision == "Approved"
@@ -182,6 +251,16 @@ namespace EPEAPI.Controllers
             {
                 return StatusCode(500, "Error: " + e.Message);
             }
+        }
+
+        public class ApprovalRateDto
+        {
+            public string Period { get; set; } = "";
+            public int Total { get; set; }
+            public int Approved { get; set; }
+            public int Disapproved { get; set; }
+            public int Pending { get; set; }
+            public double ApprovalRate { get; set; }
         }
     }
 }

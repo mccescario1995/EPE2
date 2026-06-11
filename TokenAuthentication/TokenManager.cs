@@ -95,7 +95,7 @@ namespace EPEAPI.TokenAuthentication
             {
                 var FromBase64 = Encoding.UTF8.GetString(Convert.FromBase64String(token));
                 var credentials = FromBase64.Split(':');
-                if (credentials[1].Substring(credentials[1].Length - 4).Equals("tsaf")) //if token came from fast
+                if (credentials[1].Substring(credentials[1].Length - 4).Equals("tsaf"))
                 {
 
                     var tokenList = _dbContext.Tokens.FirstOrDefault(t => t.AuthToken == token);
@@ -119,6 +119,25 @@ namespace EPEAPI.TokenAuthentication
 
             }
             catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public bool Logout(string token)
+        {
+            try
+            {
+                var tokenList = _dbContext.Tokens.FirstOrDefault(t => t.AuthToken == token);
+                if (tokenList != null)
+                {
+                    tokenList.IsExpire = true;
+                    _dbContext.SaveChanges();
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
             {
                 return false;
             }
