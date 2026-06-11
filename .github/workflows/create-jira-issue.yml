@@ -38,23 +38,25 @@ jobs:
 
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
           BODY=$(echo "$RESPONSE" | head -n -1)
-          
+
           echo "HTTP Status: $HTTP_CODE"
           echo "Response Body: $BODY"
-          
+
           if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
             echo "Error: Jira API returned HTTP $HTTP_CODE"
+            echo "Full response: $BODY" >&2
             exit 1
           fi
-          
+
           ISSUE_KEY=$(echo "$BODY" | jq -r '.key')
           ISSUE_ID=$(echo "$BODY" | jq -r '.id')
-          
+
           if [ -z "$ISSUE_KEY" ] || [ "$ISSUE_KEY" == "null" ]; then
             echo "Error: Failed to extract issue key from response"
+            echo "Response was: $BODY" >&2
             exit 1
           fi
-          
+
           echo "key=$ISSUE_KEY" >> $GITHUB_OUTPUT
           echo "id=$ISSUE_ID" >> $GITHUB_OUTPUT
 
