@@ -1,6 +1,8 @@
 <template>
   <nav class="flex" aria-label="Breadcrumb">
-    <ol class="inline-flex items-center space-x-1 md:space-x-3 bg-white/50 backdrop-blur-sm rounded-xl px-4 py-3 shadow-sm border border-gray-100">
+    <ol
+      class="inline-flex items-center space-x-1 md:space-x-3 bg-white/50 backdrop-blur-sm rounded-xl px-4 py-3 shadow-sm border border-gray-100"
+    >
       <!-- Home icon with enhanced hover state -->
       <li class="inline-flex items-center group">
         <NuxtLink
@@ -19,7 +21,9 @@
               />
             </svg>
             <!-- Hover effect circle -->
-            <div class="absolute inset-0 bg-blue-100 rounded-full scale-0 group-hover:scale-150 transition-transform duration-300 -z-10 opacity-0 group-hover:opacity-100"></div>
+            <div
+              class="absolute inset-0 bg-blue-100 rounded-full scale-0 group-hover:scale-150 transition-transform duration-300 -z-10 opacity-0 group-hover:opacity-100"
+            ></div>
           </div>
           <span class="sr-only">Home</span>
         </NuxtLink>
@@ -42,23 +46,31 @@
                 clip-rule="evenodd"
               />
             </svg>
-            
-            <!-- Clickable breadcrumb -->
+
+            <!-- Clickable breadcrumb (only if has index.vue) -->
             <NuxtLink
-              v-if="index !== breadcrumbs.length - 1"
+              v-if="index !== breadcrumbs.length - 1 && crumb.clickable"
               :to="crumb.to"
               class="relative text-sm font-medium text-gray-600 hover:text-blue-600 transition-all duration-300 px-2 py-1 rounded-lg hover:bg-blue-50"
             >
               <span class="relative z-10">{{ crumb.label }}</span>
               <!-- Underline effect -->
-              <span class="absolute bottom-0 left-2 right-2 h-0.5 bg-blue-600 scale-x-0 transition-transform duration-300 origin-left group-hover:scale-x-100"></span>
+              <span
+                class="absolute bottom-0 left-2 right-2 h-0.5 bg-blue-600 scale-x-0 transition-transform duration-300 origin-left group-hover:scale-x-100"
+              ></span>
             </NuxtLink>
-            
-            <!-- Current page (non-clickable) -->
+
+            <!-- Non-clickable breadcrumb (last item OR folder without index.vue) -->
             <span
-              v-else
-              class="text-sm font-semibold text-gray-800 px-3 py-1.5 bg-linear-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100 shadow-sm"
-              aria-current="page"
+              :class="[
+                'text-sm font-semibold text-gray-800 px-3 py-1.5 rounded-lg border shadow-sm',
+                crumb.clickable && index === breadcrumbs.length - 1
+                  ? 'bg-linear-to-r from-blue-50 to-indigo-50 border-blue-100'
+                  : 'bg-gray-100 border-gray-200',
+              ]"
+              :aria-current="
+                index === breadcrumbs.length - 1 ? 'page' : undefined
+              "
             >
               {{ crumb.label }}
             </span>

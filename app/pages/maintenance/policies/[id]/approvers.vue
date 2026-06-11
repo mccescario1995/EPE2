@@ -106,6 +106,11 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  middleware: "auth",
+  alias: "/policies/:id/approvers"
+})
+
 const route = useRoute()
 const policyId = parseInt(route.params.id as string)
 

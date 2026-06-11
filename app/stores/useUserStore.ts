@@ -8,16 +8,23 @@ export const useUserStore = defineStore("user", {
     menu: null as any,
     menuAccess: null as any,
     menuVersion: null as string | null,
+    role: null as string | null,
   }),
 
   getters: {
     isAuthenticated: (state) => !!state.token,
+    isAdmin: (state) => {
+      const roles = ['admin', 'administrator', 'superadmin'];
+      return state.role && roles.includes(state.role.toLowerCase());
+    },
+    userRole: (state) => state.role || state.profile?.role || state.profile?.userRole || null,
   },
 
   actions: {
     setUser(token: string, profile: any) {
       this.token = token;
       this.profile = profile;
+      this.role = profile?.role || profile?.userRole || null;
       localStorage.setItem("auth_token", token);
     },
 
@@ -46,19 +53,15 @@ export const useUserStore = defineStore("user", {
     logout() {
       this.token = null;
       this.profile = null;
+      this.role = null;
       this.menu = null;
       localStorage.removeItem("auth_token");
       navigateTo("/");
     },
     
-    // Refresh menu only if backend version changed
     async refreshMenuIfNeeded() {
       try {
-
-        // Step 1: get current backend menu version
         const backend: any = await apiFetch("/menu/version");
-
-        // Step 2: compare backend vs local
         if (backend.version !== this.menuVersion) {
           console.log("Menu version changed — refetching menu...");
           const newMenu = await apiFetch("/menu");

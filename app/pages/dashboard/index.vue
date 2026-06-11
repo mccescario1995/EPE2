@@ -7,7 +7,34 @@ const userId = userStore.profile;
 
 const loading = ref(false);
 const error = ref<string | null>(null);
-const months = ref(6);
+
+// Period filter state
+type PeriodType = "daily" | "weekly" | "monthly";
+const periodType = ref<PeriodType>("daily");
+const periodCount = ref(7);
+
+// Period configurations
+const periodOptions = [
+  { label: "Daily", value: "daily", counts: [7, 14, 30] },
+  { label: "Weekly", value: "weekly", counts: [4, 8, 12, 26] },
+  { label: "Monthly", value: "monthly", counts: [3, 6, 12, 24] },
+];
+
+// Default count for each period type
+const defaultCounts: Record<PeriodType, number> = {
+  daily: 7,
+  weekly: 4,
+  monthly: 3,
+};
+
+onMounted(async () => {
+  fetchAnalytics();
+});
+
+// Reset count when period type changes
+watch(periodType, (newType) => {
+  periodCount.value = defaultCounts[newType] || 12;
+});
 
 const summary = ref<any>(null);
 const approvalRates = ref<any[]>([]);
@@ -16,7 +43,7 @@ const processingByPolicy = ref<any[]>([]);
 const approverWorkload = ref<any[]>([]);
 
 type DataProps = {
-  month?: string;
+  period?: string;
   pending?: number;
   approved?: number;
   disapproved?: number;
@@ -38,21 +65,6 @@ const policyChartData = computed<PolicyDataProps[]>(() =>
   })),
 );
 
-// const policyChartOptions = computed(() => ({
-//   data: policyChartData.value,
-//   categories: {
-//     approved: { name: "Approved", color: "#22c55e" },
-//     disapproved: { name: "Disapproved", color: "#ef4444" },
-//     pending: { name: "Pending", color: "#f59e0b" },
-//   },
-//   xAxis: "policyName",
-//   xNumTicks: policyChartData.value.length,
-
-//   // REQUIRED (same fix as your month issue)
-//   xFormatter: (tick: number, i?: number) =>
-//     policyChartData.value[i ?? tick]?.policyName,
-// }));
-
 const ApprovalDecision = {
   approved: { name: "Approved", color: "#22c55e" },
   disapproved: { name: "Disapproved", color: "#ef4444" },
@@ -61,28 +73,58 @@ const ApprovalDecision = {
 
 const approvalChartData = computed<DataProps[]>(() =>
   approvalRates.value.map((r) => ({
-    month: r.month,
+    period: r.period, // formatPeriodLabel(r.period),
     approved: r.approved,
     disapproved: r.disapproved,
     pending: r.pending,
   })),
 );
 
+// function formatPeriodLabel(period: string) {
+//   // if already "Mar 2026", keep it
+//   if (/^[A-Za-z]{3}\s\d{4}$/.test(period)) return period;
+
+//   console.log("Formatting period label:", period);
+//   // fallback if backend sends ISO date
+//   // const d = new Date(period);
+//   // if (!isNaN(d.getTime())) {
+//   //   return d.toLocaleString("en-US", { month: "short", year: "numeric" });
+//   // }
+
+//   return period;
+// }
+
 const approvalChartOptions = computed(() => ({
   data: approvalChartData.value,
   categories: ApprovalDecision,
-  xAxis: "month" as const,
-  xFormatter: (tick: number, i?: number) => {
-    return approvalChartData.value[i ?? tick]?.month ?? "";
+  xAxis: "period",
+  xNumTicks: approvalChartData.value.length,
+  xFormatter: (tick: number) => {
+    const period = approvalChartData.value[tick]?.period ?? "";
+    return period;
   },
 }));
+
+// const approvalChartOptions = computed(() => ({
+//   data: approvalChartData.value,
+//   categories: ApprovalDecision,
+//   xAxis: xAxisLabel.value,
+//   xNumTicks: approvalChartData.value.length,
+//   tickTextHideOverlapping: false,
+//   tickTextAngle: -45,
+//   tickTextWidth: 80,
+//   xFormatter: (tick: number, i?: number) => {
+//     return approvalChartData.value[i ?? tick]?.period ?? "";
+//   },
+// }));
+//approvalChartData.map((d) => d.period) / xAxisLabel.value
 
 const fetchAnalytics = async () => {
   loading.value = true;
   error.value = null;
   try {
     const response = await apiFetch(
-      `/api/dashboard/analytics?months=${months.value}`,
+      `/api/dashboard/analytics?period=${periodType.value}&count=${periodCount.value}`,
       {
         method: "GET",
         parseJson: true,
@@ -95,9 +137,17 @@ const fetchAnalytics = async () => {
       policyOverrides.value = response.policyOverrides;
       processingByPolicy.value = response.processingByPolicy;
       approverWorkload.value = response.approverWorkload;
-    }
 
-    console.log("Analytics response:", response);
+      console.log(
+        "Raw Approval Rates:",
+        approvalRates.value.map((r) => r.period),
+      );
+      console.log("Approval Chart Data:", approvalChartData.value);
+      console.log(
+        "Approval Chart Data Length:",
+        approvalChartData.value.length,
+      );
+    }
   } catch (e: any) {
     error.value = e.message || "Failed to load analytics";
   } finally {
@@ -105,27 +155,11 @@ const fetchAnalytics = async () => {
   }
 };
 
-const getResponseBadge = (rate: number) => {
-  if (rate >= 85) return { text: "Active", cls: "bg-green-100 text-green-800" };
-  if (rate >= 70)
-    return { text: "Moderate", cls: "bg-yellow-100 text-yellow-800" };
-  return { text: "Low", cls: "bg-red-100 text-red-800" };
-};
-
-const formatHours = (h: number) => {
-  if (h < 24) return `${h}h`;
-  return `${Math.round((h / 24) * 10) / 10}d`;
-};
-
-watch(months, () => fetchAnalytics());
-
-onMounted(async () => {
-  fetchAnalytics();
-});
+watch([periodType, periodCount], () => fetchAnalytics());
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="bg-gray-50">
     <!-- Header -->
     <header class="bg-white shadow">
       <div
@@ -138,15 +172,26 @@ onMounted(async () => {
         <!-- Period filter -->
         <div class="flex items-center gap-3">
           <label class="text-sm text-gray-600">Period:</label>
-          <select
-            v-model="months"
-            class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-          >
-            <option :value="3">Last 3 months</option>
-            <option :value="6">Last 6 months</option>
-            <option :value="12">Last 12 months</option>
-            <option :value="24">Last 24 months</option>
-          </select>
+
+          <!-- Period Type Buttons -->
+          <div class="flex items-center gap-1">
+            <button
+              v-for="option in periodOptions"
+              :key="option.value"
+              @click="
+                periodType = option.value;
+                periodCount = option.counts[1] || option.counts[0];
+              "
+              :class="[
+                'px-3 py-1.5 text-sm rounded-lg border transition-colors',
+                periodType === option.value
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50',
+              ]"
+            >
+              {{ option.label }}
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -222,23 +267,59 @@ onMounted(async () => {
         </div>
 
         <!-- Charts row 1 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-3">
           <!-- Approval Rates Over Time -->
           <div class="bg-white rounded-lg border border-gray-200 p-5">
-            <h2 class="text-sm font-medium text-gray-700 mb-1">
-              Approval Rates Over Time
-            </h2>
-            <p class="text-xs text-gray-400 mb-3">Monthly breakdown</p>
-
-            <div style="position: relative; height: 220px">
-              <!-- <div ref="chartTrendRef" class="h-full w-full"></div> -->
-              <!-- <VChart :option="chartTrend" /> -->
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h2 class="text-sm font-medium text-gray-700 mb-1">
+                  Approval Rates Over Time
+                </h2>
+                <p class="text-xs text-gray-400 mb-3">
+                  {{
+                    periodType === "daily"
+                      ? "Daily breakdown"
+                      : periodType === "weekly"
+                        ? "Weekly breakdown"
+                        : "Monthly breakdown"
+                  }}
+                </p>
+              </div>
+              <!-- Count Dropdown -->
+              <select
+                v-model="periodCount"
+                class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+              >
+                <option
+                  v-for="count in periodOptions.find(
+                    (p) => p.value === periodType,
+                  )?.counts || []"
+                  :key="count"
+                  :value="count"
+                >
+                  {{
+                    periodType === "daily"
+                      ? `${count} day${count > 1 ? "s" : ""}`
+                      : periodType === "weekly"
+                        ? `${count} week${count > 1 ? "s" : ""}`
+                        : `${count} month${count > 1 ? "s" : ""}`
+                  }}
+                </option>
+              </select>
+            </div>
+            <div style="position: relative">
               <BarChart
-                :height="200"
+                :height="270"
                 :stacked="false"
                 :y-axis="['approved', 'disapproved', 'pending']"
                 v-bind="approvalChartOptions"
               />
+              <!-- 
+                :x-axis="approvalChartData.map((d) => d.period)"
+              :tickTextHideOverlapping="false"
+                :tickTextAngle="-45"
+              
+               -->
             </div>
           </div>
 
@@ -250,15 +331,12 @@ onMounted(async () => {
             <p class="text-xs text-gray-400 mb-3">
               By number of exemption requests
             </p>
-            <div
-              style="position: relative"
-              :style="`height:${Math.max(220, policyOverrides.length * 44)}px`"
-            >
+            <div style="position: relative">
               <div class="mt-6">
                 <table class="w-full table-auto">
                   <thead>
                     <tr class="border-b text-left">
-                      <th>Rank</th>
+                      <th>#</th>
                       <th>Policy</th>
                       <th>Total</th>
                       <th>Approved</th>
@@ -272,12 +350,55 @@ onMounted(async () => {
                       :key="p.policyId"
                       class="border-b"
                     >
-                      <td>{{ policyOverrides.indexOf(p) + 1 }}</td>
-                      <td>{{ p.policyName }}</td>
+                      <td class="text-gray-700 pe-2">
+                        {{ policyOverrides.indexOf(p) + 1 }}
+                      </td>
+                      <td class="font-medium text-gray-700">
+                        {{ p.policyName }}
+                      </td>
                       <td>{{ p.totalRequests }}</td>
                       <td class="text-green-600">{{ p.approved }}</td>
                       <td class="text-red-600">{{ p.disapproved }}</td>
                       <td class="text-yellow-600">{{ p.pending }}</td>
+                    </tr>
+                    <tr>
+                      <td colspan="2" class="text-right text-gray-400 px-4">
+                        Total:
+                      </td>
+                      <td>
+                        {{
+                          policyOverrides.reduce(
+                            (sum, p) => sum + p.totalRequests,
+                            0,
+                          )
+                        }}
+                      </td>
+                      <td class="text-green-600">
+                        {{
+                          policyOverrides.reduce(
+                            (sum, p) => sum + p.approved,
+                            0,
+                          )
+                        }}
+                      </td>
+                      <td class="text-red-600">
+                        {{
+                          policyOverrides.reduce(
+                            (sum, p) => sum + p.disapproved,
+                            0,
+                          )
+                        }}
+                      </td>
+                      <td class="text-yellow-600">
+                        {{
+                          policyOverrides.reduce((sum, p) => sum + p.pending, 0)
+                        }}
+                      </td>
+                    </tr>
+                    <tr v-if="policyOverrides.length === 0">
+                      <td colspan="6" class="text-center text-gray-400 py-4">
+                        No policy overrides found.
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -349,3 +470,13 @@ onMounted(async () => {
     </main>
   </div>
 </template>
+
+<style scoped>
+/* rotate x-axis tick labels */
+:deep(.vis-axis.x-axis text) {
+  transform: rotate(-45deg) translate(-8px, 4px);
+  transform-origin: right center;
+  text-anchor: end;
+  font-size: 11px;
+}
+</style>

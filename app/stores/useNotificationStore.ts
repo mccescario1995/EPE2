@@ -40,7 +40,7 @@ export const useNotificationStore = defineStore("notification", () => {
 
     console.log("Marking notification as read:", notification);
     if (notification && !notification.isRead) {
-      notification.isRead = 1; 
+      notification.isRead = 1;
       console.log("Notification marked as read:", notification);
       updateUnreadCount();
     }
@@ -58,13 +58,20 @@ export const useNotificationStore = defineStore("notification", () => {
 
   // Update the unread count
   const updateUnreadCount = () => {
-    unreadCount.value = notifications.value.filter((n) => n.isRead !== 1).length;
+    unreadCount.value = notifications.value.filter(
+      (n) => n.isRead !== 1,
+    ).length;
   };
 
   // Remove a notification (optional)
-  const removeNotification = (id: string | number) => {
+const removeNotification = (id: string | number) => {
     notifications.value = notifications.value.filter((n) => n.id !== id);
     updateUnreadCount();
+  };
+
+const clearNotifications = () => {
+    notifications.value = [];
+    unreadCount.value = 0;
   };
 
   return {
@@ -75,5 +82,6 @@ export const useNotificationStore = defineStore("notification", () => {
     markAsRead,
     markAllAsRead,
     removeNotification,
+    clearNotifications,
   };
 });

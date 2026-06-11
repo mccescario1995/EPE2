@@ -8,7 +8,7 @@ const userStore = useUserStore();
 const userId = userStore.profile;
 
 const loading = ref(false);
-const exemptionData : any = ref(null);
+const exemptionData: any = ref(null);
 const showDeleteConfirm = ref(false);
 const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
@@ -99,14 +99,45 @@ const fetchExemptionRequests = async () => {
   }
 };
 
+const fetchExemptionData = async (params: {
+  page: number;
+  limit: number;
+  search: string;
+  filters: Record<string, string>;
+  sortField?: string;
+  sortDirection?: "asc" | "desc";
+}) => {
+  loading.value = true;
+  const response = await apiFetch("/api/exemption/closed", {
+    method: "POST",
+    body: JSON.stringify({
+      UserId: parseInt(userId.emplId),
+      page: params.page,
+      pageSize: params.limit,
+      search: params.search,
+      sortField: params.sortField,
+      sortDirection: params.sortDirection,
+    }),
+    headers: { "Content-Type": "application/json" },
+    parseJson: true,
+  });
+
+  loading.value = false;
+
+  return {
+    data: response.items ?? [],
+    total: response.totalCount ?? 0,
+  };
+};
+
 // Handle create navigation
 const handleCreate = () => {
   router.push(`/exemptions/create`);
 };
 
-watchEffect(() => {
-  fetchExemptionRequests();
-});
+// watchEffect(() => {
+//   fetchExemptionRequests();
+// });
 </script>
 
 <template>
@@ -143,7 +174,20 @@ watchEffect(() => {
       <!-- Exemption Requests List -->
       <div class="mb-6 px-2 rounded-lg">
         <base-table
-          :table-data="exemptionData"
+          :server-pagination="true"
+          :fetch-data="fetchExemptionData"
+          :pagination="true"
+          :per-page="5"
+          :show-search="true"
+          :showlimitfilter="true"
+          :limitfilter="[5, 10, 20, 30, 40, 50]"
+          :sortable-columns="[
+            'transactionNumber',
+            'policyName',
+            'requesterName',
+            'createdDate',
+          ]"
+          :filkable-columns="['status']"
           :header="[
             'transactionNumber',
             'policyName',
@@ -177,11 +221,6 @@ watchEffect(() => {
             },
           }"
           :date-fields="['createdDate']"
-          :per-page="5"
-          :pagination="true"
-          :total-items="exemptionDataLength"
-          :key="exemptionDataLength"
-          :show-search="true"
           :show-export="true"
           :actions="[
             {
@@ -202,7 +241,8 @@ watchEffect(() => {
               tooltip: 'Edit Request',
               handler: editProduct,
               iconClass: 'text-blue-500',
-              visible: (row) => row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
+              visible: (row) =>
+                row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
             {
@@ -210,7 +250,8 @@ watchEffect(() => {
               tooltip: 'Delete Request',
               handler: confirmDelete,
               iconClass: 'text-red-500',
-              visible: (row) => row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
+              visible: (row) =>
+                row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
           ]"
