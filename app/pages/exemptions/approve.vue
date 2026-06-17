@@ -526,8 +526,17 @@ const groupedApprovers = computed(() => {
 });
 
 // Handle back navigation
+// const handleBack = () => {
+//   router.push("/exemptions/all");
+// };
+
+// Handle back navigation with fallback
 const handleBack = () => {
-  router.push("/exemptions/all");
+  if (window.history.length > 1) {
+    router.back();
+  } else {
+    router.push('/exemptions/all'); // Change to your desired fallback route
+  }
 };
 
 // Fetch on mount

@@ -497,17 +497,7 @@ const handleUpdateDraft = async () => {
   }
 };
 
-// Format date
-const formatDate = (date: string | Date | null) => {
-  if (!date) return "N/A";
-  return new Date(date).toLocaleDateString("en-PH", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+
 
 // Get status display
 const getStatusDisplay = (status: string) => {

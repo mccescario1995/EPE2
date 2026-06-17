@@ -242,18 +242,18 @@ const getProxies = (transApproverId: number): any[] => {
   return groupedApprovers.value.proxiesMap.get(transApproverId) || [];
 };
 
-const isGroupSatisfied = (transApproverId: number): boolean => {
-  const { mainApprovers, proxiesMap } = groupedApprovers.value;
-  const mainApprover = mainApprovers.find(
-    (a) => a.transApproverId === transApproverId,
+const isApprover = computed((): boolean => {
+  console.log(
+    "Checking if user is approver with data",
+    exemptionDetails.value,
+    "and userId",
+    userId,
   );
-  if (!mainApprover) return false;
+  return exemptionDetails.value?.requesterId === userId?.emplId;
+});
 
-  const groupApprovers = [
-    mainApprover,
-    ...(proxiesMap.get(transApproverId) || []),
-  ];
-  return groupApprovers.some((a) => a.respond === 1);
+const isCurrentUser = (requesterId: number): boolean => {
+  return userId?.emplId === requesterId;
 };
 
 const handleBack = () => {
@@ -263,10 +263,38 @@ const handleBack = () => {
 const handleEdit = () => {
   router.push(`/exemptions/edit?id=${exemptionId.value}`);
 };
-
+const handleApprove = () => {
+  router.push(`/exemptions/approve?id=${exemptionId.value}`);
+};
 onMounted(() => {
   fetchExemptionDetails();
+  isApprover.value; // Log the computed property to check if it's working correctly
 });
+
+// Helper to check if current user is an approver
+const isCurrentUserAnApprover = computed((): boolean => {
+  if (!userId?.emplId || !approversData.value?.length) return false;
+
+  return approversData.value.some(
+    (approver) =>
+      approver.transApproverId === userId?.emplId ||
+      approver.approverEmail === userId?.email,
+  );
+});
+
+// Helper to check if current user needs to take action (hasn't responded yet)
+const currentUserPendingAction = computed((): boolean => {
+  if (!userId?.emplId || !approversData.value?.length) return false;
+
+  const currentUserApprover = approversData.value.find(
+    (x) => String(x.employeeId) === String(userStore.profile.emplId),
+  );
+
+  // User needs to act if they're an approver and haven't responded (respond === 0 means pending)
+  return currentUserApprover?.respond === 0;
+});
+
+//
 </script>
 
 <template>
@@ -292,8 +320,9 @@ onMounted(() => {
           </Button>
           <Button
             v-if="
-              exemptionDetails?.status === 'D' || exemptionDetails?.status === 'O' &&
-              exemptionDetails?.requesterId === userId?.emplId
+              exemptionDetails?.status === 'D' ||
+              (exemptionDetails?.status === 'O' &&
+                exemptionDetails?.requesterId === userId?.emplId)
             "
             variant="primary"
             size="md"
@@ -302,6 +331,16 @@ onMounted(() => {
             @onclick="handleEdit"
           >
             Edit
+          </Button>
+          <Button
+            v-if="currentUserPendingAction"
+            variant="outline-success"
+            size="md"
+            icon="user_approver"
+            iconPosition="left"
+            @onclick="handleApprove"
+          >
+            Respond
           </Button>
         </div>
       </div>
@@ -333,7 +372,7 @@ onMounted(() => {
       </div>
 
       <div v-else-if="exemptionDetails" class="space-y-6">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-4 gap-6">
           <div
             class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow p-6"
           >
@@ -361,7 +400,7 @@ onMounted(() => {
                   </div>
                 </div>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="grid grid-cols-2 md:grid-cols-2 gap-6">
                 <div>
                   <label class="block text-sm font-medium text-gray-500 mb-1">
                     Transaction Number
@@ -475,9 +514,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <div
-            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow px-6 py-6"
-          >
+          <div class="col-span-2 bg-white rounded-lg shadow px-6 py-6">
             <div class="mb-8">
               <div class="border-b flex justify-between">
                 <h2 class="text-xl font-semibold text-gray-800 mb-2">
@@ -525,6 +562,11 @@ onMounted(() => {
                         <div>
                           <p class="text-sm font-medium text-gray-900">
                             {{ approver.approverName }}
+                            <span
+                              v-if="isCurrentUser(approver.employeeId)"
+                              class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded"
+                              >You</span
+                            >
                           </p>
                           <p class="text-xs text-gray-500">
                             {{ approver.approverEmail || "" }}

@@ -13,9 +13,6 @@ const showDeleteConfirm = ref(false);
 const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
 
-// reactive length used to force BaseTable to remount when data arrives
-const exemptionDataLength = computed(() => exemptionData.value?.length ?? 0);
-
 const viewProduct = (row: any) => {
   router.push(`/exemptions/view?id=${row.transactionId}`);
 };
