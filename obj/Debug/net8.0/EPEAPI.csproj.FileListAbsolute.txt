@@ -315,3 +315,11 @@ C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\refint\EPEAPI.d
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\EPEAPI.pdb
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\EPEAPI.genruntimeconfig.cache
 C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\obj\Debug\net8.0\ref\EPEAPI.dll
+C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\bin\Debug\net8.0\ClosedXML.dll
+C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\bin\Debug\net8.0\ClosedXML.Parser.dll
+C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\bin\Debug\net8.0\DocumentFormat.OpenXml.dll
+C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\bin\Debug\net8.0\DocumentFormat.OpenXml.Framework.dll
+C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\bin\Debug\net8.0\ExcelNumberFormat.dll
+C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\bin\Debug\net8.0\RBush.dll
+C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\bin\Debug\net8.0\SixLabors.Fonts.dll
+C:\Users\user\Documents\My Web Sites\EPE\EPEAPI\bin\Debug\net8.0\System.IO.Packaging.dll
