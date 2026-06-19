@@ -6,7 +6,6 @@ const props = defineProps<{
   show: boolean;
   policy: {
     policyid: number;
-    policyId: number;
     description: string;
     shortName?: string;
   } | null;
@@ -207,7 +206,7 @@ async function fetchApprovers() {
   loading.value = true;
   try {
     const response = await apiFetch(
-      `/api/Maintenance/policy/${props.policy.policyId}/approvers`,
+      `/api/Maintenance/policy/${props.policy.policyid}/approvers`,
       {
         method: "POST",
         body: JSON.stringify({ UserId: userId.userId }),
@@ -395,7 +394,7 @@ async function confirmAddApprover() {
       };
 
       await apiFetch(
-        `/api/Maintenance/policy/${props.policy.policyId}/approvers/update/${softDeletedApprover.id}`,
+        `/api/Maintenance/policy/${props.policy.policyid}/approvers/update/${softDeletedApprover.id}`,
         {
           method: "POST",
           body: JSON.stringify(updatePayload),
@@ -424,7 +423,7 @@ async function confirmAddApprover() {
       }
 
       const payload = {
-        policyid: props.policy.policyId,
+        policyid: props.policy.policyid,
         approverid: approvertype === "IM" ? null : approverid || null,
         approvername: approvertype === "IM" ? "Immediate Head" : approvername,
         approveremail: approvertype === "IM" ? null : approveremail,
@@ -435,7 +434,7 @@ async function confirmAddApprover() {
       };
 
       await apiFetch(
-        `/api/Maintenance/policy/${props.policy.policyId}/approvers/create`,
+        `/api/Maintenance/policy/${props.policy.policyid}/approvers/create`,
         {
           method: "POST",
           body: JSON.stringify(payload),
@@ -480,7 +479,7 @@ async function executeDelete() {
   deleteLoading.value = true;
   try {
     await apiFetch(
-      `/api/Maintenance/policy/${props.policy.policyId}/approvers/delete/${deletingApprover.value.id}`,
+      `/api/Maintenance/policy/${props.policy.policyid}/approvers/delete/${deletingApprover.value.id}`,
       { method: "POST", parseJson: true }
     );
     showToast({
@@ -512,7 +511,7 @@ async function saveOrder() {
   try {
     const flatApprovers = flattenGroups(groups.value);
     await apiFetch(
-      `/api/Maintenance/policy/${props.policy.policyId}/approvers/reorder`,
+      `/api/Maintenance/policy/${props.policy.policyid}/approvers/reorder`,
 
       {
         method: "POST",

@@ -16,6 +16,12 @@ const deleteLoading = ref(false);
 // reactive length used to force BaseTable to remount when data arrives
 const exemptionDataLength = computed(() => exemptionData.value?.length ?? 0);
 
+// Store last-known filter state for export
+const lastSearch = ref<string>('')
+const lastFilters = ref<Record<string, string>>({})
+const lastSortField = ref<string>('')
+const lastSortDirection = ref<'asc' | 'desc'>('asc')
+
 const viewProduct = (row: any) => {
   router.push(`/exemptions/view?id=${row.transactionId}`);
 };
@@ -107,7 +113,13 @@ const fetchExemptionData = async (params: {
   sortField?: string;
   sortDirection?: "asc" | "desc";
 }) => {
-  loading.value = true;
+  // Store the current filter state for export
+  lastSearch.value = params.search
+  lastFilters.value = { ...params.filters }
+  lastSortField.value = params.sortField ?? ''
+  lastSortDirection.value = params.sortDirection ?? 'asc'
+
+  loading.value = true
   const response = await apiFetch("/api/exemption/closed", {
     method: "POST",
     body: JSON.stringify({
@@ -120,24 +132,57 @@ const fetchExemptionData = async (params: {
     }),
     headers: { "Content-Type": "application/json" },
     parseJson: true,
-  });
+  })
 
-  loading.value = false;
+  loading.value = false
 
   return {
     data: response.items ?? [],
     total: response.totalCount ?? 0,
-  };
-};
+  }
+}
+
+const fetchAllForExport = async () => {
+  // Build active filters same as in fetchTable (using stored state)
+  const activeFilters: Record<string, string> = {}
+  Object.entries(lastFilters.value).forEach(([key, val]) => {
+    if (val) activeFilters[key] = val
+  })
+
+  let allData = []
+  let page = 1
+  const limit = 100 // reasonable page size for fetching
+  let total = 0
+
+  do {
+    const res = await fetchExemptionData({
+      page,
+      limit,
+      search: lastSearch.value,
+      filters: activeFilters,
+      sortField: lastSortField.value || undefined,
+      sortDirection: lastSortField.value ? lastSortDirection.value : undefined,
+    })
+
+    allData = [...allData, ...res.data]
+    if (total === 0) {
+      total = res.total
+    }
+    page++
+  } while (allData.length < total)
+
+  return {
+    data: allData,
+    total,
+  }
+}
 
 // Handle create navigation
 const handleCreate = () => {
   router.push(`/exemptions/create`);
 };
 
-// watchEffect(() => {
-//   fetchExemptionRequests();
-// });
+
 </script>
 
 <template>
@@ -187,7 +232,7 @@ const handleCreate = () => {
             'requesterName',
             'createdDate',
           ]"
-          :filkable-columns="['status']"
+          :filterable-columns="['status']"
           :header="[
             'transactionNumber',
             'policyName',
@@ -255,6 +300,7 @@ const handleCreate = () => {
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
           ]"
+          :export-fetch-data="fetchAllForExport"
         />
       </div>
     </main>

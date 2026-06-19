@@ -546,6 +546,7 @@ const props = defineProps<{
     sortField?: string;
     sortDirection?: "asc" | "desc";
   }) => Promise<{ data: Array<Record<string, any>>; total: number }>;
+  exportFetchData?: () => Promise<{ data: Array<Record<string, any>>; total: number }>;
   showSearch?: boolean;
   groupActions?: boolean;
   filterableColumns?: string[] | "all"; // Columns that should show filter controls
@@ -595,8 +596,31 @@ const mergedProps = {
   ...props,
 };
 
-function exportToExcel() {
-  const data = filteredData.value; // Or filteredData.value for all results
+const refresh = () => {
+  // currentPage.value = 1; // optional
+  fetchTable();
+};
+
+defineExpose({
+  refresh,
+});
+
+async function exportToExcel() {
+  let data: Array<Record<string, any>> = [];
+  if (props.exportFetchData) {
+    try {
+      const res = await props.exportFetchData();
+      data = res.data;
+    } catch (error) {
+      console.error('Export error:', error);
+      // Optionally show user notification here
+      return;
+    }
+  } else {
+    // Fallback to client-side data if no exportFetchData provided
+    data = filteredData.value;
+  }
+
   if (!data || data.length === 0) return;
 
   const headers = resolvedHeaders.value;
