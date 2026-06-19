@@ -8,9 +8,6 @@ definePageMeta({
 
 const router = useRouter();
 import { IconView, IconEdit, IconDelete, IconUserApprover } from "#components";
-import type { I } from "vue-router/dist/router-CWoNjPRp.mjs";
-// import { ManageApprover } from '../../../../.nuxt/components';
-// import ManageApproversModal from './ManageApproversModal.vue';
 
 type PolicyApiItem = {
   policyid: string;
@@ -28,6 +25,37 @@ const loading = ref(false);
 const policyData :any = ref(null);
 
 const policyDataLength = computed(() => policyData.value?.length ?? 0);
+const fetchPolicyData =  async (params: {
+  page: number;
+  limit: number;
+  search: string;
+  filters: Record<string, string>;
+  sortField?: string;
+  sortDirection?: 'asc' | 'desc';
+}) => {
+  loading.value = true;
+  const response = await apiFetch('/api/Maintenance/policy', {
+    method: 'POST',
+    body: JSON.stringify({
+      UserId: parseInt(userId.emplId),
+      page: params.page,
+      pageSize: params.limit,
+      search: params.search,
+      sortField: params.sortField,
+      sortDirection: params.sortDirection,
+    }),
+    headers: { 'Content-Type': 'application/json' },
+    parseJson: true,
+  });
+  console.log("Policies:", response.items);
+
+  loading.value = false;
+
+  return {
+    data: response.items ?? [],
+    total: response.totalCount ?? 0,
+  };
+};
 const showDeleteConfirm = ref(false);
 const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
@@ -64,6 +92,7 @@ const editSubmitting = ref(false);
 const editError = ref("");
 
 // Approvers state
+// Approvers managed by ManageApprovers component
 const approvers: any = ref([]);
 const approversLoading = ref(false);
 const approversError = ref("");
@@ -87,14 +116,13 @@ const viewPolicy = (row: any) => {
 
 const editPolicy = async (row: any) => {
   selectedPolicy.value = row;
-  await fetchEditPolicy(row.policyId);
+  await fetchEditPolicy(row.policyid);
   editModalOpen.value = true;
 };
 
 const manageApprovers = async (row: any) => {
-  // router.push(`/maintenance/policies/policy-approver-manager?policyId=${row.policyId}`); 
   selectedPolicy.value = row;
-  await fetchApprovers(row.policyId);
+  await fetchApprovers(row.policyid);
   approversModalOpen.value = true;
 };
 
@@ -108,6 +136,7 @@ const cancelDeletePolicy = () => {
   deletingItem.value = null;
 };
 
+
 const fetchPolicies = async () => {
   loading.value = true;
   try {
@@ -120,12 +149,11 @@ const fetchPolicies = async () => {
       console.log("Fetched policies:", response);
       // policyData.value = response.items || [];
       policyData.value = (response.items || []).map((p: PolicyApiItem) => ({
-        policyId: p.policyid,
+        policyid: p.policyid,
         description: p.description,
         status: p.status,
-        shortName: p.shortname,
-        createdDate: p.createddate,
-        // add others if needed
+        shortname: p.shortname,
+        createddate: p.createddate,
       }));
     } else {
       console.error("Failed to fetch policies:", response.message);
@@ -148,7 +176,7 @@ const deleteRequestPolicy = async () => {
     };
 
     const response = await apiFetch(
-      `/api/Maintenance/policy/delete/${deletingItem.value.policyId}`,
+      `/api/Maintenance/policy/delete/${deletingItem.value.policyid}`,
       {
         method: "POST",
         body: JSON.stringify(payload),
@@ -173,7 +201,7 @@ const deleteRequestPolicy = async () => {
         duration: 5000,
       });
 
-      await fetchPolicies();
+      tableRef.value?.refresh();
     } else {
       console.error("Delete failed:", response.message);
     }
@@ -202,8 +230,7 @@ const submitCreateForm = async () => {
       createForm.description = "";
       createForm.shortname = "";
       createForm.status = "A";
-      // Refresh the list
-      await fetchPolicies();
+
       showToast({
         title: "Policy Created",
         message: "The policy has been successfully created.",
@@ -221,12 +248,12 @@ const submitCreateForm = async () => {
   }
 };
 
-const fetchEditPolicy = async (policyId: string) => {
+const fetchEditPolicy = async (policyid: string) => {
   editLoading.value = true;
   editError.value = "";
   try {
     const response: any = await apiFetch(
-      `/api/Maintenance/policy/${policyId}`,
+      `/api/Maintenance/policy/${policyid}`,
       {
         method: "GET",
         parseJson: true,
@@ -256,7 +283,7 @@ const submitEditForm = async () => {
   editError.value = "";
   try {
     const response: any = await apiFetch(
-      `/api/Maintenance/policy/update/${selectedPolicy.value.policyId}`,
+      `/api/Maintenance/policy/update/${selectedPolicy.value.policyid}`,
       {
         method: "POST",
         body: JSON.stringify(editForm),
@@ -271,7 +298,8 @@ const submitEditForm = async () => {
       editModalOpen.value = false;
       selectedPolicy.value = null;
       // Refresh the list
-      await fetchPolicies();
+      // await fetchPolicies();
+      tableRef.value?.refresh();
       showToast({
         title: "Policy Updated",
         message: "The policy has been successfully updated.",
@@ -289,13 +317,13 @@ const submitEditForm = async () => {
   }
 };
 
-const fetchApprovers = async (policyId:any) => {
+const fetchApprovers = async (policyid:any) => {
   approversLoading.value = true;
   approversError.value = "";
   try {
-    console.log("Fetching approvers for policy:", policyId);
+    console.log("Fetching approvers for policy:", policyid);
     const response = await apiFetch(
-      `/api/Maintenance/policy/${policyId}/approvers`,
+      `/api/Maintenance/policy/${policyid}/approvers`,
       {
         method: "POST",
         body: JSON.stringify({ UserId: userId.userId }),
@@ -305,7 +333,7 @@ const fetchApprovers = async (policyId:any) => {
         parseJson: true,
       },
     );
-    console.log("Fetched approvers index.vue:", response);
+    console.log("Fetched approver item:", response.items);
     if (response) {
       approvers.value = response.items || [];
     }
@@ -317,67 +345,23 @@ const fetchApprovers = async (policyId:any) => {
   }
 };
 
-const addApprover = async () => {
-  if (!selectedPolicy.value) return;
 
-  addingApprover.value = true;
-  approversError.value = "";
-  try {
-    const response: any = await apiFetch(
-      `/api/Policy/${selectedPolicy.value.policyId}/approvers`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          Policyid: selectedPolicy.value.policyId,
-          Approverid: newApprover.approverid,
-          Approvername: newApprover.name,
-          Approveremail: newApprover.email,
-          Approvertype: newApprover.type,
-          Linesequence: newApprover.sequence,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        parseJson: true,
-      },
-    );
-    if (response) {
-      newApprover.approverid = null;
-      newApprover.name = "";
-      newApprover.email = "";
-      newApprover.type = "";
-      newApprover.sequence = 1;
-      await fetchApprovers(selectedPolicy.value.policyId);
-    } else {
-      approversError.value = response.message || "Failed to add approver";
-    }
-  } catch (err) {
-    approversError.value = "An error occurred";
-    console.error(err);
-  } finally {
-    addingApprover.value = false;
-  }
-};
 
-const updateSequence = async (approver: any) => {
-  // This would need an API endpoint to update sequence
-  // For now, we'll just log it
-  console.log("Update sequence for approver:", approver);
-};
+
 
 const deleteApprover = async (approverId: string) => {
   if (!selectedPolicy.value) return;
 
   try {
     const response: any = await apiFetch(
-      `/api/Policy/${selectedPolicy.value.policyId}/approvers/${approverId}`,
+      `/api/Policy/${selectedPolicy.value.policyid}/approvers/${approverId}`,
       {
         method: "DELETE",
         parseJson: true,
       },
     );
     if (response) {
-      await fetchApprovers(selectedPolicy.value.policyId);
+      await fetchApprovers(selectedPolicy.value.policyid);
       showToast({
         title: "Approver Deleted",
         message: "The approver has been successfully removed.",
@@ -394,6 +378,12 @@ const deleteApprover = async (approverId: string) => {
 onMounted(() => {
   fetchPolicies();
 });
+
+const tableRef = ref();
+
+const reloadTable = () => {
+  tableRef.value?.refresh();
+};
 </script>
 
 <template>
@@ -415,7 +405,6 @@ onMounted(() => {
         </div>
 
         <Button
-          v-if="policyData"
           variant="primary"
           size="md"
           icon="add"
@@ -429,14 +418,29 @@ onMounted(() => {
     <main class="max-w-7xl mx-auto py-6 sm:px-6">
       <!-- Policy Requests List -->
       <div class="mb-6 px-2 rounded-lg">
-        <base-table
-          :table-data="policyData"
-          :header="[
-            'policyId',
-            'shortName',
+        <base-table 
+          ref="tableRef"
+          :server-pagination="true" 
+          :fetch-data="fetchPolicyData"
+          :pagination="true"
+          :per-page="5"
+          :show-search="true"
+          :showlimitfilter="true"
+          :limitfilter="[5, 10, 20, 30, 40, 50]"
+          :sortable-columns="[
+            'policyid',
+            'shortname',
             'status',
             'description',
-            'createdDate',
+            'createddate',
+          ]"
+          :filterable-columns="['status']"
+          :header="[
+            'policyid',
+            'shortname',
+            'status',
+            'description',
+            'createddate',
           ]"
           :badge-fields="['status']"
           :field-mappings="{
@@ -452,11 +456,6 @@ onMounted(() => {
             },
           }"
           :date-fields="['createdDate']"
-          :pagination="true"
-          :per-page="10"
-          :totalItems="policyDataLength"
-          :key="policyDataLength"
-          :show-search="true"
           :actions="[
             {
               label: IconView,
@@ -745,7 +744,7 @@ onMounted(() => {
           <p
             class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md"
           >
-            {{ selectedPolicy.policyId }}
+            {{ selectedPolicy.policyid }}
           </p>
         </div>
 
@@ -756,7 +755,7 @@ onMounted(() => {
           <p
             class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md"
           >
-            {{ selectedPolicy.shortName ?? "-" }}
+            {{ selectedPolicy.shortname ?? "-" }}
           </p>
         </div>
 
@@ -800,7 +799,7 @@ onMounted(() => {
           <p
             class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md"
           >
-            {{ selectedPolicy.createdDate }}
+            {{ selectedPolicy.createddate }}
           </p>
         </div>
       </div>
@@ -814,173 +813,6 @@ onMounted(() => {
       </template>
     </Modal>
 
-    <!-- Approvers Modal -->
-    <!-- <Modal
-      v-model:isOpen="approversModalOpen"
-      size="xl"
-      position="center"
-      :closeOnOverlayClick="true"
-      :closeOnEsc="true"
-    >
-      <template #header>
-        <h3 class="text-lg font-medium leading-6 text-gray-900">
-          Manage Approvers for Policy {{ selectedPolicy?.policyId }}
-        </h3>
-      </template>
-
-      <div v-if="approversLoading" class="text-center py-4">Loading...</div>
-
-       <div v-else class="space-y-6"> -->
-    <!-- Approvers Table -->
-    <!-- <div>
-      <h4 class="text-md font-medium text-gray-900 mb-2">Current Approvers</h4>
-      <div class="overflow-x-auto">
-        <table class="min-w-full bg-white border border-gray-300">
-          <thead>
-            <tr class="bg-gray-100">
-              <th class="px-4 py-2 border text-left">Name</th>
-              <th class="px-4 py-2 border text-left">Email</th>
-              <th class="px-4 py-2 border text-left">Type</th>
-              <th class="px-4 py-2 border text-left">Sequence</th>
-              <th class="px-4 py-2 border text-left">Role</th>
-              <th class="px-4 py-2 border text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="approver in approvers"
-              :key="approver.Id"
-              class="hover:bg-gray-50"
-            >
-              <td class="px-4 py-2 border">{{ approver.Approvername }}</td>
-              <td class="px-4 py-2 border">{{ approver.Approveremail }}</td>
-              <td class="px-4 py-2 border">{{ approver.Approvertype }}</td>
-              <td class="px-4 py-2 border">
-                <input
-                  v-model.number="approver.Linesequence"
-                  @blur="updateSequence(approver)"
-                  type="number"
-                  min="1"
-                  class="w-16 px-2 py-1 border border-gray-300 rounded text-center"
-                />
-              </td>
-              <td class="px-4 py-2 border">{{ approver.ApproverRole }}</td>
-              <td class="px-4 py-2 border">
-                <button
-                  @click="deleteApprover(approver.Id)"
-                  class="text-red-500 hover:underline text-sm"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-            <tr v-if="approvers.length === 0">
-              <td
-                colspan="6"
-                class="px-4 py-2 border text-center text-gray-500"
-              >
-                No approvers found
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div> -->
-
-    <!-- Add New Approver Form -->
-    <!-- <div>
-          <h4 class="text-md font-medium text-gray-900 mb-2">Add New Approver</h4>
-          <form
-            @submit.prevent="addApprover"
-            class="grid grid-cols-1 md:grid-cols-2 gap-4"
-          >
-            <div>
-              <label for="approver-id" class="block text-sm font-medium text-gray-700">
-                Approver ID
-              </label>
-              <input
-                id="approver-id"
-                v-model.number="newApprover.approverid"
-                type="number"
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label for="approver-name" class="block text-sm font-medium text-gray-700">
-                Name
-              </label>
-              <input
-                id="approver-name"
-                v-model="newApprover.name"
-                type="text"
-                required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label for="approver-email" class="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                id="approver-email"
-                v-model="newApprover.email"
-                type="email"
-                required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label for="approver-type" class="block text-sm font-medium text-gray-700">
-                Type
-              </label>
-              <input
-                id="approver-type"
-                v-model="newApprover.type"
-                type="text"
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label
-                for="approver-sequence"
-                class="block text-sm font-medium text-gray-700"
-              >
-                Sequence
-              </label>
-              <input
-                id="approver-sequence"
-                v-model.number="newApprover.sequence"
-                type="number"
-                min="1"
-                required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div class="md:col-span-2 flex justify-end">
-              <Button
-                type="submit"
-                variant="primary"
-                :disabled="addingApprover"
-                class="px-4 py-2"
-              >
-                {{ addingApprover ? "Adding..." : "Add Approver" }}
-              </Button>
-            </div>
-          </form>
-        </div>
-
-        <div v-if="approversError" class="text-red-500 text-sm">
-          {{ approversError }}
-        </div>
-      </div>
-
-      <template #footer>
-        <div class="flex justify-end">
-          <Button variant="ghost" @onclick="approversModalOpen = false"> Close </Button>
-        </div>
-      </template>
-    </Modal> -->
-    <!-- In maintenance/policies/index.vue -->
     <ManageApprovers
       :show="approversModalOpen"
       :policy="selectedPolicy"
@@ -989,3 +821,11 @@ onMounted(() => {
     />
   </div>
 </template>
+
+
+
+
+
+
+
+
