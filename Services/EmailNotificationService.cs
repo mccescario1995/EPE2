@@ -83,7 +83,7 @@ public class EmailNotificationService
                               <p><strong>Transaction #:</strong> <span style='color:#2f75b5;'>{requestNumber}</span></p>
                               <p><strong>Requested By:</strong> {requestorName}</p>
                               <p><strong>Details:</strong> {requestDetails}</p>
-                              <p><strong>Expires:</strong> 72 hours from receipt</p>
+                              <!-- <p><strong>Expires:</strong> 72 hours from receipt</p> -->
                             </td></tr>
 
                             <tr><td height='25'></td></tr>
@@ -121,7 +121,8 @@ public class EmailNotificationService
 
                             <tr><td height='15'></td></tr>
                             <tr><td style='font-size:12px;color:#6b7280;'>
-                              These buttons will expire in 72 hours. After expiration, you may use the View Details button to respond, which will allow you to submit remarks.
+                              <!-- These buttons will expire in 72 hours. After expiration, y -->
+                              You may use the Respond button to respond, which will allow you to submit remarks.
                             </td></tr>
 
                             <tr><td height='30'></td></tr>

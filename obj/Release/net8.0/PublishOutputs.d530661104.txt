@@ -7,8 +7,13 @@ D:\Private\Sites\IIS\API\EPEAPI.runtimeconfig.json
 D:\Private\Sites\IIS\API\EPEAPI.pdb
 D:\Private\Sites\IIS\API\Azure.Core.dll
 D:\Private\Sites\IIS\API\Azure.Identity.dll
+D:\Private\Sites\IIS\API\ClosedXML.dll
+D:\Private\Sites\IIS\API\ClosedXML.Parser.dll
+D:\Private\Sites\IIS\API\DocumentFormat.OpenXml.dll
+D:\Private\Sites\IIS\API\DocumentFormat.OpenXml.Framework.dll
 D:\Private\Sites\IIS\API\EntityFramework.SqlServer.dll
 D:\Private\Sites\IIS\API\EntityFramework.dll
+D:\Private\Sites\IIS\API\ExcelNumberFormat.dll
 D:\Private\Sites\IIS\API\LinqKit.dll
 D:\Private\Sites\IIS\API\LinqKit.Core.dll
 D:\Private\Sites\IIS\API\Microsoft.Bcl.AsyncInterfaces.dll
@@ -34,6 +39,8 @@ D:\Private\Sites\IIS\API\Microsoft.IdentityModel.Tokens.dll
 D:\Private\Sites\IIS\API\Microsoft.OpenApi.dll
 D:\Private\Sites\IIS\API\Microsoft.SqlServer.Server.dll
 D:\Private\Sites\IIS\API\Microsoft.Win32.SystemEvents.dll
+D:\Private\Sites\IIS\API\RBush.dll
+D:\Private\Sites\IIS\API\SixLabors.Fonts.dll
 D:\Private\Sites\IIS\API\Swashbuckle.AspNetCore.Swagger.dll
 D:\Private\Sites\IIS\API\Swashbuckle.AspNetCore.SwaggerGen.dll
 D:\Private\Sites\IIS\API\Swashbuckle.AspNetCore.SwaggerUI.dll
@@ -43,6 +50,7 @@ D:\Private\Sites\IIS\API\System.Configuration.ConfigurationManager.dll
 D:\Private\Sites\IIS\API\System.Data.SqlClient.dll
 D:\Private\Sites\IIS\API\System.Drawing.Common.dll
 D:\Private\Sites\IIS\API\System.IdentityModel.Tokens.Jwt.dll
+D:\Private\Sites\IIS\API\System.IO.Packaging.dll
 D:\Private\Sites\IIS\API\System.Memory.Data.dll
 D:\Private\Sites\IIS\API\System.Runtime.Caching.dll
 D:\Private\Sites\IIS\API\System.Security.Cryptography.ProtectedData.dll

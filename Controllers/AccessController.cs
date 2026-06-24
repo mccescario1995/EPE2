@@ -60,7 +60,7 @@ namespace EPEAPI.Controllers
                 return BadRequest(response);
             }
 
-            // ✅ Actually verify the password using TokenManager
+            // Actually verify the password using TokenManager
             bool isAuthenticated = tokenManager.Authenticate(login.email, login.password);
 
             if (!isAuthenticated)

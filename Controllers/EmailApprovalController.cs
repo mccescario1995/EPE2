@@ -26,6 +26,8 @@ public class EmailApprovalController : ControllerBase
     public async Task<IActionResult> Preview([FromQuery] string token)
     {
         var baseUrl = _urlBaseSettings.View;
+
+        return Ok(baseUrl);
         try
         {
             if (string.IsNullOrWhiteSpace(token))

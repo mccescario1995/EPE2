@@ -18,6 +18,16 @@ namespace EPEAPI.Controllers
             _context = contextdb;
         }
 
+        public class PolicyListRequest
+        {
+            public int UserId { get; set; }
+            public int Page { get; set; } = 1;
+            public int PageSize { get; set; } = 10;
+            public string? Search { get; set; }
+            public string? SortField { get; set; }
+            public string? SortDirection { get; set; }
+        }
+
         [HttpGet("policy")]
         public async Task<IActionResult> GetPolicy()
         {
@@ -30,6 +40,89 @@ namespace EPEAPI.Controllers
                 }
 
                 return Ok(new { success = true, items = policy });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error" + e.Message);
+            }
+        }
+
+        [HttpPost("policy")]
+        public async Task<IActionResult> PostPolicy(
+            [FromBody] PolicyListRequest request,
+            [FromQuery] string? search = null
+            )
+        {
+            try
+            {
+                var currentUserEmplId = request.UserId;
+
+                var query = _context.EpePolicymasters.Where(p => p.Isdelete == 0);
+
+                var searchTerm = request.Search ?? search;
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    var words = searchTerm
+                        .ToLower()
+                        .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    var predicate = PredicateBuilder.New<EpePolicymaster>(true);
+                    foreach (var word in words)
+                    {
+                        var w = word;
+                        predicate = predicate.And(u =>
+                            u.Policyid.ToString().Contains(w)
+                            || u.Shortname.ToLower().Contains(w)
+                            || u.Description.ToLower().Contains(w)
+                            || u.Status.ToLower().Contains(w)
+                        );
+                    }
+                    query = query.Where(predicate);
+                }
+
+                query = request.SortField switch
+                {
+                    "Policyid" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.Policyid)
+                        : query.OrderBy(u => u.Policyid),
+                    "Shortname" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.Shortname)
+                        : query.OrderBy(u => u.Shortname),
+                    "Description" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.Description)
+                        : query.OrderBy(u => u.Description),
+                    "Status" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.Status)
+                        : query.OrderBy(u => u.Status),
+                    _ => query.OrderByDescending(u => u.Createddate),
+                };
+
+                var totalCount = await query.CountAsync();
+
+                var page = request.Page > 0 ? request.Page : 1;
+                var pageSize = request.PageSize > 0 ? request.PageSize : 10;
+
+                var items = await query
+                    .Skip((page-1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                if (items == null || items.Count == 0)
+                {
+                    return NotFound(new { success = false, message = "No policy found" });
+                }
+
+                return Ok(
+                    new 
+                    { 
+                        success = true, 
+                        items,
+                        totalCount,
+                        page,
+                        pageSize,
+                    }
+                        
+                );
             }
             catch (Exception e)
             {
@@ -221,6 +314,65 @@ namespace EPEAPI.Controllers
                     a.Approverid,
                     Approvername = a.Approvername,
                     Approveremail = a.Approveremail,
+                    a.Approvertype,
+                    a.Sort,
+                    a.Linesequence,
+                    a.Status,
+                    a.Isdelete,
+                    IsMainApprover = a.Linesequence == 1,
+                    ApproverRole = a.Linesequence == 1 ? "Main" : "Proxy"
+                }).ToList();
+
+                //    Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
+                //    Approveremail = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateEmail : a.Approveremail,
+
+                return Ok(new { success = true, items = itemsWithRole });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
+        [HttpPost("policy/{policyId}/view/approvers")]
+        public async Task<IActionResult> ViewPolicyApprover(int policyId, ApproverRequest request)
+        {
+            try
+            {
+                var userId = request.UserId;
+
+                var empId = await _context.CoreVUsers
+                        .Where(u => u.UserId == userId)
+                        .FirstOrDefaultAsync();
+
+                if (empId == null)
+                {
+                    return BadRequest(new { success = false, message = "User not found", userId = request });
+                }
+
+                var items = await _context.EpePolicyapprovers
+                    .Where(a => a.Policyid == policyId && a.Isdelete == 0)
+                    .OrderBy(u => u.Linesequence)
+                    .ThenBy(u => u.Sort)
+                    .ToListAsync();
+
+                var imHead = await _context.CoreVEmployeeDetails
+                        .Where(e => e.EmplId == empId.EmplId)
+                        .Select(e => new
+                        {
+                            e.ImmediateId,
+                            e.ImmediateName,
+                            e.ImmediateEmail
+                        })
+                        .FirstOrDefaultAsync();
+
+                var itemsWithRole = items.Select(a => new
+                {
+                    a.Id,
+                    a.Policyid,
+                    a.Approverid,
+                    Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
+                    Approveremail = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateEmail : a.Approveremail,
                     a.Approvertype,
                     a.Sort,
                     a.Linesequence,

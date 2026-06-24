@@ -83,8 +83,35 @@ app.UseCors("Policy");
 //    app.UseSwaggerUI();
 //}
 
-app.UseSwagger();
-app.UseSwaggerUI();
+Console.WriteLine("-------------------------------------------------- \n");
+
+Console.WriteLine("Application is starting... \n");
+
+Console.WriteLine("Reading base URLs from appsettings.json... \n");
+
+Console.WriteLine("-------------------------------------------------- \n");
+
+// Print the application name and environment to the terminal
+Console.WriteLine($"Application Name: {app.Configuration["About:AppName"]}\n");
+Console.WriteLine($"Environment: {app.Configuration["About:Environment"]}\n");
+
+// Print the base URLs to the terminal
+Console.WriteLine("Base URLs from appsettings.json:");
+Console.WriteLine($"---> API Base URL: {app.Configuration["UrlBase:Api"]}");
+Console.WriteLine($"---> View Base URL: {app.Configuration["UrlBase:View"]} \n");
+
+Console.WriteLine("-------------------------------------------------- \n");
+
+
+if (app.Configuration["About:Environment"] == "Development")
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+
+    Console.WriteLine("Swagger Enabled... \n");
+
+    Console.WriteLine("-------------------------------------------------- \n");
+}
 
 //app.UseHttpsRedirection();
 

@@ -104,16 +104,12 @@ namespace EPEAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<IEnumerable<EpeNotification>>> GetNotifications(UseridRequest userid)
         {
-            Console.WriteLine(userid);
-
             var userId = userid.UserId;
 
             _logger.LogInformation(" GetNotifications HIT: {UserId}", userid.UserId);
 
-            Console.WriteLine(userId);
-
             return await _context.EpeNotifications
-                .Where(n => n.UserId == userId)
+                .Where(n => n.UserId == userId && n.IsRead == 0 && n.CreatedDate.Date == DateTime.Today)
                 .OrderByDescending(n => n.CreatedDate)
                 .ToListAsync();
         }

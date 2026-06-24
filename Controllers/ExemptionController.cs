@@ -37,14 +37,6 @@ namespace EPEAPI.Controllers
             _logger = logger;
             _env = env;
         }
-
-        //public class ExemptionListRequest
-        //{
-        //    public int Page { get; set; } = 1;
-        //    public int PageSize { get; set; } = 10;
-        //    public string? Search { get; set; }
-        //    public int EmplId { get; set; }
-        //}
         public class ExemptionListRequest
         {
             public int UserId { get; set; }
@@ -53,6 +45,8 @@ namespace EPEAPI.Controllers
             public string? Search { get; set; }
             public string? SortField { get; set; }
             public string? SortDirection { get; set; }
+            public string? StartDate { get; set; }
+            public string? EndDate { get; set; }
         }
 
         [HttpPost]
@@ -235,7 +229,16 @@ namespace EPEAPI.Controllers
                     })
                     .ToListAsync();
 
-                return Ok(new { success = true, items = items, totalCount, page, pageSize });
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        items = items,
+                        totalCount,
+                        page,
+                        pageSize,
+                    }
+                );
             }
             catch (Exception e)
             {
@@ -258,6 +261,16 @@ namespace EPEAPI.Controllers
                 );
 
                 var searchTerm = request.Search ?? search;
+
+                // Date range filtering
+                if (!string.IsNullOrWhiteSpace(request.StartDate) && DateTime.TryParse(request.StartDate, out var startDate))
+                {
+                    query = query.Where(u => u.CreatedDate >= startDate);
+                }
+                if (!string.IsNullOrWhiteSpace(request.EndDate) && DateTime.TryParse(request.EndDate, out var endDate))
+                {
+                    query = query.Where(u => u.CreatedDate <= endDate);
+                }
 
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
@@ -308,7 +321,6 @@ namespace EPEAPI.Controllers
                 var page = request.Page > 0 ? request.Page : 1;
                 var pageSize = request.PageSize > 0 ? request.PageSize : 10;
 
-
                 var items = await query
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
@@ -326,7 +338,16 @@ namespace EPEAPI.Controllers
                     })
                     .ToListAsync();
 
-                return Ok(new { success = true, items = items, totalCount, page, pageSize });
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        items = items,
+                        totalCount,
+                        page,
+                        pageSize,
+                    }
+                );
             }
             catch (Exception e)
             {
@@ -633,7 +654,7 @@ namespace EPEAPI.Controllers
                 _context.EpeTransactionheaders.Add(transactionHeader);
                 await _context.SaveChangesAsync();
 
-                // APPROVERS
+                // APPROVERS - Skip the requester's approval group
                 var policyApprovers = await _context
                     .EpePolicyapprovers.Where(p =>
                         p.Policyid == request.Policyid && p.Isdelete == 0
@@ -642,15 +663,42 @@ namespace EPEAPI.Controllers
                     .ThenBy(p => p.Sort)
                     .ToListAsync();
 
-                foreach (var policyApprover in policyApprovers)
+                // Find the Sort groups that the requester belongs to
+                var requesterSortGroups = policyApprovers
+                    .Where(p => p.Approverid == requesterId.ToString())
+                    .Select(p => p.Sort)
+                    .ToHashSet();
+
+                // Filter out approvers whose Sort group contains the requester
+                var filteredApprovers = policyApprovers
+                    .Where(p => !requesterSortGroups.Contains(p.Sort))
+                    .ToList();
+
+                // Renumber Linesequence for the remaining approvers
+                // Group by new sequence numbers
+                var sequenceMap = filteredApprovers
+                    .Select(p => p.Linesequence ?? 0)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+
+                var newSequenceMap = sequenceMap
+                    .Select((oldSeq, newSeq) => new { oldSeq, newSeq = newSeq + 1 })
+                    .ToDictionary(x => x.oldSeq, x => x.newSeq);
+
+                foreach (var policyApprover in filteredApprovers)
                 {
+                    var newSequence = newSequenceMap.GetValueOrDefault(
+                        policyApprover.Linesequence ?? 0,
+                        policyApprover.Linesequence ?? 1
+                    );
                     _context.EpeTransactionapprovers.Add(
                         new EpeTransactionapprover
                         {
                             Transactionid = transactionHeader.Transactionid,
                             Approverid = policyApprover.Id.ToString(),
                             Approvertype = policyApprover.Approvertype,
-                            Linesequence = policyApprover.Linesequence,
+                            Linesequence = newSequence,
                             Sort = policyApprover.Sort,
                             Respond = 0,
                             Issent = 0,
@@ -692,10 +740,10 @@ namespace EPEAPI.Controllers
                 await transaction.CommitAsync();
 
                 // Get the first sort (lowest Sort value) from policy approvers
-                var firstSort = policyApprovers.Min(p => p.Sort);
+                var firstSort = filteredApprovers.Min(p => p.Sort);
 
                 // Find all approvers in the first sort group (main + proxies)
-                var firstGroupApprovers = policyApprovers
+                var firstGroupApprovers = filteredApprovers
                     .Where(p => p.Sort == firstSort)
                     .OrderBy(p => p.Linesequence ?? int.MaxValue)
                     .ToList();
@@ -895,10 +943,35 @@ namespace EPEAPI.Controllers
                     .ThenBy(p => p.Sort)
                     .ToListAsync();
 
-                if (policyApprovers.Any())
+                // Find the Sort groups that the requester belongs to
+                var requesterSortGroups = policyApprovers
+                    .Where(p => p.Approverid == draft.Requestorid.ToString())
+                    .Select(p => p.Sort)
+                    .ToHashSet();
+
+                // Filter out approvers whose Sort group contains the requester
+                var filteredApprovers = policyApprovers
+                    .Where(p => !requesterSortGroups.Contains(p.Sort))
+                    .ToList();
+
+                // Renumber Linesequence
+                var sequenceMap = filteredApprovers
+                    .Select(p => p.Linesequence ?? 0)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+
+                var newSequenceMap = sequenceMap
+                    .Select((oldSeq, newSeq) => new { oldSeq, newSeq = newSeq + 1 })
+                    .ToDictionary(x => x.oldSeq, x => x.newSeq);
+
+                if (filteredApprovers.Any())
                 {
                     foreach (var policyApprover in policyApprovers)
                     {
+
+                        var newSequence = newSequenceMap.GetValueOrDefault(policyApprover.Linesequence ?? 0, policyApprover.Linesequence ?? 1);
+
                         var transApprover = new EpeTransactionapprover
                         {
                             Transactionid = draft.Transactionid,
@@ -1024,6 +1097,7 @@ namespace EPEAPI.Controllers
                             }
                         }
                     }
+                
 
                     var requester = await _context
                         .CoreVEmployeeDetails.Where(r => r.EmplId == draft.Requestorid)
@@ -1162,6 +1236,46 @@ namespace EPEAPI.Controllers
             catch (Exception e)
             {
                 await transaction.RollbackAsync();
+                return StatusCode(500, "Error" + e.Message);
+            }
+        }
+
+        [HttpPost("closed/export")]
+        public async Task<IActionResult> ExportClosedExemptions([FromBody] ExemptionListRequest request)
+        {
+            try
+            {
+                var query = _context.EpeVTransactionHeaders.Where(u =>
+                    (u.FinalDecision == "Approved" || u.FinalDecision == "Disapproved") && u.IsDelete == 0
+                );
+
+                // Date range filtering
+                if (!string.IsNullOrWhiteSpace(request.StartDate) && DateTime.TryParse(request.StartDate, out var startDate))
+                {
+                    query = query.Where(u => u.CreatedDate >= startDate.Date);
+                }
+                if (DateTime.TryParse(request.EndDate, out var endDate))
+                {
+                    query = query.Where(u => u.CreatedDate <= endDate.Date.AddDays(1));
+                }
+
+                var items = await query
+                    .Select(h => new
+                    {
+                        h.TransactionId,
+                        h.TransactionNumber,
+                        h.PolicyName,
+                        h.Status,
+                        h.RequesterName,
+                        h.CreatedDate,
+                        h.FinalDecision,
+                    })
+                    .ToListAsync();
+
+                return Ok(new { success = true, items });
+            }
+            catch (Exception e)
+            {
                 return StatusCode(500, "Error" + e.Message);
             }
         }
@@ -1488,13 +1602,15 @@ namespace EPEAPI.Controllers
 
                     foreach (var groupApprover in approversInGroup)
                     {
-                        var empName = _context.CoreVEmployeeDetails.Where(n => n.EmplId == request.EmployeeId).Select(m => m.Employeename2).FirstOrDefault();
+                        var empName = _context
+                            .CoreVEmployeeDetails.Where(n => n.EmplId == request.EmployeeId)
+                            .Select(m => m.Employeename2)
+                            .FirstOrDefault();
                         // Save remarks individually for each group member
                         groupApprover.Respond = 1;
                         groupApprover.Responddate = DateTime.UtcNow.AddHours(8);
                         // Use a standard message indicating auto-approval from the original approver's remarks
-                        groupApprover.Remarks =
-                            $"Approved by: {empName ?? "Unknown"}.";
+                        groupApprover.Remarks = $"Approved by: {empName ?? "Unknown"}.";
                         await _context.SaveChangesAsync();
                     }
 
@@ -1706,13 +1822,16 @@ namespace EPEAPI.Controllers
 
                     foreach (var groupId in groupIds.Where(id => id != request.TransApproverId))
                     {
-                        var empName = _context.CoreVEmployeeDetails.Where(n => n.EmplId == request.EmployeeId).Select(m => m.Employeename2).FirstOrDefault();
+                        var empName = _context
+                            .CoreVEmployeeDetails.Where(n => n.EmplId == request.EmployeeId)
+                            .Select(m => m.Employeename2)
+                            .FirstOrDefault();
                         var groupApprover = allApprovers.First(a => a.Transapproverid == groupId);
                         groupApprover.Respond = 2;
                         groupApprover.Responddate = DateTime.UtcNow.AddHours(8);
                         // Use a standard message indicating auto-disapproval
                         groupApprover.Remarks =
-                            $"Disapproved by: { empName ?? "No remarks provided"}";
+                            $"Disapproved by: {empName ?? "No remarks provided"}";
                         await _context.SaveChangesAsync();
                     }
 
