@@ -506,8 +506,8 @@ const submitEditForm = async () => {
       // await fetchPolicies();
       tableRef.value?.refresh();
       showToast({
-        title: "Policy Updated",
-        message: "The policy has been successfully updated.",
+        title: "Success",
+        message: "The policy successfully updated.",
         type: "success",
         duration: 5000,
       });
@@ -601,7 +601,7 @@ const createManageApproversRef = ref();
 </script>
 
 <template>
-  <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh">
+  <div class="w-min-full min-h-[50vh] bg-gray-50 overflow-auto h-100vh">
     <header class="bg-white shadow">
       <div
         class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
@@ -629,7 +629,7 @@ const createManageApproversRef = ref();
         </Button>
       </div>
     </header>
-    <main class="max-w-7xl mx-auto py-6 sm:px-6">
+    <main class="max-w-full mx-auto py-6 sm:px-6">
       <!-- Policy Requests List -->
       <div class="mb-6 px-2 rounded-lg">
         <base-table
@@ -762,7 +762,6 @@ const createManageApproversRef = ref();
     </Teleport>
 
     <!-- Create Policy Modal create modal-->
-    <!-- Create Policy Modal -->
     <Modal
       v-model:isOpen="createModalOpen"
       size="4xl"
@@ -776,9 +775,9 @@ const createManageApproversRef = ref();
         </h3>
       </template>
 
-      <div class="grid grid-cols-2 gap-6">
+      <div class="grid md:grid-cols-2 gap-6">
         <!-- Policy Form -->
-        <div>
+        <div class=" sm:border-b-1 sm:pb-6 md:border-b-0 md:pb-0">
           <form @submit.prevent="submitCreateForm" class="space-y-4">
             <div>
               <label
@@ -787,12 +786,14 @@ const createManageApproversRef = ref();
               >
                 Short Name <span class="text-red-500 text-md">*</span>
               </label>
-              <input
+              <BaseInput
                 id="create-shortname"
                 v-model="createForm.shortname"
                 type="text"
                 required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                class="mt-1 block w-full focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                :max-char-count="50"
+                :min-char-count="1"
               />
             </div>
 
@@ -803,13 +804,16 @@ const createManageApproversRef = ref();
               >
                 Description <span class="text-red-500 text-md">*</span>
               </label>
-              <textarea
+              <BaseInput
                 id="create-description"
                 v-model="createForm.description"
                 required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                class="mt-1 block w-full  focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 rows="3"
-              ></textarea>
+                is-textarea
+                :max-char-count="1000"
+                :min-char-count="10"
+              ></BaseInput>
             </div>
 
             <div>
@@ -897,15 +901,7 @@ const createManageApproversRef = ref();
         </div>
 
         <!-- Approvers Management (in create mode) -->
-        <div class="border border-gray-200 rounded-lg p-4">
-          <!-- <div class="flex items-start justify-between mb-3">
-            <div>
-              <h4 class="text-md font-semibold text-gray-900">Approvers</h4>
-              p class="text-xs text-gray-500 mt-0.5">
-                Configure approval workflow (will be created with policy)
-              </p>
-            </div>
-          </div> -->
+        <div class="">
 
           <ManageApprovers
             ref="createManageApproversRef"

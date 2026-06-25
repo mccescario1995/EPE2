@@ -665,7 +665,7 @@ const currentUserPendingAction = computed((): boolean => {
               </div>
             </div>
 
-            <div class="mb-8">
+            <!-- <div class="mb-8">
               <h2
                 class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
               >
@@ -697,7 +697,7 @@ const currentUserPendingAction = computed((): boolean => {
                   </p>
                 </div>
               </div>
-            </div>
+            </div> -->
           </div>
         </div>
       </div>

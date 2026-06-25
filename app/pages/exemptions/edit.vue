@@ -377,7 +377,8 @@ const handleSubmit = async () => {
         duration: 5000,
       });
       // Redirect to exemptions view page after success
-      router.push(`/exemptions/view?id=${exemptionId.value}`);
+      // router.push(`/exemptions/view?id=${exemptionId.value}`);
+      router.back()
     } else {
       showToast({
         type: "error",
@@ -869,8 +870,7 @@ const deleteAttachment = async (attachId: number) => {
         message: "Attachment deleted successfully!",
         duration: 3000,
       });
-      await handleBack();
-      // await fetchAttachments();
+      await fetchAttachments();
     } else {
       showToast({
         type: "error",

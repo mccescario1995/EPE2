@@ -310,7 +310,7 @@ watch(
 //   { deep: true }
 // );
 
-// Validate form
+//                                                                            orm
 const validateForm = (forDraft = false) => {
   let isValid = true;
   errors.value = {
@@ -378,6 +378,7 @@ const isFormValid = computed(() => {
 // Computed property to check if form is valid for draft
 const isDraftValid = computed(() => {
   return (
+    !!formData.value.policyid &&
     !!formData.value.details &&
     formData.value.details.trim().length >= 10 &&
     newAttachments.value.length > 0 &&
