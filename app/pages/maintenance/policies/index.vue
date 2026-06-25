@@ -133,6 +133,33 @@ const newApprover = reactive({
 });
 const addingApprover = ref(false);
 
+const createApproverCount = ref(0);
+
+const isCreateFormValid = computed(() => {
+  return (
+    createForm.shortname.trim().length > 0 &&
+    createForm.description.trim().length > 0 &&
+    createApproverCount.value > 0
+  );
+});
+
+// ── Computed Validation ────────────────────────────────────────────
+// const isCreateFormValid = computed(() => {
+//   const hasShortname = createForm.shortname.trim().length > 0;
+//   const hasDescription = createForm.description.trim().length > 0;
+//   // Check approvers from the ManageApprovers inline component
+//   const hasApprovers =
+//     createManageApproversRef.value?.getPendingApprovers?.()?.length > 0;
+//   return hasShortname && hasDescription && hasApprovers;
+// });
+
+const isEditFormValid = computed(() => {
+  const hasShortname = editForm.shortname.trim().length > 0;
+  const hasDescription = editForm.description.trim().length > 0;
+  const hasApprovers = approvers.value.length > 0;
+  return hasShortname && hasDescription && hasApprovers;
+});
+
 const handleCreatePolicy = () => {
   createModalOpen.value = true;
   managerApproverSelectedEmployee.value = null;
@@ -259,11 +286,11 @@ const fetchApproversLocal = async (policyid: string) => {
   }
 };
 
-const manageApprovers = async (row: any) => {
-  selectedPolicy.value = row;
-  await fetchApprovers(row.policyid);
-  approversModalOpen.value = true;
-};
+// const manageApprovers = async (row: any) => {
+//   selectedPolicy.value = row;
+//   await fetchApprovers(row.policyid);
+//   approversModalOpen.value = true;
+// };
 
 const confirmDeletePolicy = (row: any) => {
   deletingItem.value = row;
@@ -364,9 +391,20 @@ const submitCreateForm = async () => {
       parseJson: true,
     });
     if (response) {
-      // Store the created policy ID for ManageApprovers
-      createdPolicyId.value = response.items?.policyid || response.policyid;
-      const policyid = response.items?.policyid || response.policyid;
+      // Backend returns { success, message, data: policy }
+      const policyid =
+        response.data?.policyid ??
+        response.data?.Policyid ??
+        response.items?.policyid ??
+        response.policyid;
+
+      console.log("response policyid", policyid);
+
+      createdPolicyId.value = policyid;
+
+      if (!policyid) {
+        console.error("Could not extract policyid from response:", response);
+      }
 
       if (createManageApproversRef.value && policyid) {
         await createManageApproversRef.value.createApprovers(
@@ -383,12 +421,16 @@ const submitCreateForm = async () => {
       createForm.managerApprover = "";
       createdPolicyId.value = null;
 
+      tableRef.value?.refresh();
+
       showToast({
         title: "Policy Created",
         message: "The policy has been successfully created.",
         type: "success",
         duration: 5000,
       });
+
+
     } else {
       createError.value = response.message || "Failed to create policy";
     }
@@ -875,6 +917,7 @@ const createManageApproversRef = ref();
             }"
             inline
             :create-mode="true"
+            @approver-count-change="(count) => (createApproverCount = count)"
           />
         </div>
       </div>
@@ -891,7 +934,7 @@ const createManageApproversRef = ref();
           <Button
             variant="primary"
             @click="submitCreateForm"
-            :disabled="createLoading"
+            :disabled="createLoading || !isCreateFormValid"
           >
             {{ createLoading ? "Creating..." : "Create Policy" }}
           </Button>
@@ -995,7 +1038,7 @@ const createManageApproversRef = ref();
           <Button
             variant="primary"
             @onclick="submitEditForm"
-            :disabled="editSubmitting || editLoading"
+            :disabled="editSubmitting || editLoading || !isEditFormValid"
           >
             {{ editSubmitting ? "Updating..." : "Update Policy" }}
           </Button>

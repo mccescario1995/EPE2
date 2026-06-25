@@ -17,6 +17,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "close"): void;
   (e: "saved"): void;
+  (e: "approver-count-change", count: number): void;
 }>();
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -704,7 +705,20 @@ watch(
   { deep: true },
 );
 
-defineExpose({ saveOrder, createApprovers });
+watch(
+  groups,
+  (newGroups) => {
+    const total = newGroups.reduce(
+      (sum, g) => sum + 1 + g.children.length,
+      0
+    );
+    emit("approver-count-change", total);
+  },
+  { deep: true }
+);
+
+
+defineExpose({ saveOrder, createApprovers, getPendingApprovers });
 
 // ─── Get Pending Approvers (for create mode) ───────────────────────────────────
 function getPendingApprovers() {
