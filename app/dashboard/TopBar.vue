@@ -1,4 +1,4 @@
-<template>
+  <template>
   <header class="sticky top-0 z-50 bg-white shadow-sm">
     <div class="mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex h-16 items-center justify-between">

@@ -1,6 +1,6 @@
 <template>
   <!-- Global Search -->
-  <div v-if="props.showSearch" class="flex mb-6">
+  <!-- <div v-if="props.showSearch" class="flex mb-6">
     <div class="relative text-gray-400 focus-within:text-indigo-600 flex-1">
       <div
         class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none"
@@ -51,11 +51,66 @@
         </svg>
         Search
       </div>
-    </Button>
-  </div>
+</Button>
+  </div> -->
 
   <Button
     v-if="props.showExport"
+    variant="secondary"
+    size="sm"
+    icon="download"
+    @onclick="openExportModal"
+    class="border hover:bg-gray-300 mb-3"
+  >
+    Export Excel
+  </Button>
+
+  <div
+    v-if="showExportModal"
+    class="fixed inset-0 z-50 flex items-center justify-center"
+    style="background-color: rgba(0, 0, 0, 0.5)"
+    @click.self="closeExportModal"
+  >
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Export Data</h3>
+      <div class="space-y-4">
+        <div class="flex flex-col">
+          <label class="text-sm font-medium text-gray-700 mb-1">From Date</label>
+          <input
+            type="date"
+            v-model="exportStartDate"
+            class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        <div class="flex flex-col">
+          <label class="text-sm font-medium text-gray-700 mb-1">To Date</label>
+          <input
+            type="date"
+            v-model="exportEndDate"
+            class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-6">
+        <button
+          @click="closeExportModal"
+          class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+        >
+          Cancel
+        </button>
+        <Button
+          variant="primary"
+          size="sm"
+          @onclick="confirmExport"
+        >
+          Export
+</Button>
+      </div>
+    </div>
+  </div>
+
+  <!-- <Button
+    v-else-if="props.showExport"
     variant="secondary"
     size="sm"
     icon="download"
@@ -63,10 +118,10 @@
     class="border hover:bg-gray-300 mb-3"
   >
     Export Excel
-  </Button>
+  </Button> -->
   <!-- Added if condition  : mccesccario  (to remove floating div with margin)-->
   <div
-    v-if="showFilterControls || props.showlimitfilter"
+    v-if="showFilterControls || props.showlimitfilter || props.showSearch"
     class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6"
   >
     <!-- Dynamic Filter Controls -->
@@ -107,7 +162,7 @@
         <select
           v-model="limit"
           class="bg-transparent border-0 text-sm font-medium text-gray-600 focus:outline-none focus:text-gray-900 cursor-pointer min-w-[60px]"
-          @change="fetchTable"
+          @change="handleLimitChange"
         >
           <option
             v-for="option in props.limitfilter"
@@ -119,6 +174,60 @@
         </select>
       </div>
     </div>
+
+    <div v-if="props.showSearch" class="flex">
+    <div class="relative text-gray-400 focus-within:text-indigo-600 flex-1">
+      <div
+        class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none"
+      >
+        <svg
+          class="w-5 h-5 transition-colors duration-200"
+          viewBox="0 0 20 20"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M17.5 17.5L15.4167 15.4167M15.8333 9.16667C15.8333 5.48477 12.8486 2.5 9.16667 2.5C5.48477 2.5 2.5 5.48477 2.5 9.16667C2.5 12.8486 5.48477 15.8333 9.16667 15.8333C11.0005 15.8333 12.6614 15.0929 13.8667 13.8947C15.0814 12.6872 15.8333 11.0147 15.8333 9.16667Z"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+          />
+        </svg>
+      </div>
+      <input
+        type="text"
+        id="default-search"
+        class="block w-full h-12 pr-5 pl-12 py-3 text-base font-medium shadow-sm text-gray-900 bg-white border border-gray-200 rounded-l-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+        v-if="props.showSearch"
+        v-model="globalSearch"
+        placeholder="Search across all data..."
+        @input="handleGlobalSearch"
+      />
+    </div>
+    <Button
+      variant="primary"
+      size="sm"
+      custom-class="rounded-r-xl rounded-l-none h-12 px-6 bg-linear-to-r from-indigo-600 to-indigo-600 hover:from-indigo-700 hover:to-purple-700 border-0 shadow-sm font-medium transition-all duration-200"
+      @onclick="handleGlobalSearch"
+    >
+      <div class="flex items-center">
+        <svg
+          class="w-4 h-4 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
+        </svg>
+        Search
+      </div>
+    </Button>
+  </div>
   </div>
 
   <!-- Table -->
@@ -538,19 +647,21 @@ const props = defineProps<{
   showExport?: boolean;
   serverPagination?: boolean;
   totalItems?: number | undefined;
-  fetchData?: (params: {
+fetchData?: (params: {
     page: number;
     limit: number;
     search: string;
     filters: Record<string, string>;
     sortField?: string;
     sortDirection?: "asc" | "desc";
+    startDate?: string;
+    endDate?: string;
   }) => Promise<{ data: Array<Record<string, any>>; total: number }>;
-  exportFetchData?: () => Promise<{ data: Array<Record<string, any>>; total: number }>;
+  exportFetchData?: (params: { startDate?: string; endDate?: string }) => Promise<{ data: Array<Record<string, any>>; total: number }>;
   showSearch?: boolean;
   groupActions?: boolean;
-  filterableColumns?: string[] | "all"; // Columns that should show filter controls
-  sortableColumns?: string[] | "all"; // Columns that should be sortable
+  filterableColumns?: string[] | "all";
+  sortableColumns?: string[] | "all";
   limitfilter?: Number[];
   showlimitfilter?: boolean;
 }>();
@@ -583,6 +694,9 @@ const loading = ref(false);
 const dynamicFilters = ref<Record<string, string>>({});
 const sortField = ref<string>("");
 const sortDirection = ref<"asc" | "desc">("asc");
+const exportStartDate = ref<string>("");
+const exportEndDate = ref<string>("");
+const showExportModal = ref(false);
 
 // Default props
 const defaultProps = {
@@ -597,7 +711,6 @@ const mergedProps = {
 };
 
 const refresh = () => {
-  // currentPage.value = 1; // optional
   fetchTable();
 };
 
@@ -605,19 +718,35 @@ defineExpose({
   refresh,
 });
 
+function openExportModal() {
+  showExportModal.value = true;
+  exportStartDate.value = "";
+  exportEndDate.value = "";
+}
+
+function closeExportModal() {
+  showExportModal.value = false;
+}
+
+async function confirmExport() {
+  await exportToExcel();
+  closeExportModal();
+}
+
 async function exportToExcel() {
   let data: Array<Record<string, any>> = [];
   if (props.exportFetchData) {
     try {
-      const res = await props.exportFetchData();
+      const res = await props.exportFetchData({
+        startDate: exportStartDate.value,
+        endDate: exportEndDate.value,
+      });
       data = res.data;
     } catch (error) {
       console.error('Export error:', error);
-      // Optionally show user notification here
       return;
     }
   } else {
-    // Fallback to client-side data if no exportFetchData provided
     data = filteredData.value;
   }
 
@@ -788,7 +917,7 @@ watch(
 
 // Replace the existing watch
 watch(
-  [currentPage, globalSearch, sortField, sortDirection],
+  [currentPage, sortField, sortDirection],
   () => {
     if (props.serverPagination && props.fetchData) {
       fetchTable();
@@ -955,6 +1084,13 @@ function handleGlobalSearch() {
   }
 }
 
+function handleLimitChange() {
+  currentPage.value = 1;
+  if (props.serverPagination) {
+    fetchTable();
+  }
+}
+
 function handleColumnFilter(key: string) {
   currentPage.value = 1;
   if (props.serverPagination) {
@@ -1034,9 +1170,11 @@ const fetchTable = async () => {
       page: currentPage.value,
       limit: limit.value,
       search: globalSearch.value,
-      filters: activeFilters,          // ← was always {} before
+      filters: activeFilters,
       sortField: sortField.value || undefined,
       sortDirection: sortField.value ? sortDirection.value : undefined,
+      startDate: exportStartDate.value || undefined,
+      endDate: exportEndDate.value || undefined,
     });
 
     internalData.value = res.data;

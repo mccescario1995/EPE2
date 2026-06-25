@@ -608,6 +608,11 @@ const currentUserPendingAction = computed((): boolean => {
                           <div class="ps-3">
                             <p class="text-sm text-gray-700">
                               {{ proxy.approverName }}
+                              <span
+                                v-if="isCurrentUser(proxy.employeeId)"
+                                class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded"
+                                >You</span
+                              >
                             </p>
                             <p class="text-xs text-gray-500">
                               {{ proxy.approverEmail || "" }}

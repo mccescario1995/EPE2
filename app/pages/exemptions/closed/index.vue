@@ -13,15 +13,6 @@ const showDeleteConfirm = ref(false);
 const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
 
-// reactive length used to force BaseTable to remount when data arrives
-const exemptionDataLength = computed(() => exemptionData.value?.length ?? 0);
-
-// Store last-known filter state for export
-const lastSearch = ref<string>('')
-const lastFilters = ref<Record<string, string>>({})
-const lastSortField = ref<string>('')
-const lastSortDirection = ref<'asc' | 'desc'>('asc')
-
 const viewProduct = (row: any) => {
   router.push(`/exemptions/view?id=${row.transactionId}`);
 };
@@ -113,12 +104,6 @@ const fetchExemptionData = async (params: {
   sortField?: string;
   sortDirection?: "asc" | "desc";
 }) => {
-  // Store the current filter state for export
-  lastSearch.value = params.search
-  lastFilters.value = { ...params.filters }
-  lastSortField.value = params.sortField ?? ''
-  lastSortDirection.value = params.sortDirection ?? 'asc'
-
   loading.value = true
   const response = await apiFetch("/api/exemption/closed", {
     method: "POST",
@@ -129,6 +114,8 @@ const fetchExemptionData = async (params: {
       search: params.search,
       sortField: params.sortField,
       sortDirection: params.sortDirection,
+      startDate: params.startDate,
+      endDate: params.endDate,
     }),
     headers: { "Content-Type": "application/json" },
     parseJson: true,
@@ -142,39 +129,33 @@ const fetchExemptionData = async (params: {
   }
 }
 
-const fetchAllForExport = async () => {
-  // Build active filters same as in fetchTable (using stored state)
-  const activeFilters: Record<string, string> = {}
-  Object.entries(lastFilters.value).forEach(([key, val]) => {
-    if (val) activeFilters[key] = val
-  })
-
-  let allData = []
-  let page = 1
-  const limit = 100 // reasonable page size for fetching
-  let total = 0
-
-  do {
-    const res = await fetchExemptionData({
-      page,
-      limit,
-      search: lastSearch.value,
-      filters: activeFilters,
-      sortField: lastSortField.value || undefined,
-      sortDirection: lastSortField.value ? lastSortDirection.value : undefined,
+const fetchAllForExport = async (params: {
+  startDate?: string;
+  endDate?: string;
+}) => {
+  loading.value = true
+  try {
+    const response = await apiFetch("/api/exemption/closed/export", {
+      method: "POST",
+      body: JSON.stringify({
+        UserId: parseInt(userId.emplId),
+        startDate: params.startDate,
+        endDate: params.endDate,
+      }),
+      headers: { "Content-Type": "application/json" },
+      parseJson: true,
     })
 
-    allData = [...allData, ...res.data]
-    if (total === 0) {
-      total = res.total
+    return {
+      data: response.items ?? [],
+      total: response.items?.length ?? 0,
     }
-    page++
-  } while (allData.length < total)
-
-  return {
-    data: allData,
-    total,
-  }
+  } catch (error) {
+    console.error('Export error:', error)
+    return { data: [], total: 0 }
+  } finally {
+    loading.value = false
+}
 }
 
 // Handle create navigation
@@ -182,11 +163,10 @@ const handleCreate = () => {
   router.push(`/exemptions/create`);
 };
 
-
 </script>
 
 <template>
-  <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh">
+  <div class="bg-gray-50 overflow-auto h-100vh">
     <header class="bg-white shadow">
       <div
         class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
@@ -215,12 +195,12 @@ const handleCreate = () => {
         </Button>
       </div>
     </header>
-    <main class="max-w-7xl mx-auto py-6 sm:px-6">
+    <main class="max-w-full mx-auto py-6 sm:px-6">
       <!-- Exemption Requests List -->
       <div class="mb-6 px-2 rounded-lg">
         <base-table
           :server-pagination="true"
-          :fetch-data="fetchExemptionData"
+          :fetch-data="(params) => fetchExemptionData(params)"
           :pagination="true"
           :per-page="5"
           :show-search="true"
@@ -300,7 +280,7 @@ const handleCreate = () => {
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
           ]"
-          :export-fetch-data="fetchAllForExport"
+          :export-fetch-data="(params) => fetchAllForExport(params)"
         />
       </div>
     </main>

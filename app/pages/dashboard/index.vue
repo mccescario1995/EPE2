@@ -9,15 +9,16 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 
 // Period filter state
-type PeriodType = "daily" | "weekly" | "monthly";
-const periodType = ref<PeriodType>("daily");
-const periodCount = ref(7);
+type PeriodType = "daily" | "weekly" | "monthly" | "all";
+const periodType = ref<PeriodType>("all");
+const periodCount = ref(0);
 
 // Period configurations
 const periodOptions = [
   { label: "Daily", value: "daily", counts: [7, 14, 30] },
   { label: "Weekly", value: "weekly", counts: [4, 8, 12, 26] },
   { label: "Monthly", value: "monthly", counts: [3, 6, 12, 24] },
+  { label: "All", value: "all", counts: [] },
 ];
 
 // Default count for each period type
@@ -25,15 +26,11 @@ const defaultCounts: Record<PeriodType, number> = {
   daily: 7,
   weekly: 4,
   monthly: 3,
+  all: 0,
 };
 
 onMounted(async () => {
   fetchAnalytics();
-});
-
-// Reset count when period type changes
-watch(periodType, (newType) => {
-  periodCount.value = defaultCounts[newType] || 12;
 });
 
 const summary = ref<any>(null);
@@ -48,22 +45,6 @@ type DataProps = {
   approved?: number;
   disapproved?: number;
 };
-
-type PolicyDataProps = {
-  policyName: string;
-  approved: number;
-  disapproved: number;
-  pending: number;
-};
-
-const policyChartData = computed<PolicyDataProps[]>(() =>
-  policyOverrides.value.map((p) => ({
-    policyName: p.policyName,
-    approved: p.approved,
-    disapproved: p.disapproved,
-    pending: p.pending,
-  })),
-);
 
 const ApprovalDecision = {
   approved: { name: "Approved", color: "#22c55e" },
@@ -80,20 +61,6 @@ const approvalChartData = computed<DataProps[]>(() =>
   })),
 );
 
-// function formatPeriodLabel(period: string) {
-//   // if already "Mar 2026", keep it
-//   if (/^[A-Za-z]{3}\s\d{4}$/.test(period)) return period;
-
-//   console.log("Formatting period label:", period);
-//   // fallback if backend sends ISO date
-//   // const d = new Date(period);
-//   // if (!isNaN(d.getTime())) {
-//   //   return d.toLocaleString("en-US", { month: "short", year: "numeric" });
-//   // }
-
-//   return period;
-// }
-
 const approvalChartOptions = computed(() => ({
   data: approvalChartData.value,
   categories: ApprovalDecision,
@@ -104,20 +71,6 @@ const approvalChartOptions = computed(() => ({
     return period;
   },
 }));
-
-// const approvalChartOptions = computed(() => ({
-//   data: approvalChartData.value,
-//   categories: ApprovalDecision,
-//   xAxis: xAxisLabel.value,
-//   xNumTicks: approvalChartData.value.length,
-//   tickTextHideOverlapping: false,
-//   tickTextAngle: -45,
-//   tickTextWidth: 80,
-//   xFormatter: (tick: number, i?: number) => {
-//     return approvalChartData.value[i ?? tick]?.period ?? "";
-//   },
-// }));
-//approvalChartData.map((d) => d.period) / xAxisLabel.value
 
 const fetchAnalytics = async () => {
   loading.value = true;
@@ -140,7 +93,7 @@ const fetchAnalytics = async () => {
 
       console.log(
         "Raw Approval Rates:",
-        approvalRates.value.map((r) => r.period),
+        approvalRates.value
       );
       console.log("Approval Chart Data:", approvalChartData.value);
       console.log(
@@ -155,6 +108,13 @@ const fetchAnalytics = async () => {
   }
 };
 
+const changePeriod = (option: (typeof periodOptions)[number]) => {
+  periodType.value = option.value;
+
+  periodCount.value =
+    option.value === "all" ? 0 : (option.counts[1] ?? option.counts[0]);
+};
+
 watch([periodType, periodCount], () => fetchAnalytics());
 </script>
 
@@ -163,7 +123,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
     <!-- Header -->
     <header class="bg-white shadow">
       <div
-        class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
+        class="max-w-full mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
       >
         <div class="flex items-center">
           <h1 class="text-2xl ps-5 font-bold text-gray-900">Dashboard</h1>
@@ -178,10 +138,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
             <button
               v-for="option in periodOptions"
               :key="option.value"
-              @click="
-                periodType = option.value;
-                periodCount = option.counts[1] || option.counts[0];
-              "
+              @click="changePeriod(option)"
               :class="[
                 'px-3 py-1.5 text-sm rounded-lg border transition-colors',
                 periodType === option.value
@@ -196,7 +153,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
       </div>
     </header>
 
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <main class="max-w-full mx-auto py-6 sm:px-6 lg:px-8">
       <!-- Loading -->
       <div v-if="loading" class="flex items-center justify-center py-24">
         <svg
@@ -281,13 +238,17 @@ watch([periodType, periodCount], () => fetchAnalytics());
                       ? "Daily breakdown"
                       : periodType === "weekly"
                         ? "Weekly breakdown"
-                        : "Monthly breakdown"
+                        : periodType === "monthly"
+                          ? "Monthly breakdown"
+                          : "All-time data"
                   }}
                 </p>
               </div>
               <!-- Count Dropdown -->
+              <!-- Count Dropdown - hidden for "All" period -->
               <select
                 v-model="periodCount"
+                v-if="periodType !== 'all'"
                 class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
               >
                 <option
@@ -306,6 +267,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
                   }}
                 </option>
               </select>
+              <div v-else class="text-sm text-gray-500">All time</div>
             </div>
             <div style="position: relative">
               <BarChart
@@ -361,40 +323,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
                       <td class="text-red-600">{{ p.disapproved }}</td>
                       <td class="text-yellow-600">{{ p.pending }}</td>
                     </tr>
-                    <tr>
-                      <td colspan="2" class="text-right text-gray-400 px-4">
-                        Total:
-                      </td>
-                      <td>
-                        {{
-                          policyOverrides.reduce(
-                            (sum, p) => sum + p.totalRequests,
-                            0,
-                          )
-                        }}
-                      </td>
-                      <td class="text-green-600">
-                        {{
-                          policyOverrides.reduce(
-                            (sum, p) => sum + p.approved,
-                            0,
-                          )
-                        }}
-                      </td>
-                      <td class="text-red-600">
-                        {{
-                          policyOverrides.reduce(
-                            (sum, p) => sum + p.disapproved,
-                            0,
-                          )
-                        }}
-                      </td>
-                      <td class="text-yellow-600">
-                        {{
-                          policyOverrides.reduce((sum, p) => sum + p.pending, 0)
-                        }}
-                      </td>
-                    </tr>
+                     
                     <tr v-if="policyOverrides.length === 0">
                       <td colspan="6" class="text-center text-gray-400 py-4">
                         No policy overrides found.
