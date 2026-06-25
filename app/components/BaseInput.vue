@@ -21,9 +21,11 @@
         :placeholder="placeholder"
         :rows="isTextarea ? rowCount : undefined"
         :maxlength="maxCharCount || undefined"
+        :disabled="disabled"
         :class="[
           customClass ||
             'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-3 px-4 border',
+          disabled && 'cursor-not-allowed bg-gray-100',
         ]"
         @input="handleInput"
         @blur="validateInput"
@@ -109,16 +111,16 @@ interface Props {
   type?: string;
   placeholder?: string;
   maxCharCount?: number;
-  minCharCount?: number; // added minCharCount prop for validation of minimum characters in textarea
+  minCharCount?: number;
   rowCount?: number;
   isTextarea?: boolean;
   id?: string;
   errorMessage?: string;
   customClass?: string;
   rules?: ((value: string | number | null) => true | string)[];
-  // 👇 Optional custom icons for password toggle
-  showIcon?: any; // Vue component for "show password"
-  hideIcon?: any; // Vue component for "hide password"
+  disabled?: boolean;
+  showIcon?: any;
+  hideIcon?: any;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -129,6 +131,7 @@ const props = withDefaults(defineProps<Props>(), {
   id: `input-${Math.random().toString(36).substr(2, 9)}`,
   customClass: "",
   rules: () => [],
+  disabled: false,
 });
 
 const emit = defineEmits(["update:modelValue", "error"]);
@@ -209,9 +212,9 @@ const charCount = computed(() => {
 //Added Computed property to generate character counter text based on provided props
 const charCounterText = computed(() => {
   if (props.maxCharCount && props.minCharCount) {
-    return `${charCount.value} / ${props.minCharCount}-${props.maxCharCount}`;
+    return `${charCount.value} / ${props.maxCharCount} character (min ${props.minCharCount})`;
   } else if (props.maxCharCount) {
-    return `${charCount.value} / ${props.maxCharCount}`;
+    return `${charCount.value} / ${props.maxCharCount} character`;
   } else if (props.minCharCount) {
     return `${charCount.value} (min: ${props.minCharCount})`;
   }

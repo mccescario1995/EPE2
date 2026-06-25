@@ -356,8 +356,10 @@ definePageMeta({
   // alias: "/dashboard"
 });
 
-const username = ref("test@fastgroup.biz");
-const password = ref("test");
+// const username = ref("test@fastgroup.biz");
+// const password = ref("test");
+const username = ref("");
+const password = ref("");
 const showPassword = ref(false);
 const isCapsLockOn = ref(false);
 const loginspinnerindicator = ref(true);

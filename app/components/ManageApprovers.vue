@@ -5,10 +5,13 @@ import { VueDraggable } from "vue-draggable-plus";
 const props = defineProps<{
   show: boolean;
   policy: {
-    policyid: number;
+    policyid: string | number;
     description: string;
     shortName?: string;
   } | null;
+  inline?: boolean;
+  initialApprovers?: any[];
+  createMode?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -19,7 +22,7 @@ const emit = defineEmits<{
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Approver {
   id: number;
-  policyid: number;
+  policyid: string | number;
   approverid: string | null;
   approvername: string | null;
   approveremail: string | null;
@@ -31,9 +34,9 @@ interface Approver {
 }
 
 interface TreeNode {
-  id: number; // keep numeric (no string parsing anymore 🔥)
+  id: number;
   name: string;
-  approver: Approver; // keep original data
+  approver: Approver;
   children: TreeNode[];
 }
 
@@ -51,7 +54,8 @@ const userId = userStore.profile;
 const justOppened = ref(true);
 const loading = ref(false);
 const saving = ref(false);
-const rawApprovers = ref<Approver[]>([]);
+const creatingApprovers = ref(false);
+const rawApprovers = ref<Approver[]>(props.initialApprovers || []);
 const groups = ref<TreeNode[]>([]);
 
 const showAddForm = ref(false);
@@ -69,10 +73,12 @@ const newApprover = ref({
 
 // Persist form state per approver type so switching clears the visible inputs
 // but restores values when switching back.
-const savedFormState = ref<Record<"M" | "IM", typeof newApprover.value | null>>({
-  M: null,
-  IM: null,
-});
+const savedFormState = ref<Record<"M" | "IM", typeof newApprover.value | null>>(
+  {
+    M: null,
+    IM: null,
+  },
+);
 
 function setApproverType(type: "M" | "IM") {
   const currentType = newApprover.value.approvertype;
@@ -84,7 +90,10 @@ function setApproverType(type: "M" | "IM") {
   // restore saved state for target type if available, otherwise reset defaults
   const saved = savedFormState.value[type];
   if (saved) {
-    newApprover.value = { ...saved, approvertype: type } as typeof newApprover.value;
+    newApprover.value = {
+      ...saved,
+      approvertype: type,
+    } as typeof newApprover.value;
   } else {
     newApprover.value = {
       approvertype: type,
@@ -120,7 +129,9 @@ const hasUnsavedOrder = ref(false);
 const isModalOpen = ref(false);
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
-const hasIM = computed(() => groups.value.some((g) => g.approver.approvertype === "IM"));
+const hasIM = computed(() =>
+  groups.value.some((g) => g.approver.approvertype === "IM"),
+);
 
 const hasPendingAdd = computed(() => {
   if (!showAddForm.value) return false;
@@ -203,6 +214,10 @@ function flattenGroups(tree: TreeNode[]): Approver[] {
 // ─── Data Fetching ────────────────────────────────────────────────────────────
 async function fetchApprovers() {
   if (!props.policy) return;
+  // In create mode, we do not fetch from backend
+  if (props.createMode) {
+    return;
+  }
   loading.value = true;
   try {
     const response = await apiFetch(
@@ -214,7 +229,7 @@ async function fetchApprovers() {
           "Content-Type": "application/json",
         },
         parseJson: true,
-      }
+      },
     );
     rawApprovers.value = response.items ?? [];
     console.log("Fetched approvers ManageApprovers:", rawApprovers.value);
@@ -266,7 +281,7 @@ async function searchEmployees(query: string) {
       {
         method: "GET",
         parseJson: true,
-      }
+      },
     );
 
     const list = Array.isArray(response) ? response : [];
@@ -295,7 +310,7 @@ watch(
       newApprover.value.approvername = "";
       newApprover.value.approveremail = "";
     }
-  }
+  },
 );
 
 // ─── Add Approver ─────────────────────────────────────────────────────────────
@@ -334,10 +349,11 @@ function resetAddForm() {
 }
 
 async function confirmAddApprover() {
+  console.log("[ManageApprovers] confirmAddApprover called, createMode:", props.createMode, "policy:", props.policy);
   if (!props.policy) return;
-  const { approvertype, approverid, approvername, approveremail } = newApprover.value;
+  const { approvertype, approverid, approvername, approveremail } =
+    newApprover.value;
 
-  // Validation for non-IM types
   if (approvertype !== "IM") {
     if (!approvername.trim() || !approveremail.trim()) {
       showToast({
@@ -350,9 +366,8 @@ async function confirmAddApprover() {
     }
   }
 
-  // Check for active duplicates (only if isdelete === 0)
   const activeDuplicate = rawApprovers.value.find(
-    (a) => a.approverid === approverid && a.isdelete === 0
+    (a) => a.approverid === approverid && a.isdelete === 0,
   );
   if (activeDuplicate) {
     showToast({
@@ -364,28 +379,60 @@ async function confirmAddApprover() {
     return;
   }
 
-  // Check for soft-deleted approver (for reactivation)
   const softDeletedApprover = rawApprovers.value.find(
-    (a) => a.approverid === approverid && a.isdelete === 1
+    (a) => a.approverid === approverid && a.isdelete === 1,
   );
 
   addFormLoading.value = true;
   try {
-    if (softDeletedApprover) {
-      // Reactivate the soft-deleted approver
+    if (props.createMode) {
       let sort: number;
       let linesequence: number;
 
       if (addingAsProxy.value !== null) {
         sort = addingAsProxy.value;
         const group: any = groups.value[addingAsProxy.value - 1];
-        linesequence = group.children.length + 2; // Next available proxy position
+        linesequence = group.children.length + 2;
       } else {
-        sort = groups.value.length + 1; // Next main position
+        sort = groups.value.length + 1;
         linesequence = 1;
       }
 
-      // Assumed update API payload (adjust based on your backend)
+      const newApproverObj: Approver = {
+        id: Date.now(),
+        policyid: props.policy.policyid,
+        approverid: approvertype === "IM" ? null : approverid || null,
+        approvername: approvertype === "IM" ? "Immediate Head" : approvername,
+        approveremail: approvertype === "IM" ? null : approveremail,
+        approvertype,
+        sort,
+        linesequence,
+        status: "A",
+        isdelete: 0,
+      };
+
+      rawApprovers.value = [...rawApprovers.value, newApproverObj];
+      groups.value = buildGroups(rawApprovers.value);
+
+      showToast({
+        type: "success",
+        title: "Added",
+        message: "Approver added successfully",
+        duration: 3000,
+      });
+    } else if (softDeletedApprover) {
+      let sort: number;
+      let linesequence: number;
+
+      if (addingAsProxy.value !== null) {
+        sort = addingAsProxy.value;
+        const group: any = groups.value[addingAsProxy.value - 1];
+        linesequence = group.children.length + 2;
+      } else {
+        sort = groups.value.length + 1;
+        linesequence = 1;
+      }
+
       const updatePayload = {
         isdelete: 0,
         sort,
@@ -399,7 +446,7 @@ async function confirmAddApprover() {
           method: "POST",
           body: JSON.stringify(updatePayload),
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
 
       showToast({
@@ -408,8 +455,8 @@ async function confirmAddApprover() {
         message: "Approver reactivated and added successfully",
         duration: 3000,
       });
+      await fetchApprovers();
     } else {
-      // No soft-deleted match: Create a new approver
       let sort: number;
       let linesequence: number;
 
@@ -439,7 +486,7 @@ async function confirmAddApprover() {
           method: "POST",
           body: JSON.stringify(payload),
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
 
       showToast({
@@ -448,10 +495,10 @@ async function confirmAddApprover() {
         message: "Approver added successfully",
         duration: 3000,
       });
+      await fetchApprovers();
     }
 
     cancelAdd();
-    await fetchApprovers(); // Refresh to reflect changes
   } catch (err) {
     console.error("Failed to add/reactivate approver:", err);
     showToast({
@@ -478,18 +525,32 @@ async function executeDelete() {
   if (!deletingApprover.value || !props.policy) return;
   deleteLoading.value = true;
   try {
-    await apiFetch(
-      `/api/Maintenance/policy/${props.policy.policyid}/approvers/delete/${deletingApprover.value.id}`,
-      { method: "POST", parseJson: true }
-    );
-    showToast({
-      type: "success",
-      title: "Deleted",
-      message: "Approver removed",
-      duration: 3000,
-    });
-    deletingApprover.value = null;
-    await fetchApprovers();
+    if (props.createMode) {
+      rawApprovers.value = rawApprovers.value.filter(
+        (a) => a.id !== deletingApprover.value!.id,
+      );
+      groups.value = buildGroups(rawApprovers.value);
+      showToast({
+        type: "success",
+        title: "Deleted",
+        message: "Approver removed",
+        duration: 3000,
+      });
+      deletingApprover.value = null;
+    } else {
+      await apiFetch(
+        `/api/Maintenance/policy/${props.policy.policyid}/approvers/delete/${deletingApprover.value.id}`,
+        { method: "POST", parseJson: true },
+      );
+      showToast({
+        type: "success",
+        title: "Deleted",
+        message: "Approver removed",
+        duration: 3000,
+      });
+      deletingApprover.value = null;
+      await fetchApprovers();
+    }
   } catch {
     showToast({
       type: "error",
@@ -507,6 +568,11 @@ async function executeDelete() {
 // ─── Save ─────────────────────────────────────────────────────────────────────
 async function saveOrder() {
   if (!props.policy) return;
+  if (props.createMode) {
+    hasUnsavedOrder.value = false;
+    emit("saved");
+    return;
+  }
   saving.value = true;
   try {
     const flatApprovers = flattenGroups(groups.value);
@@ -520,10 +586,10 @@ async function saveOrder() {
             id: a.id,
             sort: a.sort,
             linesequence: a.linesequence,
-          }))
+          })),
         ),
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
 
     showToast({
@@ -534,7 +600,6 @@ async function saveOrder() {
     });
     hasUnsavedOrder.value = false;
     emit("saved");
-    // handleClose();
   } catch (err) {
     console.error("Failed to save order:", err);
     showToast({
@@ -579,9 +644,10 @@ function confirmClose() {
 }
 
 function handleModalUpdate(newVal: boolean) {
+  if (props.inline) return;
   if (!newVal) {
     if (hasUnsavedOrder.value || hasPendingAdd.value) {
-      isModalOpen.value = true; // Keep modal open
+      isModalOpen.value = true;
       isCloseConfirmOpen.value = true;
     } else {
       resetState();
@@ -594,24 +660,30 @@ function handleModalUpdate(newVal: boolean) {
 watch(
   () => props.show,
   (newVal) => {
-    if (newVal && props.policy) fetchApprovers();
+    if (!props.inline) {
+      isModalOpen.value = newVal;
+    }
   },
-  { immediate: true }
 );
 
 watch(
-  () => props.policy,
-  (val) => {
-    if (val && props.show) fetchApprovers();
-  }
+  () => props.policy?.policyid,
+  (newId) => {
+    if (newId && props.show && !props.createMode) {
+      fetchApprovers();
+    }
+  },
 );
 
 watch(
-  () => props.show,
+  () => props.initialApprovers,
   (newVal) => {
-    isModalOpen.value = newVal;
+    if (newVal && newVal.length > 0) {
+      rawApprovers.value = newVal;
+      groups.value = buildGroups(newVal);
+    }
   },
-  { immediate: true }
+  { immediate: true, deep: true },
 );
 
 watch(
@@ -619,20 +691,85 @@ watch(
   (newVal) => {
     isDeleteModalOpen.value = newVal !== null;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 watch(
   groups,
   () => {
-    hasUnsavedOrder.value = true;
+    if (!props.createMode) {
+      hasUnsavedOrder.value = true;
+    }
   },
-  { deep: true }
+  { deep: true },
 );
+
+defineExpose({ saveOrder, createApprovers });
+
+// ─── Get Pending Approvers (for create mode) ───────────────────────────────────
+function getPendingApprovers() {
+  const flatApprovers = flattenGroups(groups.value);
+  return flatApprovers.map((a) => ({
+    approverid: a.approverid,
+    approvername: a.approvername,
+    approveremail: a.approveremail,
+    approvertype: a.approvertype,
+    sort: a.sort,
+    linesequence: a.linesequence,
+  }));
+}
+
+// ─── Create Approvers (for create mode) ───────────────────────────────────────
+async function createApprovers(policyid: string | number, createdBy: string) {
+  if (!policyid) return;
+  creatingApprovers.value = true;
+  try {
+    const pendingApprovers = getPendingApprovers();
+    for (const approver of pendingApprovers) {
+      const payload = {
+        policyid,
+        approverid: approver.approverid,
+        approvername: approver.approvername,
+        approveremail: approver.approveremail,
+        approvertype: approver.approvertype,
+        sort: approver.sort,
+        linesequence: approver.linesequence,
+        CreatedBy: createdBy,
+      };
+      await apiFetch(
+        `/api/Maintenance/policy/${policyid}/approvers/create`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+    showToast({
+      type: "success",
+      title: "Created",
+      message: "Approvers created successfully",
+      duration: 3000,
+    });
+    emit("saved");
+  } catch (err) {
+    console.error("Failed to create approvers:", err);
+    showToast({
+      type: "error",
+      title: "Error",
+      message: "Failed to create approvers",
+      duration: 4000,
+    });
+  } finally {
+    creatingApprovers.value = false;
+  }
+}
+
 </script>
 
 <template>
   <Modal
+    v-if="!props.inline"
     v-model:isOpen="isModalOpen"
     size="lg"
     position="top-center"
@@ -642,7 +779,9 @@ watch(
     @update:isOpen="handleModalUpdate"
   >
     <template #header>
-      <div class="flex items-start justify-between border-b border-gray-100 bg-gray-50">
+      <div
+        class="flex items-start justify-between border-b border-gray-100 bg-gray-50"
+      >
         <div>
           <h2 class="text-lg font-semibold text-gray-900">Manage Approvers</h2>
           <p class="text-sm text-gray-500 mt-0.5">
@@ -660,7 +799,11 @@ watch(
     <div class="space-y-4">
       <!-- Loading -->
       <div v-if="loading" class="flex items-center justify-center py-16">
-        <svg class="animate-spin h-7 w-7 text-blue-500" fill="none" viewBox="0 0 24 24">
+        <svg
+          class="animate-spin h-7 w-7 text-blue-500"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
           <circle
             class="opacity-25"
             cx="12"
@@ -701,12 +844,19 @@ watch(
           </svg>
         </div>
         <p class="text-sm font-medium text-gray-700">No approvers yet</p>
-        <p class="text-xs text-gray-400 mt-1">Add the first approver for this policy</p>
+        <p class="text-xs text-gray-400 mt-1">
+          Add the first approver for this policy
+        </p>
         <button
           class="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
           @click="openAddMain"
         >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -735,8 +885,8 @@ watch(
               d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"
             />
           </svg> -->
-          Drag <span class="font-bold px-0.5">⠿</span> handles to reorder approvers and
-          their proxies
+          Drag <span class="font-bold px-0.5">⠿</span> handles to reorder
+          approvers and their proxies
         </div>
 
         <!-- Testing groups -->
@@ -765,9 +915,10 @@ watch(
               >
                 ⠿
               </div>
-              <span class="rounded-full bg-blue-200 h-7 w-7 flex justify-center">{{
-                index + 1
-              }}</span>
+              <span
+                class="rounded-full bg-blue-200 h-7 w-7 flex justify-center"
+                >{{ index + 1 }}</span
+              >
               <div class="uppercase">{{ element.name }}</div>
               <button
                 class="ml-auto text-red-500 hover:text-red-700 transition-colors"
@@ -808,9 +959,10 @@ watch(
                 >
                   ⠿
                 </div>
-                <span class="rounded-full bg-orange-200 h-5 w-5 flex justify-center">{{
-                  index + 1
-                }}</span>
+                <span
+                  class="rounded-full bg-orange-200 h-5 w-5 flex justify-center"
+                  >{{ index + 1 }}</span
+                >
                 {{ child.name }}
                 <button
                   class="ml-auto text-red-400 hover:text-red-600 transition-colors"
@@ -838,7 +990,12 @@ watch(
               class="mt-2 ml-auto w-full flex items-center justify-center gap-2 py-2 px-4 border-2 border-dashed border-orange-200 rounded text-sm text-orange-400 hover:border-orange-300 hover:text-orange-500 hover:bg-orange-50 transition-all"
               @click="openAddProxy(element.approver.sort)"
             >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -856,7 +1013,9 @@ watch(
           v-if="showAddForm"
           class="mt-3 border-2 border-blue-200 border-dashed rounded-xl p-4 bg-blue-50"
         >
-          <p class="text-xs font-semibold text-blue-700 mb-3 uppercase tracking-wide">
+          <p
+            class="text-xs font-semibold text-blue-700 mb-3 uppercase tracking-wide"
+          >
             {{
               addingAsProxy !== null
                 ? `New Proxy for Approver ${addingAsProxy}`
@@ -911,8 +1070,8 @@ watch(
                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            The immediate head of each requester will be automatically resolved when a
-            request is submitted.
+            The immediate head of each requester will be automatically resolved
+            when a request is submitted.
           </div>
 
           <!-- Main fields (always show, but adjust for proxy) -->
@@ -952,7 +1111,9 @@ watch(
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              <span class="text-green-700 text-xs">{{ newApprover.approveremail }}</span>
+              <span class="text-green-700 text-xs">{{
+                newApprover.approveremail
+              }}</span>
               <button
                 class="ml-auto text-gray-400 hover:text-gray-600"
                 @click="
@@ -1023,7 +1184,12 @@ watch(
           class="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-blue-200 rounded-xl text-sm text-blue-400 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-100 transition-all"
           @click="openAddMain"
         >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -1054,7 +1220,11 @@ watch(
           <button
             class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
             :disabled="
-              saving || loading || showAddForm || !hasUnsavedOrder || justOppened
+              saving ||
+              loading ||
+              showAddForm ||
+              !hasUnsavedOrder ||
+              justOppened
             "
             @click="saveOrder"
           >
@@ -1167,7 +1337,9 @@ watch(
         />
       </svg>
     </div>
-    <h3 class="text-base font-semibold text-gray-900 text-center mb-1">Cancel</h3>
+    <h3 class="text-base font-semibold text-gray-900 text-center mb-1">
+      Cancel
+    </h3>
     <p class="text-sm text-gray-500 text-center mb-5">
       Are you sure you want to cancel?
     </p>
@@ -1186,4 +1358,424 @@ watch(
       </button>
     </div>
   </Modal>
+
+  <div v-if="props.inline">
+    <div class="space-y-4">
+      <div class="flex items-start justify-between bg-gray-50">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 -mb-4">Manage Approvers</h2>
+          <!-- <p class="text-sm text-gray-500 mt-0.5">
+          {{ policy?.description }}
+          <span
+            v-if="policy?.shortName"
+            class="ml-1 text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded"
+            >{{ policy.shortName }}</span
+          >
+        </p> -->
+        </div>
+      </div>
+      <div class="space-y-4">
+        <div v-if="loading" class="flex items-center justify-center py-16">
+          <svg
+            class="animate-spin h-7 w-7 text-blue-500"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          <span class="ml-2 text-sm text-gray-500">Loading approvers...</span>
+        </div>
+        <div
+          v-else-if="!loading && groups.length === 0 && !showAddForm"
+          class="flex flex-col items-center justify-center py-14 text-center"
+        >
+          <div
+            class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mb-3"
+          >
+            <svg
+              class="w-7 h-7 text-blue-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+          </div>
+          <p class="text-sm font-medium text-gray-700">No approvers yet</p>
+          <p class="text-xs text-gray-400 mt-1">
+            Add the first approver for this policy
+          </p>
+          <button
+            class="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
+            @click="openAddMain"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Add Approver
+          </button>
+        </div>
+        <div v-else-if="!loading" class="flex flex-col gap-2">
+          <div class="flex items-center gap-2 text-xs text-gray-400 mb-3">
+            Drag <span class="font-bold px-0.5">⠿</span> handles to reorder
+            approvers and their proxies
+          </div>
+          <VueDraggable
+            v-model="groups"
+            :animation="150"
+            ghost-class="ghost"
+            :fallbackOnBody="true"
+            class="flex flex-col gap-2"
+          >
+            <div
+              v-for="(element, index) in groups"
+              :key="element.id"
+              class="bg-white border rounded p-3"
+            >
+              <div class="font-medium text-gray-900 flex items-center gap-2">
+                <div
+                  class="group-drag-handle cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 select-none px-0.5 text-lg leading-none flex-shrink-0"
+                  title="Drag to reorder step"
+                >
+                  ⠿
+                </div>
+                <span
+                  class="rounded-full bg-blue-200 h-7 w-7 flex justify-center"
+                  >{{ index + 1 }}</span
+                >
+                <div class="uppercase">
+                  {{ element.name }}
+                  <div class="lowercase text-gray-500 ps-2 -mt-1 text-sm">
+                    {{ element.approver.approveremail }}
+                  </div>
+                </div>
+
+                <button
+                  class="ml-auto text-red-500 hover:text-red-700 transition-colors"
+                  title="Delete approver"
+                  @click="confirmDelete(element.approver)"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <VueDraggable
+                v-model="element.children"
+                :animation="150"
+                group="nested"
+                class="ml-4 mt-2 flex flex-col gap-2"
+              >
+                <div
+                  v-for="child in element.children"
+                  :key="child.id"
+                  class="bg-gray-100 p-2 rounded flex items-center gap-2 text-sm text-gray-700"
+                >
+                  <div
+                    class="group-drag-handle cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 select-none px-0.5 text-lg leading-none flex-shrink-0"
+                    title="Drag to reorder step"
+                  >
+                    ⠿
+                  </div>
+                  <span
+                    class="rounded-full bg-orange-200 h-5 w-5 flex justify-center"
+                    >{{ index + 1 }}</span
+                  >
+                  {{ child.name }}
+                  <button
+                    class="ml-auto text-red-400 hover:text-red-600 transition-colors"
+                    title="Delete approver"
+                    @click="confirmDelete(child.approver)"
+                  >
+                    <svg
+                      class="w-3.5 h-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </VueDraggable>
+              <button
+                v-if="!showAddForm"
+                class="mt-2 ml-auto w-full flex items-center justify-center gap-2 py-2 px-4 border-2 border-dashed border-orange-200 rounded text-sm text-orange-400 hover:border-orange-300 hover:text-orange-500 hover:bg-orange-50 transition-all"
+                @click="openAddProxy(element.approver.sort)"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                Add Proxy
+              </button>
+            </div>
+          </VueDraggable>
+          <div
+            v-if="showAddForm"
+            class="mt-3 border-2  border-dashed rounded-xl p-4 "
+            :class="addingAsProxy !== null ? 'border-orange-200 bg-orange-50' : 'border-blue-200 bg-blue-50' "
+          >
+            <p
+              class="text-xs font-semibold mb-3 uppercase tracking-wide"
+              :class="
+                addingAsProxy !== null ? 'text-orange-700' : 'text-blue-700'
+              "
+            >
+              {{
+                addingAsProxy !== null
+                  ? `New Proxy for Approver ${addingAsProxy}`
+                  : `New Approver — Approver ${groups.length + 1}`
+              }}
+            </p>
+
+            <div v-if="addingAsProxy === null" class="flex gap-2 mb-3">
+              <button
+                class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-all"
+                :class="
+                  newApprover.approvertype === 'M'
+                    ? 'border-blue-500 bg-blue-500 text-white'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                "
+                @click="setApproverType('M')"
+              >
+                Main
+              </button>
+              <button
+                class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-all"
+                :class="[
+                  newApprover.approvertype === 'IM'
+                    ? 'border-purple-500 bg-purple-500 text-white'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
+                  hasIM ? 'opacity-50 cursor-not-allowed' : '',
+                ]"
+                :disabled="hasIM"
+                @click="!hasIM && setApproverType('IM')"
+              >
+                Immediate Head
+              </button>
+            </div>
+            <div
+              v-if="addingAsProxy === null && newApprover.approvertype === 'IM'"
+              class="flex items-start gap-2 p-3 bg-purple-50 rounded-lg mb-3 text-xs text-purple-700"
+            >
+              <svg
+                class="w-4 h-4 mt-0.5 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              The immediate head of each requester will be automatically
+              resolved when a request is submitted.
+            </div>
+            <div
+              v-if="addingAsProxy !== null || newApprover.approvertype !== 'IM'"
+              class="space-y-2 mb-3"
+            >
+              <Dropdown
+                v-model="newApprover.selectedEmployee"
+                :initialItems="employeeOptions"
+                placeholder="Select an employee"
+                @input="(e) => onEmployeeSearch(e.target.value)"
+              />
+              <div
+                v-if="newApprover.selectedEmployee"
+                class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-gray-200 rounded-lg text-sm"
+              >
+                <svg
+                  class="w-4 h-4 text-green-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span class="text-green-700 text-xs">{{
+                  newApprover.approveremail
+                }}</span>
+                <button
+                  class="ml-auto text-gray-400 hover:text-gray-600"
+                  @click="
+                    newApprover.selectedEmployee = null;
+                    newApprover.searchQuery = '';
+                    newApprover.approverid = '';
+                    newApprover.approvername = '';
+                    newApprover.approveremail = '';
+                  "
+                >
+                  <svg
+                    class="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button
+                class="flex-1 py-2 px-4 text-white text-sm font-medium rounded-lg  disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
+                :class=" addingAsProxy !== null ? 'bg-orange-400 hover:bg-orange-500' : 'bg-blue-600 hover:bg-blue-700' "
+                :disabled="addFormLoading"
+                @click="confirmAddApprover"
+              >
+                <svg
+                  v-if="addFormLoading"
+                  class="animate-spin w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  />
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                <span>{{ addFormLoading ? "Adding..." : "Add Approver" }}</span>
+              </button>
+              <button
+                class="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                @click="cancelAdd"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+          <button
+            v-if="!showAddForm"
+            class="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-blue-200 rounded-xl text-sm text-blue-400 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-100 transition-all"
+            @click="openAddMain"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Add Approver
+          </button>
+        </div>
+      </div>
+      <!-- <div
+        v-if="!loading && groups.length > 0"
+        class="flex items-center justify-between"
+      >
+        <p class="text-xs text-gray-400">
+          {{ groups.length }} Main{{ groups.length == 1 ? "s" : "" }}
+        </p>
+        <button
+          class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+          :disabled="saving || !hasUnsavedOrder || justOppened"
+          @click="saveOrder"
+        >
+          <svg
+            v-if="saving"
+            class="animate-spin w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          {{ saving ? "Saving..." : "Save Order" }}
+        </button>
+      </div> -->
+    </div>
+  </div>
 </template>

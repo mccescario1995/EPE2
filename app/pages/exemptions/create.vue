@@ -149,7 +149,7 @@ const fetchPolicies = async () => {
 
     policyOptions.value = items.map((p: any) => ({
       id: p.policyid,
-      label: p.description || p.label || `Policy ${p.policyid}`,
+      label: p.shortname || p.description || p.label || `Policy ${p.policyid}`,
     }));
   } catch (error) {
     console.error("Error fetching policies:", error);
