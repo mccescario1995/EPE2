@@ -63,6 +63,8 @@ const showAddForm = ref(false);
 const addingAsProxy = ref<number | null>(null);
 const addFormLoading = ref(false);
 
+const imEmployeeId = ref<string | null>(null);
+
 const newApprover = ref({
   approvertype: "M" as "M" | "IM",
   approverid: "",
@@ -129,6 +131,8 @@ const isModalOpen = ref(false);
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
 const hasIM = computed(() => groups.value.some((g) => g.approver.approvertype === "IM"));
+
+const imHasMain = computed (() => groups.value.some((g) => g.approver.approverid === imEmployeeId.value));
 
 const hasPendingAdd = computed(() => {
   if (!showAddForm.value) return false;
@@ -229,11 +233,11 @@ async function fetchApprovers() {
       }
     );
     rawApprovers.value = response.items ?? [];
-    console.log("Fetched approvers ManageApprovers:", rawApprovers.value);
     groups.value = buildGroups(rawApprovers.value);
-    console.log("RAW:", rawApprovers.value);
-    console.log("GROUPS:", groups.value);
     hasUnsavedOrder.value = false;
+
+    // ── Fetch current user's IM employee ID ──────────────────────────
+    await fetchImmediateHead();
   } catch (err) {
     console.error("Failed to fetch approvers ManageApprovers:", err);
     showToast({
@@ -244,6 +248,21 @@ async function fetchApprovers() {
     });
   } finally {
     loading.value = false;
+  }
+}
+
+
+
+async function fetchImmediateHead() {
+  try {
+    const response: any = await apiFetch(
+      `/api/Maintenance/employees/immediate-head?userId=${userId.userId}`,
+      { method: "GET", parseJson: true }
+    );
+    imEmployeeId.value = response?.immediateId ?? null;
+    console.log("Fetched IM Employee ID:", imEmployeeId.value);
+  } catch {
+    imEmployeeId.value = null;
   }
 }
 
@@ -283,11 +302,18 @@ async function searchEmployees(query: string) {
 
     const list = Array.isArray(response) ? response : [];
 
-    employeeOptions.value = list.map((e: any) => ({
-      id: e.id,
-      label: e.label,
-      email: e.email,
-    }));
+    employeeOptions.value = list
+      .map((e: any) => ({
+        id: e.id,
+        label: e.label,
+        email: e.email,
+      })).filter((e) => {
+        if (!hasIM.value) return true;           // no IM added yet, show all
+        if (!imEmployeeId.value) return true;    // couldn't fetch IM, show all
+        return e.id !== imEmployeeId.value;      // exclude the IM's emplId
+      });
+
+    console.log("Employee Searched: ", employeeOptions);
   } catch (err) {
     console.error(err);
     employeeOptions.value = [];
@@ -402,15 +428,28 @@ async function confirmAddApprover() {
       const newApproverObj: Approver = {
         id: Date.now(),
         policyid: props.policy.policyid,
-        approverid: approvertype === "IM" ? null : approverid || null,
+        approverid: approverid,
         approvername: approvertype === "IM" ? "Immediate Head" : approvername,
-        approveremail: approvertype === "IM" ? null : approveremail,
+        approveremail:  approveremail,
         approvertype,
         sort,
         linesequence,
         status: "A",
         isdelete: 0,
       };
+
+// const newApproverObj: Approver = {
+//         id: Date.now(),
+//         policyid: props.policy.policyid,
+//         approverid: approvertype === "IM" ? null : approverid || null,
+//         approvername: approvertype === "IM" ? "Immediate Head" : approvername,
+//         approveremail: approvertype === "IM" ? null : approveremail,
+//         approvertype,
+//         sort,
+//         linesequence,
+//         status: "A",
+//         isdelete: 0,
+//       };
 
       rawApprovers.value = [...rawApprovers.value, newApproverObj];
       groups.value = buildGroups(rawApprovers.value);
@@ -664,6 +703,10 @@ watch(
     if (!props.inline) {
       isModalOpen.value = newVal;
     }
+    // ── Fetch IM on open ──────────────────────────
+    if (newVal) {
+      fetchImmediateHead();
+    }
   }
 );
 
@@ -672,6 +715,8 @@ watch(
   (newId) => {
     if (newId && props.show && !props.createMode) {
       fetchApprovers();
+      // ── Fetch IM on open ──────────────────────────
+      fetchImmediateHead();
     }
   }
 );
@@ -771,6 +816,10 @@ async function createApprovers(policyid: string | number, createdBy: string) {
     creatingApprovers.value = false;
   }
 }
+
+onMounted(() => {
+  fetchImmediateHead();
+});
 </script>
 
 <template>
@@ -865,27 +914,10 @@ async function createApprovers(policyid: string | number, createdBy: string) {
       <div v-else-if="!loading">
         <!-- Drag hint -->
         <div class="flex items-center gap-2 text-xs text-gray-400 mb-3">
-          <!-- <svg
-            class="w-3.5 h-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"
-            />
-          </svg> -->
+
           Drag <span class="font-bold px-0.5">⠿</span> handles to reorder approvers and
           their proxies
         </div>
-
-        <!-- Testing groups -->
-        <!-- <div v-for="g in groups" :key="g.id">
-          {{ g.name }}
-        </div> -->
 
         <!-- Top-level draggable: reorder groups -->
         <VueDraggable
@@ -1028,11 +1060,11 @@ async function createApprovers(policyid: string | number, createdBy: string) {
                   : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
                 hasIM ? 'opacity-50 cursor-not-allowed' : '',
               ]"
-              :disabled="hasIM"
+              :disabled="hasIM || imHasMain"
               :title="hasIM ? 'Only one Immediate Head approver allowed' : ''"
               @click="!hasIM && setApproverType('IM')"
             >
-              Immediate Head
+              Immediate Head {{ imHasMain }}
             </button>
           </div>
 

@@ -53,6 +53,7 @@ watch(route, () => {
             @close="close"
           />
         </main>
+        
       </div>
     </div>
   </div>

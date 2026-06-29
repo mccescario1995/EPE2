@@ -664,40 +664,6 @@ const currentUserPendingAction = computed((): boolean => {
                 </p>
               </div>
             </div>
-
-            <!-- <div class="mb-8">
-              <h2
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
-              >
-                Audit Trail
-              </h2>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    Created Date
-                  </label>
-                  <p class="text-gray-900">
-                    {{ formatDate(exemptionDetails?.createdDate) }}
-                  </p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    Workstation
-                  </label>
-                  <p class="text-gray-900">
-                    {{ exemptionDetails?.workstation || "N/A" }}
-                  </p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    IP Address
-                  </label>
-                  <p class="text-gray-900">
-                    {{ exemptionDetails?.ipAddress || "N/A" }}
-                  </p>
-                </div>
-              </div>
-            </div> -->
           </div>
         </div>
       </div>

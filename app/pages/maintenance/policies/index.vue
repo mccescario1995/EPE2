@@ -239,7 +239,7 @@ watch(
 
 const viewPolicy = async (row: any) => {
   selectedPolicy.value = row;
-  await fetchApprovers(row.policyid);
+  await fetchViewApprovers(row.policyid);
   viewModalOpen.value = true;
 };
 
@@ -429,8 +429,6 @@ const submitCreateForm = async () => {
         type: "success",
         duration: 5000,
       });
-
-
     } else {
       createError.value = response.message || "Failed to create policy";
     }
@@ -520,6 +518,77 @@ const submitEditForm = async () => {
   } finally {
     editSubmitting.value = false;
   }
+};
+
+const fetchViewApprovers = async (policyid: any) => {
+  approversLoading.value = true;
+  approversError.value = "";
+  try {
+    console.log("Fetching approvers for policy:", policyid);
+    const response = await apiFetch(
+      `/api/Maintenance/policy/${policyid}/approvers`,
+      {
+        method: "POST",
+        body: JSON.stringify({ UserId: userId.userId }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        parseJson: true,
+      },
+    );
+    console.log("Fetched approver item:", response.items);
+    if (response) {
+      approvers.value = (response.items || []).map((item: any) => ({
+        id: item.id || item.approverid,
+        approverid: item.approverid || "",
+        name: item.approvername || "",
+        email: item.approveremail || "",
+        type: item.approvertype || "",
+        sequence: item.sort || 0,
+        linesequence: item.linesequence || 0,
+      }));
+    }
+  } catch (err) {
+    approversError.value = "Failed to load approvers";
+    console.error(err);
+  } finally {
+    approversLoading.value = false;
+  }
+};
+
+// Computed property to group main approvers with their proxies
+const groupedApprovers = computed(() => {
+  const mainApprovers: any[] = [];
+  const proxiesMap: Map<number, any[]> = new Map();
+
+  // Sort approvers by sequence and linesequence
+  const sorted = [...approvers.value].sort((a, b) => {
+    const sortA = a.sequence ?? 0;
+    const sortB = b.sequence ?? 0;
+    if (sortA !== sortB) return sortA - sortB;
+    return (a.linesequence ?? 0) - (b.linesequence ?? 0);
+  });
+
+  sorted.forEach((approver) => {
+    const isMain = approver.linesequence === 1;
+    if (isMain) {
+      mainApprovers.push(approver);
+      proxiesMap.set(approver.sequence, []);
+    } else {
+      const mainApprover = mainApprovers.find(
+        (m) => m.sequence === approver.sequence,
+      );
+      if (mainApprover) {
+        proxiesMap.get(mainApprover.sequence)?.push(approver);
+      }
+    }
+  });
+
+  return { mainApprovers, proxiesMap };
+});
+
+const getProxies = (sequence: number): any[] => {
+  return groupedApprovers.value.proxiesMap.get(sequence) || [];
 };
 
 const fetchApprovers = async (policyid: any) => {
@@ -777,7 +846,7 @@ const createManageApproversRef = ref();
 
       <div class="grid md:grid-cols-2 gap-6">
         <!-- Policy Form -->
-        <div class=" sm:border-b-1 sm:pb-6 md:border-b-0 md:pb-0">
+        <div class="sm:border-b-1 sm:pb-6 md:border-b-0 md:pb-0">
           <form @submit.prevent="submitCreateForm" class="space-y-4">
             <div>
               <label
@@ -808,7 +877,7 @@ const createManageApproversRef = ref();
                 id="create-description"
                 v-model="createForm.description"
                 required
-                class="mt-1 block w-full  focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                class="mt-1 block w-full focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 rows="3"
                 is-textarea
                 :max-char-count="1000"
@@ -833,67 +902,6 @@ const createManageApproversRef = ref();
               </select>
             </div>
 
-            <!-- <div>
-              <label
-                for="create-managerApprover"
-                class="block text-sm font-medium text-gray-700"
-              >
-                Manager Approver
-              </label>
-              <div class="space-y-2">
-                <Dropdown
-                  v-model="managerApproverSelectedEmployee"
-                  :initialItems="managerApproverEmployeeOptions"
-                  placeholder="Select a manager approver"
-                  @input="
-                    (e: any) => searchManagerApproverEmployee(e.target.value)
-                  "
-                />
-                <div
-                  v-if="managerApproverSelectedEmployee"
-                  class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-gray-200 rounded-lg text-sm"
-                >
-                  <svg
-                    class="w-4 h-4 text-green-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span class="text-green-700 text-xs">{{
-                    managerApproverSelectedEmployee.email
-                  }}</span>
-                  <button
-                    class="ml-auto text-gray-400 hover:text-gray-600"
-                    @click="
-                      managerApproverSelectedEmployee = null;
-                      managerApproverEmployeeOptions = [];
-                    "
-                  >
-                    <svg
-                      class="w-3.5 h-3.5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div> -->
-
             <div v-if="createError" class="text-red-500 text-sm">
               {{ createError }}
             </div>
@@ -902,7 +910,6 @@ const createManageApproversRef = ref();
 
         <!-- Approvers Management (in create mode) -->
         <div class="">
-
           <ManageApprovers
             ref="createManageApproversRef"
             :show="createModalOpen"
@@ -1058,20 +1065,15 @@ const createManageApproversRef = ref();
             <h2 class="text-lg font-semibold text-gray-900">View Policy</h2>
             <p class="text-sm text-gray-500 mt-0.5">
               {{ selectedPolicy?.shortname }}
-              <!-- <span
-                v-if="selectedPolicy?.shortname"
-                class="ml-1 text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded"
-                >{{ selectedPolicy?.shortname }}</span
-              > -->
               <span
                 v-if="selectedPolicy.status === 'A'"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 border"
               >
                 Active
               </span>
               <span
                 v-else
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+                class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 border"
               >
                 Inactive
               </span>
@@ -1082,48 +1084,46 @@ const createManageApproversRef = ref();
 
       <div class="grid grid-cols-2 gap-6">
         <div v-if="selectedPolicy" class="grid grid-cols-2 gap-4">
-          <div class="">
-            <label class="text-sm font-medium text-gray-700"> Policy ID </label>
-            <p
-              class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm"
-            >
-              {{ selectedPolicy.policyid }}
-            </p>
-          </div>
-          <div>
-            <label class="text-sm font-medium text-gray-700">
-              Created Date
-            </label>
-            <p
-              class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm"
-            >
-              {{ new Date(selectedPolicy.createddate).toLocaleString() }}
-            </p>
-          </div>
-
-          <!-- <div>
-            <label class="block text-sm font-medium text-gray-700">
-              Shortname
-            </label>
-            <p
-              class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm"
-            >
-              {{ selectedPolicy.shortname ?? "-" }}
-            </p>
-          </div> -->
           <div class="col-span-full">
-            <label class="text-sm font-medium text-gray-700">
-              Description
-            </label>
-            <base-input
-              isTextarea
-              :class="'bg-gray-50'"
-              disabled
-              v-model="selectedPolicy.description"
-            >
-            </base-input>
+            <div class="">
+              <label class="text-sm font-medium text-gray-700">
+                Policy ID
+              </label>
+              <p
+                class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm"
+              >
+                {{ selectedPolicy.policyid }}
+              </p>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-gray-700">
+                Created Date
+              </label>
+              <p
+                class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm"
+              >
+                {{ new Date(selectedPolicy.createddate).toLocaleString() }}
+              </p>
+            </div>
+          </div>
+          <div class="col-span-full">
+            <div class="col-span-full">
+              <label class="text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <base-input
+                isTextarea
+                :class="'bg-gray-50'"
+                disabled
+                v-model="selectedPolicy.description"
+              >
+              </base-input>
+            </div>
           </div>
         </div>
+        <!-- <div>
+            
+          </div> -->
 
         <div>
           <div
@@ -1189,24 +1189,48 @@ const createManageApproversRef = ref();
               No approvers configured for this policy
             </p>
           </div>
+          <div v-else class="space-y-3">
+            <div
+              v-for="(mainApprover, index) in groupedApprovers.mainApprovers"
+              :key="mainApprover.approverid"
+              class="bg-white border rounded p-3"
+            >
+              <div class="font-medium text-gray-900 flex items-center gap-2">
+                <span
+                  class="rounded-full bg-blue-200 h-7 w-7 flex justify-center items-center text-xs font-semibold"
+                >
+                  {{ index + 1 }}
+                </span>
+                <div>
+                  <div class="text-sm w-full">{{ mainApprover.name }}</div>
 
-          <div v-else class="space-y-2">
-            <div class="flex flex-col gap-2">
+                  <div class="text-xs text-gray-500">
+                    {{ mainApprover.email }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Proxy approvers -->
               <div
-                v-for="(approver, index) in approvers"
-                :key="approver.approverid"
-                class="bg-white border rounded p-3"
+                v-if="getProxies(mainApprover.sequence).length > 0"
+                class="ml-6 mt-2 space-y-1"
               >
-                <div class="font-medium text-gray-900 flex items-center gap-2">
+                <div
+                  v-for="proxy in getProxies(mainApprover.sequence)"
+                  :key="proxy.approverid"
+                  class="flex items-center gap-2 text-sm text-gray-600"
+                >
                   <span
-                    class="rounded-full bg-blue-200 h-7 w-7 flex justify-center items-center text-xs font-semibold"
+                    class="rounded-full bg-orange-100 h-5 w-5 flex justify-center items-center text-xs font-semibold"
                   >
-                    {{ Number(index) + 1 }}
+                    P
                   </span>
-                  <div class="text-sm">{{ approver.name }}</div>
-                  <span class="text-xs text-gray-500">{{
-                    approver.email
-                  }}</span>
+                  <div>
+                    <div>
+                      {{ proxy.name }}
+                    </div>
+                    <div class="text-xs text-gray-400">{{ proxy.email }}</div>
+                  </div>
                 </div>
               </div>
             </div>

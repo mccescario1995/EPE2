@@ -6,6 +6,7 @@ import TopBar from "./TopBar.vue";
 import Overlay from "./Overlay.vue";
 import Sidebar from "./sidebar/Sidebar.vue";
 import { closeSidebar, sidebarOpen } from "./store";
+import Footer from "./Footer.vue";
 
 const route = useRoute();
 
@@ -31,6 +32,7 @@ watch(route, () => {
         <main class="h-screen overflow-auto px-2 pb-36 pt-4 md:pb-8 lg:px-4">
           <slot />
         </main>
+        <Footer/>
       </div>
     </div>
   </div>
