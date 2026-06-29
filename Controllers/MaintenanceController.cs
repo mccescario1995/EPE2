@@ -13,6 +13,7 @@ namespace EPEAPI.Controllers
     public class MaintenanceController : ControllerBase
     {
         private readonly EpeDbContext _context;
+
         public MaintenanceController(EpeDbContext contextdb)
         {
             _context = contextdb;
@@ -33,7 +34,9 @@ namespace EPEAPI.Controllers
         {
             try
             {
-                var policy = await _context.EpePolicymasters.Where(p => p.Isdelete == 0).ToListAsync();
+                var policy = await _context
+                    .EpePolicymasters.Where(p => p.Isdelete == 0)
+                    .ToListAsync();
                 if (policy == null || policy.Count == 0)
                 {
                     return NotFound(new { success = false, message = "No policy found" });
@@ -51,7 +54,7 @@ namespace EPEAPI.Controllers
         public async Task<IActionResult> PostPolicy(
             [FromBody] PolicyListRequest request,
             [FromQuery] string? search = null
-            )
+        )
         {
             try
             {
@@ -102,10 +105,7 @@ namespace EPEAPI.Controllers
                 var page = request.Page > 0 ? request.Page : 1;
                 var pageSize = request.PageSize > 0 ? request.PageSize : 10;
 
-                var items = await query
-                    .Skip((page-1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
+                var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
                 if (items == null || items.Count == 0)
                 {
@@ -113,15 +113,14 @@ namespace EPEAPI.Controllers
                 }
 
                 return Ok(
-                    new 
-                    { 
-                        success = true, 
+                    new
+                    {
+                        success = true,
                         items,
                         totalCount,
                         page,
                         pageSize,
                     }
-                        
                 );
             }
             catch (Exception e)
@@ -135,7 +134,9 @@ namespace EPEAPI.Controllers
         {
             try
             {
-                var policy = await _context.EpePolicymasters.Where(p => p.Policyid == id && p.Isdelete == 0).FirstAsync();
+                var policy = await _context
+                    .EpePolicymasters.Where(p => p.Policyid == id && p.Isdelete == 0)
+                    .FirstAsync();
                 if (policy == null)
                 {
                     return NotFound(new { success = false, message = "Policy Not Found" });
@@ -166,13 +167,20 @@ namespace EPEAPI.Controllers
                     Status = request.Status,
                     Createdby = request.UserId,
                     Createddate = DateTime.UtcNow.AddHours(8),
-                    Isdelete = 0
+                    Isdelete = 0,
                 };
 
                 _context.EpePolicymasters.Add(policy);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { success = true, message = "Policy created successfully", data = policy });
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        message = "Policy created successfully",
+                        data = policy,
+                    }
+                );
             }
             catch (Exception e)
             {
@@ -181,7 +189,10 @@ namespace EPEAPI.Controllers
         }
 
         [HttpPost("policy/update/{id}")]
-        public async Task<IActionResult> UpdatePolicy(int id, [FromBody] PolicyUpdateRequest request)
+        public async Task<IActionResult> UpdatePolicy(
+            int id,
+            [FromBody] PolicyUpdateRequest request
+        )
         {
             try
             {
@@ -191,9 +202,14 @@ namespace EPEAPI.Controllers
                     return NotFound(new { success = false, message = "Policy not found" });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.Description) || string.IsNullOrWhiteSpace(request.Shortname))
+                if (
+                    string.IsNullOrWhiteSpace(request.Description)
+                    || string.IsNullOrWhiteSpace(request.Shortname)
+                )
                 {
-                    return BadRequest(new { success = false, message = "Description and Shortname are required" });
+                    return BadRequest(
+                        new { success = false, message = "Description and Shortname are required" }
+                    );
                 }
 
                 policy.Description = request.Description;
@@ -212,16 +228,18 @@ namespace EPEAPI.Controllers
             }
         }
 
-
         [HttpPost("policy/delete/{id}")]
-        public async Task<IActionResult> DeletePolicy(int id, [FromBody] PolicyDeleteRequest request)
+        public async Task<IActionResult> DeletePolicy(
+            int id,
+            [FromBody] PolicyDeleteRequest request
+        )
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var existingItem = await _context.EpePolicymasters
-                   .Where(u => u.Policyid == id && u.Isdelete == 0)
-                   .FirstOrDefaultAsync();
+                var existingItem = await _context
+                    .EpePolicymasters.Where(u => u.Policyid == id && u.Isdelete == 0)
+                    .FirstOrDefaultAsync();
 
                 if (existingItem == null)
                 {
@@ -245,7 +263,10 @@ namespace EPEAPI.Controllers
         // Policy Approver Maintenance
 
         [HttpPost("policy/{policyId}/approvers/create")]
-        public async Task<IActionResult> CreateApprover(int policyId, [FromBody] CreateApproverRequest request)
+        public async Task<IActionResult> CreateApprover(
+            int policyId,
+            [FromBody] CreateApproverRequest request
+        )
         {
             try
             {
@@ -267,7 +288,14 @@ namespace EPEAPI.Controllers
                 _context.EpePolicyapprovers.Add(approver);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { success = true, message = "Approver added", item = approver });
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        message = "Approver added",
+                        item = approver,
+                    }
+                );
             }
             catch (Exception e)
             {
@@ -282,46 +310,55 @@ namespace EPEAPI.Controllers
             {
                 var userId = request.UserId;
 
-                var empId = await _context.CoreVUsers
-                        .Where(u => u.UserId == userId)
-                        .FirstOrDefaultAsync();
+                var empId = await _context
+                    .CoreVUsers.Where(u => u.UserId == userId)
+                    .FirstOrDefaultAsync();
 
                 if (empId == null)
                 {
-                    return BadRequest(new { success = false, message = "User not found", userId = request });
+                    return BadRequest(
+                        new
+                        {
+                            success = false,
+                            message = "User not found",
+                            userId = request,
+                        }
+                    );
                 }
 
-                var items = await _context.EpePolicyapprovers
-                    .Where(a => a.Policyid == policyId && a.Isdelete == 0)
+                var items = await _context
+                    .EpePolicyapprovers.Where(a => a.Policyid == policyId && a.Isdelete == 0)
                     .OrderBy(u => u.Linesequence)
                     .ThenBy(u => u.Sort)
                     .ToListAsync();
 
-                var imHead = await _context.CoreVEmployeeDetails
-                        .Where(e => e.EmplId == empId.EmplId)
-                        .Select(e => new
-                        {
-                            e.ImmediateId,
-                            e.ImmediateName,
-                            e.ImmediateEmail
-                        })
-                        .FirstOrDefaultAsync();
+                var imHead = await _context
+                    .CoreVEmployeeDetails.Where(e => e.EmplId == empId.EmplId)
+                    .Select(e => new
+                    {
+                        e.ImmediateId,
+                        e.ImmediateName,
+                        e.ImmediateEmail,
+                    })
+                    .FirstOrDefaultAsync();
 
-                var itemsWithRole = items.Select(a => new
-                {
-                    a.Id,
-                    a.Policyid,
-                    a.Approverid,
-                    Approvername = a.Approvername,
-                    Approveremail = a.Approveremail,
-                    a.Approvertype,
-                    a.Sort,
-                    a.Linesequence,
-                    a.Status,
-                    a.Isdelete,
-                    IsMainApprover = a.Linesequence == 1,
-                    ApproverRole = a.Linesequence == 1 ? "Main" : "Proxy"
-                }).ToList();
+                var itemsWithRole = items
+                    .Select(a => new
+                    {
+                        a.Id,
+                        a.Policyid,
+                        a.Approverid,
+                        Approvername = a.Approvername,
+                        Approveremail = a.Approveremail,
+                        a.Approvertype,
+                        a.Sort,
+                        a.Linesequence,
+                        a.Status,
+                        a.Isdelete,
+                        IsMainApprover = a.Linesequence == 1,
+                        ApproverRole = a.Linesequence == 1 ? "Main" : "Proxy",
+                    })
+                    .ToList();
 
                 //    Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
                 //    Approveremail = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateEmail : a.Approveremail,
@@ -341,46 +378,59 @@ namespace EPEAPI.Controllers
             {
                 var userId = request.UserId;
 
-                var empId = await _context.CoreVUsers
-                        .Where(u => u.UserId == userId)
-                        .FirstOrDefaultAsync();
+                var empId = await _context
+                    .CoreVUsers.Where(u => u.UserId == userId)
+                    .FirstOrDefaultAsync();
 
                 if (empId == null)
                 {
-                    return BadRequest(new { success = false, message = "User not found", userId = request });
+                    return BadRequest(
+                        new
+                        {
+                            success = false,
+                            message = "User not found",
+                            userId = request,
+                        }
+                    );
                 }
 
-                var items = await _context.EpePolicyapprovers
-                    .Where(a => a.Policyid == policyId && a.Isdelete == 0)
+                var items = await _context
+                    .EpePolicyapprovers.Where(a => a.Policyid == policyId && a.Isdelete == 0)
                     .OrderBy(u => u.Linesequence)
                     .ThenBy(u => u.Sort)
                     .ToListAsync();
 
-                var imHead = await _context.CoreVEmployeeDetails
-                        .Where(e => e.EmplId == empId.EmplId)
-                        .Select(e => new
-                        {
-                            e.ImmediateId,
-                            e.ImmediateName,
-                            e.ImmediateEmail
-                        })
-                        .FirstOrDefaultAsync();
+                var imHead = await _context
+                    .CoreVEmployeeDetails.Where(e => e.EmplId == empId.EmplId)
+                    .Select(e => new
+                    {
+                        e.ImmediateId,
+                        e.ImmediateName,
+                        e.ImmediateEmail,
+                    })
+                    .FirstOrDefaultAsync();
 
-                var itemsWithRole = items.Select(a => new
-                {
-                    a.Id,
-                    a.Policyid,
-                    a.Approverid,
-                    Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
-                    Approveremail = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateEmail : a.Approveremail,
-                    a.Approvertype,
-                    a.Sort,
-                    a.Linesequence,
-                    a.Status,
-                    a.Isdelete,
-                    IsMainApprover = a.Linesequence == 1,
-                    ApproverRole = a.Linesequence == 1 ? "Main" : "Proxy"
-                }).ToList();
+                var itemsWithRole = items
+                    .Select(a => new
+                    {
+                        a.Id,
+                        a.Policyid,
+                        a.Approverid,
+                        Approvername = a.Approvertype == "IM" && imHead != null
+                            ? imHead.ImmediateName
+                            : a.Approvername,
+                        Approveremail = a.Approvertype == "IM" && imHead != null
+                            ? imHead.ImmediateEmail
+                            : a.Approveremail,
+                        a.Approvertype,
+                        a.Sort,
+                        a.Linesequence,
+                        a.Status,
+                        a.Isdelete,
+                        IsMainApprover = a.Linesequence == 1,
+                        ApproverRole = a.Linesequence == 1 ? "Main" : "Proxy",
+                    })
+                    .ToList();
 
                 //    Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
                 //    Approveremail = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateEmail : a.Approveremail,
@@ -394,57 +444,106 @@ namespace EPEAPI.Controllers
         }
 
         [HttpPost("create/policy/{policyId}/approvers")]
-        public async Task<IActionResult> GetPolicyApproverCreate(int policyId, ApproverRequest request)
+        public async Task<IActionResult> GetPolicyApproverCreate(
+            int policyId,
+            ApproverRequest request
+        )
         {
             try
             {
                 var userId = request.UserId;
 
-                var empId = await _context.CoreVUsers
-                        .Where(u => u.UserId == userId)
-                        .FirstOrDefaultAsync();
+                var empId = await _context
+                    .CoreVUsers.Where(u => u.UserId == userId)
+                    .FirstOrDefaultAsync();
 
                 if (empId == null)
                 {
-                    return BadRequest(new { success = false, message = "User not found", userId = request });
+                    return BadRequest(
+                        new
+                        {
+                            success = false,
+                            message = "User not found",
+                            userId = request,
+                        }
+                    );
                 }
 
-                var items = await _context.EpePolicyapprovers
-                    .Where(a => a.Policyid == policyId && a.Isdelete == 0)
+                var items = await _context
+                    .EpePolicyapprovers.Where(a => a.Policyid == policyId && a.Isdelete == 0)
                     .OrderBy(u => u.Linesequence)
                     .ThenBy(u => u.Sort)
                     .ToListAsync();
 
-                var imHead = await _context.CoreVEmployeeDetails
-                        .Where(e => e.EmplId == empId.EmplId)
-                        .Select(e => new
-                        {
-                            e.ImmediateId,
-                            e.ImmediateName,
-                            e.ImmediateEmail
-                        })
-                        .FirstOrDefaultAsync();
+                var imHead = await _context
+                    .CoreVEmployeeDetails.Where(e => e.EmplId == empId.EmplId)
+                    .Select(e => new
+                    {
+                        e.ImmediateId,
+                        e.ImmediateName,
+                        e.ImmediateEmail,
+                    })
+                    .FirstOrDefaultAsync();
 
-                var itemsWithRole = items.Select(a => new
-                {
-                    a.Id,
-                    a.Policyid,
-                    a.Approverid,
-                    Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
-                    Approveremail = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateEmail : a.Approveremail,
-                    a.Approvertype,
-                    a.Sort,
-                    a.Linesequence,
-                    a.Status,
-                    a.Isdelete,
-                    IsMainApprover = a.Linesequence == 1,
-                    ApproverRole = a.Linesequence == 1 ? "Main" : "Proxy"
-                }).ToList();
+                var itemsWithRole = items
+                    .Select(a => new
+                    {
+                        a.Id,
+                        a.Policyid,
+                        a.Approverid,
+                        Approvername = a.Approvertype == "IM" && imHead != null
+                            ? imHead.ImmediateName
+                            : a.Approvername,
+                        Approveremail = a.Approvertype == "IM" && imHead != null
+                            ? imHead.ImmediateEmail
+                            : a.Approveremail,
+                        a.Approvertype,
+                        a.Sort,
+                        a.Linesequence,
+                        a.Status,
+                        a.Isdelete,
+                        IsMainApprover = a.Linesequence == 1,
+                        ApproverRole = a.Linesequence == 1 ? "Main" : "Proxy",
+                    })
+                    .ToList();
 
                 //    Approvername = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateName : a.Approvername,
                 //    Approveremail = a.Approvertype == "IM" && imHead != null ? imHead.ImmediateEmail : a.Approveremail,
 
                 return Ok(new { success = true, items = itemsWithRole });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
+        [HttpGet("employees/immediate-head")]
+        public async Task<IActionResult> GetImmediateHead([FromQuery] int userId)
+        {
+            try
+            {
+                var user = await _context
+                    .CoreVUsers.Where(u => u.UserId == userId)
+                    .FirstOrDefaultAsync();
+
+                if (user == null)
+                    return NotFound(new { success = false, message = "User not found" });
+
+                var empDetails = await _context
+                    .CoreVEmployeeDetails.Where(e => e.EmplId == user.EmplId)
+                    .Select(e => new
+                    {
+                        immediateId = e.ImmediateId,
+                        immediateName = e.ImmediateName,
+                        immediateEmail = e.ImmediateEmail,
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (empDetails == null)
+                    return NotFound(new { success = false, message = "Employee not found" });
+
+                return Ok(new { success = true, immediateId = empDetails.immediateId });
             }
             catch (Exception e)
             {
@@ -460,21 +559,19 @@ namespace EPEAPI.Controllers
 
             q = q.Trim();
 
-            var searchWords = q
-                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var searchWords = q.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            var query = _context.CoreVEmployeeDetails
-                .AsNoTracking(); // IMPORTANT for views / keyless entities
+            var query = _context.CoreVEmployeeDetails.AsNoTracking(); // IMPORTANT for views / keyless entities
 
             foreach (var word in searchWords)
             {
                 var temp = word;
 
                 query = query.Where(e =>
-                    EF.Functions.Like(e.Fname ?? "", $"%{temp}%") ||
-                    EF.Functions.Like(e.Lname ?? "", $"%{temp}%") ||
-                    EF.Functions.Like(e.Mname ?? "", $"%{temp}%") ||
-                    EF.Functions.Like(e.Emailadd ?? "", $"%{temp}%")
+                    EF.Functions.Like(e.Fname ?? "", $"%{temp}%")
+                    || EF.Functions.Like(e.Lname ?? "", $"%{temp}%")
+                    || EF.Functions.Like(e.Mname ?? "", $"%{temp}%")
+                    || EF.Functions.Like(e.Emailadd ?? "", $"%{temp}%")
                 );
             }
 
@@ -485,7 +582,7 @@ namespace EPEAPI.Controllers
                 {
                     id = e.EmplId,
                     label = e.Employeename2,
-                    email = e.Emailadd
+                    email = e.Emailadd,
                 })
                 .ToList();
 
@@ -505,8 +602,9 @@ namespace EPEAPI.Controllers
                 return NotFound(new { success = false, message = "Approver not found" });
             }
 
-            var approver = await _context.EpePolicyapprovers
-                .FirstOrDefaultAsync(a => a.Policyid == policyId && a.Id == approverId && a.Isdelete == 0);
+            var approver = await _context.EpePolicyapprovers.FirstOrDefaultAsync(a =>
+                a.Policyid == policyId && a.Id == approverId && a.Isdelete == 0
+            );
 
             if (approver == null)
             {
@@ -520,7 +618,10 @@ namespace EPEAPI.Controllers
         }
 
         [HttpPost("policy/{policyId}/approvers/reorder")]
-        public async Task<IActionResult> ReorderApprovers(int policyId, [FromBody] List<ReorderApproverRequest> requests)
+        public async Task<IActionResult> ReorderApprovers(
+            int policyId,
+            [FromBody] List<ReorderApproverRequest> requests
+        )
         {
             if (requests == null || !requests.Any())
             {
@@ -532,12 +633,15 @@ namespace EPEAPI.Controllers
             {
                 foreach (var request in requests)
                 {
-                    var approver = await _context.EpePolicyapprovers
-                        .FirstOrDefaultAsync(a => a.Id == request.Id && a.Policyid == policyId && a.Isdelete == 0);
+                    var approver = await _context.EpePolicyapprovers.FirstOrDefaultAsync(a =>
+                        a.Id == request.Id && a.Policyid == policyId && a.Isdelete == 0
+                    );
 
                     if (approver == null)
                     {
-                        return NotFound(new { success = false, message = $"Approver {request.Id} not found" });
+                        return NotFound(
+                            new { success = false, message = $"Approver {request.Id} not found" }
+                        );
                     }
 
                     approver.Sort = request.Sort;
@@ -558,7 +662,11 @@ namespace EPEAPI.Controllers
         }
 
         [HttpPost("policy/{policyId}/approvers/update/{approverId}")]
-        public async Task<IActionResult> UpdateApprover(int policyId, int approverId, [FromBody] UpdateApproverRequest request)
+        public async Task<IActionResult> UpdateApprover(
+            int policyId,
+            int approverId,
+            [FromBody] UpdateApproverRequest request
+        )
         {
             if (policyId <= 0)
             {
@@ -570,8 +678,9 @@ namespace EPEAPI.Controllers
                 return BadRequest(new { success = false, message = "Invalid approver ID" });
             }
 
-            var approver = await _context.EpePolicyapprovers
-                .FirstOrDefaultAsync(a => a.Policyid == policyId && a.Id == approverId);
+            var approver = await _context.EpePolicyapprovers.FirstOrDefaultAsync(a =>
+                a.Policyid == policyId && a.Id == approverId
+            );
 
             if (approver == null)
             {
@@ -586,10 +695,14 @@ namespace EPEAPI.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok(new { success = true, message = "Approver updated successfully", item = approver });
+            return Ok(
+                new
+                {
+                    success = true,
+                    message = "Approver updated successfully",
+                    item = approver,
+                }
+            );
         }
-
     }
-
-                                                                                                                                                                                                                                                                                                                    
 }
