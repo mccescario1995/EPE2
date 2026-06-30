@@ -36,6 +36,12 @@ const cancelDelete = () => {
   deletingItem.value = null;
 };
 
+const tableRef = ref();
+
+const reloadTable = () => {
+  tableRef.value?.refresh();
+};
+
 const deleteRequest = async () => {
   if (!deletingItem.value) return;
 
@@ -70,6 +76,7 @@ const deleteRequest = async () => {
       });
 
       await fetchExemptionRequests();
+      reloadTable();
     } else {
       console.error("Delete failed:", response.message);
     }
@@ -170,6 +177,7 @@ const fetchExemptionData = async (params: {
       <!-- Exemption Requests List -->
       <div class="mb-6 px-2 rounded-lg">
         <base-table
+          ref="tableRef"
           :server-pagination="true"
           :fetch-data="fetchExemptionData"
           :pagination="true"

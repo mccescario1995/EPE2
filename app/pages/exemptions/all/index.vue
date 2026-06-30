@@ -33,6 +33,12 @@ const cancelDelete = () => {
   deletingItem.value = null;
 };
 
+const tableRef = ref();
+
+const reloadTable = () => {
+  tableRef.value?.refresh();
+};
+
 const deleteRequest = async () => {
   if (!deletingItem.value) return;
 
@@ -67,6 +73,7 @@ const deleteRequest = async () => {
       });
 
       await fetchExemptionRequests();
+      tableRef.value?.refresh();
     } else {
       console.error("Delete failed:", response.message);
     }
@@ -102,11 +109,11 @@ const fetchExemptionData = async (params: {
   search: string;
   filters: Record<string, string>;
   sortField?: string;
-  sortDirection?: 'asc' | 'desc';
+  sortDirection?: "asc" | "desc";
 }) => {
   loading.value = true;
-  const response = await apiFetch('/api/exemption', {
-    method: 'POST',
+  const response = await apiFetch("/api/exemption", {
+    method: "POST",
     body: JSON.stringify({
       UserId: parseInt(userId.emplId),
       page: params.page,
@@ -115,7 +122,7 @@ const fetchExemptionData = async (params: {
       sortField: params.sortField,
       sortDirection: params.sortDirection,
     }),
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
     parseJson: true,
   });
   loading.value = false;
@@ -130,7 +137,6 @@ const fetchExemptionData = async (params: {
 const handleCreate = () => {
   router.push(`/exemptions/create`);
 };
-
 </script>
 
 <template>
@@ -152,7 +158,6 @@ const handleCreate = () => {
         </div>
 
         <Button
-          
           variant="primary"
           size="md"
           icon="add"
@@ -167,6 +172,7 @@ const handleCreate = () => {
       <!-- Exemption Requests List -->
       <div class="mb-6 px-2 rounded-lg">
         <base-table
+          ref="tableRef"
           :server-pagination="true"
           :fetch-data="fetchExemptionData"
           :pagination="true"
@@ -218,7 +224,6 @@ const handleCreate = () => {
             },
           }"
           :date-fields="['createdDate']"
-          
           :actions="[
             {
               label: IconView,
@@ -254,7 +259,6 @@ const handleCreate = () => {
             },
           ]"
         />
-
       </div>
     </main>
 
