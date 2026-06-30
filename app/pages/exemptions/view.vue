@@ -76,6 +76,17 @@ const fetchExemptionDetails = async () => {
   }
 };
 
+const isViewableInBrowser = (fileType: string): boolean => {
+  const extension = "." + fileType.toLowerCase();
+  return [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".pdf"].includes(
+    extension,
+  );
+};
+
+const getAttachmentButtonLabel = (filetype: string): string => {
+  return isViewableInBrowser(filetype) ? "View" : "Download";
+};
+
 const fetchPolicyName = async (policyId: number): Promise<string> => {
   try {
     const response = await apiFetch("/api/policy", {
@@ -501,10 +512,15 @@ const currentUserPendingAction = computed((): boolean => {
                   </div>
                   <a
                     :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
+                    :download="!isViewableInBrowser(attachment.filetype)"
+                    :class="
+                      isViewableInBrowser(attachment.filetype)
+                        ? 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 '
+                        : 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200'
+                    "
                     target="_blank"
-                    class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
                   >
-                    View
+                    {{ getAttachmentButtonLabel(attachment.filetype) }}
                   </a>
                 </div>
               </div>

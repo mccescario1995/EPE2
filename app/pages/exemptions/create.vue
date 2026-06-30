@@ -824,21 +824,6 @@ onMounted(async () => {
               {{ errors.attachments }}
             </p>
 
-            <!-- Multi-select input
-             <input
-               type="file"
-               multiple
-               accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
-               @change="handleMultipleFileSelect"
-               :disabled="remainingAttachmentSlots <= 0 || totalNewAttachmentsSize >= MAX_TOTAL_SIZE"
-               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-             />
-             <p class="text-xs text-gray-500 mt-1 ps-2">
-               Select the exact number of files you are allowed to add.
-               You can currently add up to {{ remainingAttachmentSlots }} more file(s).
-               Maximum 5 files total per exemption (10 MB each, 50 MB combined).
-             </p> -->
-
             <!-- Multi-select input -->
 
             <!-- Selected files list -->
@@ -862,6 +847,7 @@ onMounted(async () => {
                   @onclick="() => removeAttachment(index)"
                   icon="trash"
                   icon-position="center"
+                  type="button"
                 />
               </div>
             </div>

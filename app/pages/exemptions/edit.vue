@@ -143,7 +143,8 @@ const fetchPolicyName = async (policyId: number) => {
       const policy = items.find((p: any) => p.policyid === policyId);
 
       if (policy) {
-        policyName.value = policy.shortname || policy.description || `Policy ${policyId}`;
+        policyName.value =
+          policy.shortname || policy.description || `Policy ${policyId}`;
       }
     }
 
@@ -213,9 +214,6 @@ const fetchExemptionDetails = async () => {
         approversData.value = response.approvers || [];
       }
 
-      // Set approvers data
-      // approversData.value = response.approvers || [];
-
       // Fetch attachments
       await fetchAttachments();
 
@@ -282,7 +280,7 @@ const validateForm = () => {
     transactionNumber: "",
     requestorName: "",
     details: "",
-      attachments: "",
+    attachments: "",
   };
 
   const isDraft = exemptionDetails.value?.status === "D";
@@ -378,7 +376,7 @@ const handleSubmit = async () => {
       });
       // Redirect to exemptions view page after success
       // router.push(`/exemptions/view?id=${exemptionId.value}`);
-      router.back()
+      router.back();
     } else {
       showToast({
         type: "error",
@@ -498,8 +496,6 @@ const handleUpdateDraft = async () => {
   }
 };
 
-
-
 // Get status display
 const getStatusDisplay = (status: string) => {
   const statusMap: Record<string, string> = {
@@ -581,50 +577,16 @@ onUnmounted(() => {
   resendIntervals.clear();
 });
 
-// const resendToApprover = async (transApproverId: number) => {
-//   if (cooldowns.value[transApproverId] && cooldowns.value[transApproverId] > 0) return;
-//   isResending.value = transApproverId;
-//   try {
-//     const response = await apiFetch(
-//       `/api/exemption/resend/${exemptionId.value}`,
-//       {
-//         method: "POST",
-//         body: JSON.stringify({ transApproverId }),
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//       },
-//     );
+const isViewableInBrowser = (fileType: string): boolean => {
+  const extension = "." + fileType.toLowerCase();
+  return [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".pdf"].includes(
+    extension,
+  );
+};
 
-//     if (response) {
-//       showToast({
-//         type: "success",
-//         title: "Success",
-//         message: "Notification sent to approver successfully!",
-//         duration: 5000,
-//       });
-//     } else {
-//       showToast({
-//         type: "error",
-//         title: "Error",
-//         message: response?.message || "Failed to resend notification",
-//         duration: 5000,
-//       });
-//     }
-//   } catch (error: any) {
-//     console.error("Error resending notification:", error);
-//     showToast({
-//       type: "error",
-//       title: "Error",
-//       message:
-//         error.message || "An error occurred while resending notification",
-//       duration: 5000,
-//     });
-//   } finally {
-//     isResending.value = null;
-//     startResendCooldown(transApproverId, 10);
-//   }
-// };
+const getAttachmentButtonLabel = (filetype: string): string => {
+  return isViewableInBrowser(filetype) ? "View" : "Download";
+};
 
 const resendToMainApprover = async (transApproverId: number) => {
   if (cooldowns.value[transApproverId] > 0) return;
@@ -831,7 +793,8 @@ const handleMultipleFileSelect = (event: Event) => {
     validFiles.reduce((s, f) => s + f.size, 0) -
       (filesToAdd.reduce((s, f) => s + f.size, 0) || 0)
   ) {
-    errors.value.attachments = "Adding these files would exceed the 50MB total limit.";
+    errors.value.attachments =
+      "Adding these files would exceed the 50MB total limit.";
     showToast({
       type: "error",
       title: "Size Limit",
@@ -1099,6 +1062,7 @@ onMounted(() => {
               iconPosition="left"
               @onclick="handleSubmit"
               :loading="isSubmitting"
+              :disabled="newAttachments.length > 0"
             >
               Save Changes
             </Button>
@@ -1298,12 +1262,24 @@ onMounted(() => {
                       </div>
                     </div>
                     <div class="flex items-center gap-2">
-                      <a
+                      <!-- <a
                         :href="`${config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
                         target="_blank"
                         class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
                       >
                         View
+                      </a> -->
+                      <a
+                        :href="`${config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
+                        :download="!isViewableInBrowser(attachment.filetype)"
+                        :class="
+                          isViewableInBrowser(attachment.filetype)
+                            ? 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200'
+                            : 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200'
+                        "
+                        target="_blank"
+                      >
+                        {{ getAttachmentButtonLabel(attachment.filetype) }}
                       </a>
                       <button
                         @click="deleteAttachment(attachment.attachId)"
@@ -1365,9 +1341,7 @@ onMounted(() => {
                         >{{ attachment.file.name }}</span
                       >
                       <span class="text-xs text-gray-500 whitespace-nowrap">
-                        ({{
-                          (attachment.file.size / 1024 / 1024).toFixed(2)
-                        }}
+                        ({{ (attachment.file.size / 1024 / 1024).toFixed(2) }}
                         MB)
                       </span>
                     </div>
