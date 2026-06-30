@@ -1,8 +1,42 @@
+# =========================
+# ASP.NET / .NET
+# =========================
+
 .vs/
 bin/
 obj/
+out/
+publish/
 
-wwwroot/uploads/
-
+# User-specific files
 *.user
 *.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+*.dll
+*.exe
+*.pdb
+*.cache
+
+# ASP.NET Core HTTPS
+*.pfx
+
+# Logs
+*.log
+logs/
+
+# EF Core migrations designer files (optional but common)
+Migrations/*Designer.cs
+
+# Rider / JetBrains
+.idea/
+*.DotSettings.user
+
+# Visual Studio Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
