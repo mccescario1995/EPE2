@@ -1006,8 +1006,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh">
-    <header class="bg-white shadow">
+  <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900">
+    <header class="bg-white dark:bg-gray-800 shadow">
       <div
         class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
       >
@@ -1021,7 +1021,7 @@ onMounted(() => {
             customClass="rounded-full"
             @onclick="handleBack"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900">
+          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-100">
             {{
               exemptionDetails?.status === "D" ? "Edit Draft" : "Edit Request"
             }}
@@ -1075,7 +1075,7 @@ onMounted(() => {
       <!-- Loading State -->
       <div v-if="isLoading" class="flex items-center justify-center py-20">
         <svg
-          class="animate-spin h-8 w-8 text-blue-600"
+          class="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -1094,17 +1094,21 @@ onMounted(() => {
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           ></path>
         </svg>
-        <span class="ml-3 text-gray-600">Loading exemption details...</span>
+        <span class="ml-3 text-gray-600 dark:text-gray-400"
+          >Loading exemption details...</span
+        >
       </div>
 
       <!-- Content -->
       <div v-else>
         <!-- Info Notice -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4 mb-3">
+        <div
+          class="bg-blue-50 dark:bg-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mt-4 mb-3"
+        >
           <div class="flex">
             <div class="shrink-0">
               <svg
-                class="h-5 w-5 text-blue-400"
+                class="h-5 w-5 text-blue-400 dark:text-blue-300"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -1117,7 +1121,7 @@ onMounted(() => {
               </svg>
             </div>
             <div class="ml-3">
-              <p class="text-sm text-blue-700">
+              <p class="text-sm text-blue-700 dark:text-blue-300">
                 Note: Request Status and Approver Status cannot be edited. These
                 are managed automatically.
               </p>
@@ -1127,15 +1131,15 @@ onMounted(() => {
         <div class="grid grid-cols-4 gap-6">
           <!-- Left Column -->
           <div
-            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow p-6"
+            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow p-6 dark:bg-gray-800"
           >
             <!-- Transaction Info -->
             <div class="mb-8">
               <div
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
+                class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b"
               >
                 <div class="flex justify-between items-center">
-                  <h2>Request Information</h2>
+                  <h2 class="dark:text-gray-100">Request Information</h2>
                   <div v-if="exemptionDetails">
                     <span
                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
@@ -1156,18 +1160,22 @@ onMounted(() => {
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
+                  <label
+                    class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
+                  >
                     Transaction Number
                   </label>
-                  <p class="text-gray-900">
+                  <p class="text-gray-900 dark:text-gray-100">
                     {{ formData.transactionNumber || "N/A" }}
                   </p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
+                  <label
+                    class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
+                  >
                     Requestor Name
                   </label>
-                  <p class="text-gray-900">
+                  <p class="text-gray-900 dark:text-gray-100">
                     {{ formData.requestorName || "N/A" }}
                   </p>
                 </div>
@@ -1180,7 +1188,9 @@ onMounted(() => {
                 <div class="grid grid-cols-1 gap-6">
                   <!-- md:grid-cols-2 -->
                   <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">
+                    <label
+                      class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
+                    >
                       Policy To Override
                       <span
                         v-if="exemptionDetails?.status !== 'D'"
@@ -1194,23 +1204,27 @@ onMounted(() => {
                       placeholder="Select a policy"
                       :disabled="isLoadingPolicies"
                       :errorMessage="errors.policyId"
+                      class="dark:text-gray-200 dark:bg-gray-700"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    Details <span class="text-red-500">*</span>
-                  </label>
-                  <BaseInput
-                    v-model="formData.details"
-                    type="textarea"
-                    isTextarea
-                    :rowCount="5"
-                    placeholder="Explain the reason for your exemption request..."
-                    :errorMessage="errors.details"
-                    :maxCharCount="1000"
-                  />
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
+                    >
+                      Details <span class="text-red-500">*</span>
+                    </label>
+                    <BaseInput
+                      v-model="formData.details"
+                      type="textarea"
+                      isTextarea
+                      :rowCount="5"
+                      placeholder="Explain the reason for your exemption request..."
+                      :errorMessage="errors.details"
+                      :maxCharCount="1000"
+                      class="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1218,25 +1232,27 @@ onMounted(() => {
             <!-- Attachments -->
             <div class="mb-8">
               <h2
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
+                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b dark:text-gray-100"
               >
                 Attachments
               </h2>
 
               <!-- Existing Attachments -->
               <div v-if="attachments.length > 0" class="mb-6">
-                <h3 class="text-lg font-medium text-gray-700 mb-3">
+                <h3
+                  class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-3"
+                >
                   Existing Attachments
                 </h3>
                 <div class="space-y-2">
                   <div
                     v-for="attachment in attachments"
                     :key="attachment.attachId"
-                    class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
                   >
                     <div class="flex items-center">
                       <svg
-                        class="h-5 w-5 text-gray-400 mr-3"
+                        class="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -1249,11 +1265,12 @@ onMounted(() => {
                         />
                       </svg>
                       <div>
-                        <p class="text-sm font-medium text-gray-900">
+                        <p
+                          class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                        >
                           {{ attachment.uploadFilename }}
                         </p>
-                        <p class="text-xs text-gray-500">
-                          <!-- // {{ attachment.referenceType }} • -->
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
                           {{ attachment.filetype }} •
                           {{
                             new Date(attachment.createdate).toLocaleDateString()
@@ -1262,28 +1279,21 @@ onMounted(() => {
                       </div>
                     </div>
                     <div class="flex items-center gap-2">
-                      <!-- <a
-                        :href="`${config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
-                        target="_blank"
-                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
-                      >
-                        View
-                      </a> -->
                       <a
-                        :href="`${config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
+                        :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
                         :download="!isViewableInBrowser(attachment.filetype)"
                         :class="
                           isViewableInBrowser(attachment.filetype)
-                            ? 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200'
-                            : 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200'
+                            ? 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700'
+                            : 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:border-green-800 dark:hover:bg-green-700' 
                         "
                         target="_blank"
-                      >
+                      > 
                         {{ getAttachmentButtonLabel(attachment.filetype) }}
                       </a>
                       <button
                         @click="deleteAttachment(attachment.attachId)"
-                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200"
+                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-800/20 dark:text-red-300 dark:hover:bg-red-700"
                       >
                         Delete
                       </button>
@@ -1294,9 +1304,13 @@ onMounted(() => {
 
               <!-- Add New Attachments -->
               <div v-if="attachments.length < MAX_FILES">
-                <h3 class="text-lg font-medium text-gray-700 mb-3">
+                <h3
+                  class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-3"
+                >
                   Add New Attachments
-                  <span class="text-sm text-gray-500 font-normal">
+                  <span
+                    class="text-sm text-gray-500 dark:text-gray-400 font-normal"
+                  >
                     ({{ attachments.length }}/{{ MAX_FILES }} used —
                     {{ remainingAttachmentSlots }} remaining)
                   </span>
@@ -1304,7 +1318,7 @@ onMounted(() => {
 
                 <p
                   v-if="errors.attachments"
-                  class="mt-1 text-xs text-red-500 border border-red-500 rounded px-2 py-3 mb-3"
+                  class="mt-1 text-xs text-red-500 dark:text-red-400 border border-red-500 dark:border-red-400 rounded px-2 py-3 mb-3"
                 >
                   {{ errors.attachments }}
                 </p>
@@ -1319,9 +1333,9 @@ onMounted(() => {
                     remainingAttachmentSlots <= 0 ||
                     totalNewAttachmentsSize >= MAX_TOTAL_SIZE
                   "
-                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:bg-gray-700 dark:file:bg-gray-600 dark:file:text-gray-200 dark:hover:file:bg-gray-500 mb-3"
                 />
-                <p class="text-xs text-gray-500 mt-1">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Select the exact number of files you are allowed to add. You
                   can currently add up to {{ remainingAttachmentSlots }} more
                   file(s). Maximum 5 files total per exemption (10 MB each, 50
@@ -1333,20 +1347,22 @@ onMounted(() => {
                   <div
                     v-for="(attachment, index) in newAttachments"
                     :key="index"
-                    class="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg"
+                    class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg"
                   >
-                    <div class="flex items-center gap-3 min-w-0">
+                    <div class="flex items-center gap-3 min-w-0 me-2">
                       <span
-                        class="text-sm font-medium text-gray-900 truncate"
+                        class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate"
                         >{{ attachment.file.name }}</span
                       >
-                      <span class="text-xs text-gray-500 whitespace-nowrap">
+                      <span
+                        class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap"
+                      >
                         ({{ (attachment.file.size / 1024 / 1024).toFixed(2) }}
                         MB)
                       </span>
                     </div>
                     <Button
-                      variant="outline-danger"
+                      variant="dark:outline-danger"
                       size="sm"
                       @onclick="() => removeNewAttachment(index)"
                       icon="trash"
@@ -1358,10 +1374,10 @@ onMounted(() => {
                 <!-- Live usage counter -->
                 <div
                   v-if="newAttachments.length > 0"
-                  class="mt-2 text-xs text-gray-600"
+                  class="mt-2 text-xs text-gray-600 dark:text-gray-400"
                 >
                   {{ totalNewAttachmentsSizeMB }} MB of new files
-                  <span class="text-gray-400">
+                  <span class="text-gray-400 dark:text-gray-500">
                     ({{ newAttachments.length }} new •
                     {{ totalAttachmentsCount }}/{{ MAX_FILES }} total)
                   </span>
@@ -1384,12 +1400,12 @@ onMounted(() => {
 
           <!-- Right Column -->
           <div
-            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow px-6 py-6"
+            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow px-6 py-6 dark:bg-gray-800 "
           >
             <!-- Approvers Status -->
             <div class="mb-8">
-              <div class="border-b flex justify-between">
-                <h2 class="text-xl font-semibold text-gray-800 mb-2">
+              <div class="border-b flex justify-between mb-3">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2 dark:text-gray-100">
                   Approvers Status
                 </h2>
                 <div>
@@ -1422,7 +1438,7 @@ onMounted(() => {
                   v-for="(approver, index) in groupedApprovers.mainApprovers"
                   :key="approver.transApproverId"
                 >
-                  <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
                     <div class="flex justify-between items-start mb-2">
                       <div class="flex items-start">
                         <span
@@ -1432,10 +1448,10 @@ onMounted(() => {
                         </span>
 
                         <div>
-                          <p class="text-sm font-medium text-gray-900">
+                          <p class="text-sm font-medium text-gray-900 dark:text-gray-100 ">
                             {{ approver.approverName }}
                           </p>
-                          <p class="text-xs text-gray-500">
+                          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
                             {{ approver.approverEmail || "" }}
                           </p>
                           <div class="flex items-center gap-2 mt-1">
@@ -1533,13 +1549,13 @@ onMounted(() => {
                       >
                         <div class="flex items-start">
                           <span
-                            class="w-2 h-2 rounded-full bg-blue-400 mt-1.5"
+                            class="w-2 h-2 rounded-full bg-orange-400 mt-1.5"
                           ></span>
                           <div class="ps-3">
-                            <p class="text-sm text-gray-700">
+                            <p class="text-sm text-gray-700 dark:text-gray-300 mb-1">
                               {{ proxy.approverName }}
                             </p>
-                            <p class="text-xs text-gray-500">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
                               {{ proxy.approverEmail || "" }}
                             </p>
                             <span
@@ -1627,7 +1643,7 @@ onMounted(() => {
               </div>
               <div
                 v-else
-                class="text-sm flex items-center justify-center h-24 text-gray-400"
+                class="text-sm flex items-center justify-center h-24 text-gray-400 dark:text-gray-500"
               >
                 <span
                   v-if="exemptionDetails?.status === 'D'"
@@ -1642,59 +1658,18 @@ onMounted(() => {
             <!-- Remarks (if any) -->
             <div v-if="exemptionDetails?.remarks" class="mb-8">
               <h2
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
+                class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b"
               >
                 Remarks
               </h2>
-              <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <p class="text-gray-900 whitespace-pre-wrap">
+              <div
+                class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600"
+              >
+                <p class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                   {{ exemptionDetails.remarks }}
                 </p>
               </div>
             </div>
-
-            <!-- Audit Trail -->
-            <!-- <div class="mb-8">
-              <h2
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
-              >
-                Audit Trail
-              </h2>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    Created Date
-                  </label>
-                  <p class="text-gray-900">
-                    {{ formatDate(exemptionDetails?.createdDate) }}
-                  </p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    Modified Date
-                  </label>
-                  <p class="text-gray-900">
-                    {{ formatDate(exemptionDetails?.modifiedDate) }}
-                  </p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    Workstation
-                  </label>
-                  <p class="text-gray-900">
-                    {{ exemptionDetails?.workstation || "N/A" }}
-                  </p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
-                    IP Address
-                  </label>
-                  <p class="text-gray-900">
-                    {{ exemptionDetails?.ipAddress || "N/A" }}
-                  </p>
-                </div>
-              </div>
-            </div> -->
           </div>
         </div>
       </div>

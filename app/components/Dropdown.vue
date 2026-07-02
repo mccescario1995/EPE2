@@ -35,6 +35,7 @@ const props = withDefaults(
     debounceTime?: number;
     disabled?: boolean;
     objectOutput?: boolean;
+    class?: string;
   }>(),
   {
     placeholder: "Select an option",
@@ -51,6 +52,7 @@ const props = withDefaults(
     debounceTime: 300,
     disabled: false,
     objectOutput: true,
+    class: "",
   }
 );
 
@@ -316,14 +318,14 @@ const handleKeyDown = (e: KeyboardEvent) => {
     <!-- Trigger Button -->
     <div
       v-if="!disabled"
-      class="flex items-center justify-between p-2 border border-gray-300 rounded-md cursor-pointer bg-white hover:border-gray-400 transition-colors"
+      class="flex items-center justify-between p-2 border border-gray-300 rounded-md cursor-pointer bg-white hover:border-gray-400 transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400 dark:hover:border-gray-500"
       @click="toggleDropdown()"
     >
       <div class="truncate max-w-[90%]">
-        <span v-if="selectedLabels" class="text-gray-800">
+        <span v-if="selectedLabels" class="text-gray-800 dark:text-gray-100">
           {{ selectedLabels }}
         </span>
-        <span v-else class="text-gray-500">
+        <span v-else class="text-gray-500 dark:text-gray-400">
           {{ placeholder }}
         </span>
       </div>
@@ -331,7 +333,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
         <button
           v-if="(multiple && modelValue?.length) || (!multiple && modelValue)"
           @click.stop="clearSelection"
-          class="text-gray-500 hover:text-gray-700"
+          class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -363,13 +365,13 @@ const handleKeyDown = (e: KeyboardEvent) => {
     </div>
     <div
       v-else
-      class="flex items-center justify-between p-2 border border-gray-300 rounded-md cursor-pointer bg-white hover:border-gray-400 transition-colors"
+      class="flex items-center justify-between p-2 border border-gray-300 rounded-md cursor-pointer bg-white hover:border-gray-400 transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400 dark:hover:border-gray-500"
     >
       <div class="truncate max-w-[90%]">
-        <span v-if="selectedLabels" class="text-gray-800">
+        <span v-if="selectedLabels" class="text-gray-800 dark:text-gray-100">
           {{ selectedLabels }}
         </span>
-        <span v-else class="text-gray-500">
+        <span v-else class="text-gray-500 dark:text-gray-400">
           {{ placeholder }}
         </span>
       </div>
@@ -398,20 +400,20 @@ const handleKeyDown = (e: KeyboardEvent) => {
       :style="{ 'max-height': maxHeight }"
     > -->
       <!-- Search Input -->
-      <div class="p-2 border-b border-gray-200 sticky top-0 bg-white z-10">
+      <div class="p-2 border-b border-gray-200 dark:border-0 sticky top-0 bg-white z-10 dark:bg-gray-800">
         <input
           type="text"
           v-model="searchQuery"
           :placeholder="searchPlaceholder"
-          class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-gray-700 dark:bg-gray-100"
           @click.stop
         />
       </div>
 
       <!-- Dropdown Items -->
-      <div class="overflow-y-auto max-h-52">
+      <div class="overflow-y-auto max-h-52 dark:bg-gray-800">
         <!-- Loading state -->
-        <div v-if="isFetching" class="p-4 flex justify-center">
+        <div v-if="isFetching" class="p-4 flex justify-center dark:bg-gray-800">
           <svg
             class="animate-spin h-5 w-5 text-blue-500"
             xmlns="http://www.w3.org/2000/svg"
@@ -440,7 +442,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
             <div
               v-for="item in filteredItems"
               :key="item.id"
-              class="px-4 py-2 cursor-pointer hover:bg-gray-100 flex items-center"
+              class="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-400 flex items-center  "
               :class="{
                 'bg-blue-50': isSelected(item),
                 'text-blue-600': isSelected(item),
@@ -451,15 +453,15 @@ const handleKeyDown = (e: KeyboardEvent) => {
                 <input
                   type="checkbox"
                   :checked="isSelected(item)"
-                  class="mr-2 h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                  class="mr-2 h-4 w-4 text-blue-600 rounded focus:ring-blue-500 dark:text-gray-700"
                   @click="isSelected(item)"
                   @click.stop
                 />
               </template>
-              <span>{{ item.label }}</span>
+              <span class="dark:text-gray-300 " :class="isSelected(item) ? 'text-blue-600 dark:text-gray-700' : ''">{{ item.label }}</span>
             </div>
           </template>
-          <div v-else class="px-4 py-2 text-gray-500 text-center">
+          <div v-else class="px-4 py-2 text-gray-500 text-center dark:text-gray-400">
             {{ noResultsText }}
           </div>
         </template>

@@ -670,7 +670,9 @@ const createManageApproversRef = ref();
 </script>
 
 <template>
-  <div class="w-min-full min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900 dark:text-gray-200 dark:border-gray-3000">
+  <div
+    class="w-min-full min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900 dark:text-gray-200 dark:border-gray-3000"
+  >
     <header class="bg-white dark:bg-gray-800 shadow">
       <div
         class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
@@ -685,7 +687,9 @@ const createManageApproversRef = ref();
             class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             @onclick="$router.back()"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">Policies</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
+            Policies
+          </h1>
         </div>
 
         <Button
@@ -746,21 +750,24 @@ const createManageApproversRef = ref();
               tooltip: 'View Details',
               handler: viewPolicy,
               iconClass: 'text-indigo-500 dark:text-indigo-400',
-              buttonClass: 'hover:bg-indigo-100 dark:hover:bg-indigo-100 hover:text-indigo-600 !dark:hover:text-indigo-900',
+              buttonClass:
+                'hover:bg-indigo-100 dark:hover:bg-indigo-100 hover:text-indigo-600 !dark:hover:text-indigo-900',
             },
             {
               label: IconEdit,
               tooltip: 'Edit Request',
               handler: editPolicy,
               iconClass: '!text-blue-500 dark:text-blue-400',
-              buttonClass: 'hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900',
+              buttonClass:
+                'hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900',
             },
             {
               label: IconDelete,
               tooltip: 'Delete Request',
               handler: confirmDeletePolicy,
               iconClass: 'text-red-500 dark:text-red-400',
-              buttonClass: 'hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900',
+              buttonClass:
+                'hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900',
             },
           ]"
         />
@@ -786,13 +793,13 @@ const createManageApproversRef = ref();
 
           <!-- Modal Content -->
           <div
-            class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"
+            class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 border border-gray-200 dark:border-gray-700"
           >
             <div
-              class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4"
+              class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 dark:bg-red-900/30 rounded-full mb-4"
             >
               <svg
-                class="w-6 h-6 text-red-600"
+                class="w-6 h-6 text-red-600 dark:text-red-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -805,7 +812,9 @@ const createManageApproversRef = ref();
                 />
               </svg>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-200 text-center mb-2">
+            <h3
+              class="text-lg font-medium text-gray-900 dark:text-gray-100 text-center mb-2"
+            >
               Delete Request
             </h3>
             <p class="text-gray-500 dark:text-gray-400 text-center mb-6">
@@ -815,7 +824,7 @@ const createManageApproversRef = ref();
             <div class="flex gap-3 justify-center">
               <button
                 @click="cancelDeletePolicy"
-                class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-600"
                 :disabled="deleteLoading"
               >
                 Cancel
@@ -841,21 +850,28 @@ const createManageApproversRef = ref();
       position="center"
       :closeOnOverlayClick="false"
       :closeOnEsc="false"
+      class="dark:bg-gray-900"
     >
       <template #header>
-        <h3 class="text-lg font-medium leading-6 text-gray-900">
+        <h3
+          class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100"
+        >
           Create Policy
         </h3>
       </template>
 
-      <div class="grid md:grid-cols-2 gap-6">
+      <div
+        class="grid md:grid-cols-2 gap-6 bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-0"
+      >
         <!-- Policy Form -->
-        <div class="sm:border-b-1 sm:pb-6 md:border-b-0 md:pb-0">
+        <div
+          class="sm:border-b-1 sm:pb-6 md:border-b-0 md:pb-0 md:border-r dark:md:border-0 md:border-gray-200"
+        >
           <form @submit.prevent="submitCreateForm" class="space-y-4">
             <div>
               <label
                 for="create-shortname"
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
               >
                 Short Name <span class="text-red-500 text-md">*</span>
               </label>
@@ -864,7 +880,7 @@ const createManageApproversRef = ref();
                 v-model="createForm.shortname"
                 type="text"
                 required
-                class="mt-1 block w-full focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                class="mt-1 block w-full focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                 :max-char-count="50"
                 :min-char-count="1"
               />
@@ -873,7 +889,7 @@ const createManageApproversRef = ref();
             <div>
               <label
                 for="create-description"
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
               >
                 Description <span class="text-red-500 text-md">*</span>
               </label>
@@ -881,7 +897,7 @@ const createManageApproversRef = ref();
                 id="create-description"
                 v-model="createForm.description"
                 required
-                class="mt-1 block w-full focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                class="mt-1 block w-full focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                 rows="3"
                 is-textarea
                 :max-char-count="1000"
@@ -892,14 +908,14 @@ const createManageApproversRef = ref();
             <div>
               <label
                 for="create-status"
-                class="block text-sm font-medium text-gray-700"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
               >
                 Status <span class="text-red-500 text-md">*</span>
               </label>
               <select
                 id="create-status"
                 v-model="createForm.status"
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               >
                 <option value="A">Active</option>
                 <option value="I">Inactive</option>
@@ -913,7 +929,9 @@ const createManageApproversRef = ref();
         </div>
 
         <!-- Approvers Management (in create mode) -->
-        <div class="">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-0 dark:border-gray-700"
+        >
           <ManageApprovers
             ref="createManageApproversRef"
             :show="createModalOpen"
@@ -930,11 +948,14 @@ const createManageApproversRef = ref();
       </div>
 
       <template #footer>
-        <div class="flex justify-end space-x-2">
+        <div
+          class="flex justify-end space-x-2 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-0 p-4 rounded-b-lg"
+        >
           <Button
             variant="ghost"
             @click="createModalOpen = false"
             :disabled="createLoading"
+            class="dark:hover:bg-gray-700 dark:text-gray-200"
           >
             Cancel
           </Button>
@@ -956,20 +977,30 @@ const createManageApproversRef = ref();
       position="center"
       :closeOnOverlayClick="false"
       :closeOnEsc="false"
+      class="dark:bg-gray-900"
     >
       <template #header>
-        <h3 class="text-lg font-medium leading-6 text-gray-900">
+        <h3
+          class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100"
+        >
           Edit Policy {{ editForm.policyid }}
         </h3>
       </template>
-      <div class="grid grid-cols-2 gap-6">
-        <div v-if="editLoading" class="text-center py-4">Loading...</div>
+      <div
+        class="grid grid-cols-2 gap-6 bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-0"
+      >
+        <div
+          v-if="editLoading"
+          class="text-center py-4 text-gray-500 dark:text-gray-400"
+        >
+          Loading...
+        </div>
 
         <form v-else @submit.prevent="submitEditForm" class="space-y-4">
           <div>
             <label
               for="edit-shortname"
-              class="block text-sm font-medium text-gray-700"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               Shortname
             </label>
@@ -978,14 +1009,14 @@ const createManageApproversRef = ref();
               v-model="editForm.shortname"
               type="text"
               required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
 
           <div>
             <label
               for="edit-description"
-              class="block text-sm font-medium text-gray-700"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               Description
             </label>
@@ -993,7 +1024,7 @@ const createManageApproversRef = ref();
               id="edit-description"
               v-model="editForm.description"
               required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               rows="3"
             ></textarea>
           </div>
@@ -1001,14 +1032,14 @@ const createManageApproversRef = ref();
           <div>
             <label
               for="edit-status"
-              class="block text-sm font-medium text-gray-700"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               Status
             </label>
             <select
               id="edit-status"
               v-model="editForm.status"
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="A">Active</option>
               <option value="I">Inactive</option>
@@ -1020,7 +1051,9 @@ const createManageApproversRef = ref();
           </div>
         </form>
 
-        <div>
+        <div
+          class="border-t border-l md:border-l-0 md:border-t-0 pt-4 md:pt-0 md:border-l-gray-200 dark:md:border-l-gray-700 md:border-t-gray-200 dark:md:border-t-gray-700"
+        >
           <ManageApprovers
             ref="manageApproversRef"
             :key="selectedPolicy?.policyid"
@@ -1034,11 +1067,14 @@ const createManageApproversRef = ref();
       </div>
 
       <template #footer>
-        <div class="flex justify-end space-x-2">
+        <div
+          class="flex justify-end space-x-2 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-0 dark:border-gray-700 p-4 rounded-b-lg"
+        >
           <Button
             variant="ghost"
             @onclick="editModalOpen = false"
             :disabled="editSubmitting"
+            class="dark:hover:bg-gray-700 dark:text-gray-200"
           >
             Cancel
           </Button>
@@ -1060,24 +1096,27 @@ const createManageApproversRef = ref();
       position="center"
       :closeOnOverlayClick="false"
       :closeOnEsc="false"
+      class="dark:bg-gray-900"
     >
       <template #header>
         <div
-          class="flex items-start justify-between border-b border-gray-100 bg-gray-50"
+          class="flex items-start justify-between border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
         >
           <div>
-            <h2 class="text-lg font-semibold text-gray-900">View Policy</h2>
-            <p class="text-sm text-gray-500 mt-0.5">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              View Policy
+            </h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
               {{ selectedPolicy?.shortname }}
               <span
                 v-if="selectedPolicy.status === 'A'"
-                class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 border"
+                class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800"
               >
                 Active
               </span>
               <span
                 v-else
-                class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 border"
+                class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800"
               >
                 Inactive
               </span>
@@ -1086,25 +1125,31 @@ const createManageApproversRef = ref();
         </div>
       </template>
 
-      <div class="grid grid-cols-2 gap-6">
+      <div
+        class="grid grid-cols-2 gap-6 bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700"
+      >
         <div v-if="selectedPolicy" class="grid grid-cols-2 gap-4">
           <div class="col-span-full">
             <div class="">
-              <label class="text-sm font-medium text-gray-700">
+              <label
+                class="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Policy ID
               </label>
               <p
-                class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm"
+                class="mt-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-sm"
               >
                 {{ selectedPolicy.policyid }}
               </p>
             </div>
             <div>
-              <label class="text-sm font-medium text-gray-700">
+              <label
+                class="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Created Date
               </label>
               <p
-                class="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm"
+                class="mt-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-sm"
               >
                 {{ new Date(selectedPolicy.createddate).toLocaleString() }}
               </p>
@@ -1112,12 +1157,14 @@ const createManageApproversRef = ref();
           </div>
           <div class="col-span-full">
             <div class="col-span-full">
-              <label class="text-sm font-medium text-gray-700">
+              <label
+                class="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Description
               </label>
               <base-input
                 isTextarea
-                :class="'bg-gray-50'"
+                :class="'bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600'"
                 disabled
                 v-model="selectedPolicy.description"
               >
@@ -1125,17 +1172,18 @@ const createManageApproversRef = ref();
             </div>
           </div>
         </div>
-        <!-- <div>
-            
-          </div> -->
 
         <div>
           <div
-            class="flex items-start justify-between border-b border-gray-100 py-3"
+            class="flex items-start justify-between border-b border-gray-100 dark:border-gray-700 py-3"
           >
             <div>
-              <h3 class="text-md font-semibold text-gray-900">Approvers</h3>
-              <p class="text-xs text-gray-500 mt-0.5">
+              <h3
+                class="text-md font-semibold text-gray-900 dark:text-gray-100"
+              >
+                Approvers
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 Approver list for this policy
               </p>
             </div>
@@ -1146,7 +1194,7 @@ const createManageApproversRef = ref();
             class="flex items-center justify-center py-16"
           >
             <svg
-              class="animate-spin h-7 w-7 text-blue-500"
+              class="animate-spin h-7 w-7 text-blue-500 dark:text-blue-400"
               fill="none"
               viewBox="0 0 24 24"
             >
@@ -1164,7 +1212,9 @@ const createManageApproversRef = ref();
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            <span class="ml-2 text-sm text-gray-500">Loading approvers...</span>
+            <span class="ml-2 text-sm text-gray-500 dark:text-gray-400"
+              >Loading approvers...</span
+            >
           </div>
 
           <div
@@ -1172,10 +1222,10 @@ const createManageApproversRef = ref();
             class="flex flex-col items-center justify-center py-14 text-center"
           >
             <div
-              class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mb-3"
+              class="w-14 h-14 bg-blue-50 dark:bg-gray-800/20 rounded-full flex items-center justify-center mb-3"
             >
               <svg
-                class="w-7 h-7 text-blue-400"
+                class="w-7 h-7 text-blue-400 dark:text-blue-300"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -1188,8 +1238,10 @@ const createManageApproversRef = ref();
                 />
               </svg>
             </div>
-            <p class="text-sm font-medium text-gray-700">No approvers yet</p>
-            <p class="text-xs text-gray-400 mt-1">
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              No approvers yet
+            </p>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
               No approvers configured for this policy
             </p>
           </div>
@@ -1197,18 +1249,20 @@ const createManageApproversRef = ref();
             <div
               v-for="(mainApprover, index) in groupedApprovers.mainApprovers"
               :key="mainApprover.approverid"
-              class="bg-white border rounded p-3"
+              class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded p-3"
             >
-              <div class="font-medium text-gray-900 flex items-center gap-2">
+              <div
+                class="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2"
+              >
                 <span
-                  class="rounded-full bg-blue-200 h-7 w-7 flex justify-center items-center text-xs font-semibold"
+                  class="rounded-full bg-blue-200 dark:bg-blue-800 h-7 w-7 flex justify-center items-center text-xs font-semibold"
                 >
                   {{ index + 1 }}
                 </span>
                 <div>
                   <div class="text-sm w-full">{{ mainApprover.name }}</div>
 
-                  <div class="text-xs text-gray-500">
+                  <div class="text-xs text-gray-500 dark:text-gray-400">
                     {{ mainApprover.email }}
                   </div>
                 </div>
@@ -1222,10 +1276,10 @@ const createManageApproversRef = ref();
                 <div
                   v-for="proxy in getProxies(mainApprover.sequence)"
                   :key="proxy.approverid"
-                  class="flex items-center gap-2 text-sm text-gray-600"
+                  class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
                 >
                   <span
-                    class="rounded-full bg-orange-100 h-5 w-5 flex justify-center items-center text-xs font-semibold"
+                    class="rounded-full bg-orange-100 dark:bg-orange-600 dark:text-gray-300 h-5 w-5 flex justify-center items-center text-xs font-semibold"
                   >
                     P
                   </span>
@@ -1233,7 +1287,9 @@ const createManageApproversRef = ref();
                     <div>
                       {{ proxy.name }}
                     </div>
-                    <div class="text-xs text-gray-400">{{ proxy.email }}</div>
+                    <div class="text-xs text-gray-400 dark:text-gray-500">
+                      {{ proxy.email }}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1243,7 +1299,9 @@ const createManageApproversRef = ref();
       </div>
 
       <template #footer>
-        <div class="flex justify-end">
+        <div
+          class="flex justify-end bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 rounded-b-lg"
+        >
           <Button variant="ghost" @click="viewModalOpen = false">
             Close
           </Button>

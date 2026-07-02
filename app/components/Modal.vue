@@ -19,7 +19,7 @@
       <div class="flex min-h-screen p-4 text-center" :class="positionClasses">
         <!-- Modal content -->
         <div
-          class="relative inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:align-middle"
+          class="relative inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:align-middle"
           :class="sizeClasses"
           role="dialog"
           aria-modal="true"
@@ -51,7 +51,7 @@
           <!-- Header slot -->
           <div
             v-if="$slots.header"
-            class="border-b border-gray-200 px-4 py-4 sm:px-6"
+            class="border-b border-gray-200 dark:border-gray-500 px-4 py-4 sm:px-6"
           >
             <slot name="header"></slot>
           </div>
@@ -64,7 +64,7 @@
           <!-- Footer slot -->
           <div
             v-if="$slots.footer"
-            class="border-t border-gray-200 bg-gray-50 px-4 py-4 sm:px-6 sm:flex sm:flex-row-reverse"
+            class="border-t border-gray-200 dark:border-gray-500 bg-gray-50 dark:bg-gray-800 px-4 py-4 sm:px-6 sm:flex sm:flex-row-reverse"
           >
             <slot name="footer"></slot>
           </div>

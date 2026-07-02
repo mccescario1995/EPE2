@@ -84,7 +84,7 @@
       </button>
     </div>
 
-    <div class="flex justify-between mt-1">
+    <div class="flex justify-between mt-1 dark:bg-gray-800">
       <!-- Error message -->
       <p v-if="errorMessage" class="text-xs text-red-500 dark:text-red-400">
         {{ errorMessage }}

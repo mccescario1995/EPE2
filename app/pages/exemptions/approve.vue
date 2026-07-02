@@ -547,8 +547,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="bg-gray-50">
-    <header class="bg-white shadow">
+  <div class="bg-gray-50 dark:bg-gray-900">
+    <header class="bg-white dark:bg-gray-800 shadow">
       <div
         class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
       >
@@ -561,7 +561,7 @@ onMounted(async () => {
             customClass="rounded-full"
             @onclick="handleBack"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900">Approve Request</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-100">Approve Request</h1>
         </div>
       </div>
     </header>
@@ -596,22 +596,20 @@ onMounted(async () => {
       <div v-else-if="exemptionData">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Request Details -->
-          <div class="bg-white rounded-lg shadow p-6">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div class="mb-6">
-              <div
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b"
-              >
+              <div class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b">
                 <div class="flex justify-between items-center">
                   <h2>Request Information</h2>
                   <div>
                     <span
                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                       :class="{
-                        'bg-blue-100 text-blue-800':
+                        'bg-blue-100 text-blue-800 dark:bg-blue-800/20 dark:text-blue-300':
                           exemptionData.status === 'O' ||
                           exemptionData.status === 'P',
 
-                        'bg-green-100 text-green-800':
+                        'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-300':
                           exemptionData.status === 'C',
                       }"
                     >
@@ -624,19 +622,19 @@ onMounted(async () => {
               <div class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">
+                    <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                       Transaction Number
                     </label>
-                    <p class="text-gray-900 font-medium">
+                    <p class="text-gray-900 dark:text-gray-100 font-medium">
                       {{ exemptionData.transactionNumber || "N/A" }}
                     </p>
                   </div>
 
                   <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">
+                    <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                       Requestor Name
                     </label>
-                    <p class="text-gray-900">
+                    <p class="text-gray-900 dark:text-gray-100">
                       {{ exemptionData.requesterName || "N/A" }}
                     </p>
                   </div>
@@ -644,32 +642,30 @@ onMounted(async () => {
 
                 <div class="grid grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">
+                    <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                       Created Date
                     </label>
-                    <p class="text-gray-900">
+                    <p class="text-gray-900 dark:text-gray-100">
                       {{ formatDate(exemptionData.createdDate) }}
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
+                  <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     Policy To Override
                   </label>
-                  <p class="text-gray-900">
+                  <p class="text-gray-900 dark:text-gray-100">
                     {{ exemptionData.policyName }}
                   </p>
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">
+                  <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     Details
                   </label>
-                  <div
-                    class="bg-gray-50 rounded-lg p-4 border border-gray-200 h-25"
-                  >
-                    <p class="text-gray-900 whitespace-pre-wrap">
+                  <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                    <p class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                       {{ exemptionData.details || "No details provided" }}
                     </p>
                   </div>
@@ -679,10 +675,10 @@ onMounted(async () => {
           </div>
 
           <!-- Approval Form -->
-          <div class="bg-white rounded-lg shadow p-6">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div class="mb-6">
               <div class="border-b mb-6 flex justify-between">
-                <h2 class="text-xl font-semibold text-gray-800 pb-2">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 pb-2">
                   Your Response
                 </h2>
                 <div>
@@ -690,11 +686,11 @@ onMounted(async () => {
                     v-if="exemptionData.finalDecision"
                     class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                     :class="{
-                      'bg-yellow-100 text-yellow-800':
+                      'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300':
                         exemptionData.finalDecision === 'Pending',
-                      'bg-green-100 text-green-800':
+                      'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-300':
                         exemptionData.finalDecision === 'Approved',
-                      'bg-red-100 text-red-800':
+                      'bg-red-100 text-red-800 dark:bg-red-800/20 dark:text-red-300':
                         exemptionData.finalDecision === 'Disapproved',
                     }"
                   >
@@ -706,10 +702,10 @@ onMounted(async () => {
               <!-- Check if satisfied by proxy/main approver approval -->
               <div v-if="isSatisfiedByGroup" class="text-center py-8">
                 <div
-                  class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-green-100"
+                  class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-green-100 dark:bg-green-800/20"
                 >
                   <svg
-                    class="w-8 h-8 text-green-600"
+                    class="w-8 h-8 text-green-600 dark:text-green-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -722,10 +718,10 @@ onMounted(async () => {
                     ></path>
                   </svg>
                 </div>
-                <p class="text-lg font-medium text-green-600">
+                <p class="text-lg font-medium text-green-600 dark:text-green-400">
                   Already Approved
                 </p>
-                <p class="text-gray-500 mt-2">
+                <p class="text-gray-500 dark:text-gray-400 mt-2">
                   {{ satisfiedByApproverName }} has already approved this
                   request. Your approval is not required.
                 </p>
@@ -734,10 +730,10 @@ onMounted(async () => {
               <!-- Check if user is approver but not their turn yet -->
               <div v-else-if="isPendingApproval" class="text-center py-8">
                 <div
-                  class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-yellow-100"
+                  class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-yellow-100 dark:bg-yellow-800/20"
                 >
                   <svg
-                    class="w-8 h-8 text-yellow-600"
+                    class="w-8 h-8 text-yellow-600 dark:text-yellow-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -750,10 +746,10 @@ onMounted(async () => {
                     ></path>
                   </svg>
                 </div>
-                <p class="text-lg font-medium text-yellow-600">
+                <p class="text-lg font-medium text-yellow-600 dark:text-yellow-400">
                   Waiting for Previous Approvers
                 </p>
-                <p class="text-gray-500 mt-2">
+                <p class="text-gray-500 dark:text-gray-400 mt-2">
                   {{ pendingApproverName }} needs to approve this request first
                   before you can respond. You will be notified when it's your
                   turn.
@@ -773,13 +769,13 @@ onMounted(async () => {
                   class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
                   :class="
                     exemptionData.finalDecision === 'Approved'
-                      ? 'bg-green-100'
-                      : 'bg-red-100'
+                      ? 'bg-green-100 dark:bg-green-800/20'
+                      : 'bg-red-100 dark:bg-red-800/20'
                   "
                 >
                   <svg
                     v-if="exemptionData.finalDecision === 'Approved'"
-                    class="w-8 h-8 text-green-600"
+                    class="w-8 h-8 text-green-600 dark:text-green-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -793,7 +789,7 @@ onMounted(async () => {
                   </svg>
                   <svg
                     v-else
-                    class="w-8 h-8 text-red-600"
+                    class="w-8 h-8 text-red-600 dark:text-red-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -810,17 +806,17 @@ onMounted(async () => {
                   class="text-lg font-medium"
                   :class="
                     exemptionData.finalDecision === 'Approved'
-                      ? 'text-green-600'
-                      : 'text-red-600'
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-red-600 dark:text-red-400'
                   "
                 >
                   This request has been {{ exemptionData.finalDecision }}
                 </p>
-                <p v-if="isDisapproved" class="text-gray-500 mt-2">
+                <p v-if="isDisapproved" class="text-gray-500 dark:text-gray-400 mt-2">
                   The request has been disapproved. Remaining approvers can no
                   longer respond.
                 </p>
-                <p v-else class="text-gray-500 mt-2">
+                <p v-else class="text-gray-500 dark:text-gray-400 mt-2">
                   You can no longer modify your response.
                 </p>
               </div>
@@ -828,7 +824,7 @@ onMounted(async () => {
               <!-- Approval buttons (only show if can respond and not satisfied by group) -->
               <div v-else-if="canRespond">
                 <div class="mb-6">
-                  <label class="block text-sm font-medium text-gray-700 mb-3">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     Select your decision <span class="text-red-500">*</span>
                   </label>
                   <div class="flex gap-4">
@@ -838,8 +834,8 @@ onMounted(async () => {
                       class="flex-1 py-3 px-4 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2"
                       :class="
                         selectedRespond === 1
-                          ? 'border-green-500 bg-green-50 text-green-700'
-                          : 'border-gray-200 hover:border-green-300 hover:bg-gray-50 '
+                          ? 'border-green-500 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-800/20 dark:text-green-300'
+                          : 'border-gray-200 dark:border-gray-600 hover:border-green-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       "
                     >
                       <svg
@@ -863,8 +859,8 @@ onMounted(async () => {
                       class="flex-1 py-3 px-4 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2"
                       :class="
                         selectedRespond === 2
-                          ? 'border-red-500 bg-red-50 text-red-700'
-                          : 'border-gray-200 hover:border-red-300 hover:bg-gray-50'
+                          ? 'border-red-500 bg-red-50 text-red-700 dark:border-red-400 dark:bg-red-800/20 dark:text-red-300'
+                          : 'border-gray-200 dark:border-gray-600 hover:border-red-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       "
                     >
                       <svg
@@ -886,21 +882,15 @@ onMounted(async () => {
                 </div>
 
                 <div class="mb-6">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Remarks (Optional)
                   </label>
-                  <!-- <textarea
-                    v-model="remarks"
-                    rows="4"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter your remarks or comments..."
-                    maxlength="250"
-                  ></textarea> -->
                   <BaseInput
                     v-model="respondRemarks"
                     isTextarea
                     :rowCount="4"
                     :maxCharCount="250"
+                    class="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   />
                 </div>
 
@@ -929,12 +919,12 @@ onMounted(async () => {
               <!-- Approval Status -->
               <div
                 v-else-if="isApproved"
-                class="rounded-lg border-l-4 border-green-500 bg-green-50 p-4 shadow-sm"
+                class="rounded-lg border-l-4 border-green-500 bg-green-50 dark:bg-green-800/20 dark:border-green-400 p-4 shadow-sm"
                 role="alert"
               >
                 <div class="flex items-center">
                   <svg
-                    class="h-5 w-5 text-green-500 mr-2"
+                    class="h-5 w-5 text-green-500 dark:text-green-400 mr-2"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -945,10 +935,10 @@ onMounted(async () => {
                     />
                   </svg>
 
-                  <span class="font-semibold text-green-800"> Approved </span>
+                  <span class="font-semibold text-green-800 dark:text-green-300"> Approved </span>
                 </div>
 
-                <p class="mt-2 text-sm text-green-700">
+                <p class="mt-2 text-sm text-green-700 dark:text-green-300">
                   You already approved this exemption request.
                 </p>
 
@@ -963,26 +953,10 @@ onMounted(async () => {
               </div>
 
               <!-- Debug fallback - shows when none of the above conditions match -->
-              <div v-else class="text-center py-8 bg-gray-50 rounded-lg">
-                <p class="text-gray-600 mb-2">
+              <div v-else class="text-center py-8 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p class="text-gray-600 dark:text-gray-400 mb-2">
                   You are not assigned as an approver for this request.
                 </p>
-                <!-- Debug info -->
-                <!-- <div class="text-xs text-left bg-gray-200 p-3 rounded mt-4 font-mono">
-                  <div>=== DEBUG INFO ===</div>
-                  <div>canRespond: {{ canRespond }}</div>
-                  <div>isSatisfiedByGroup: {{ isSatisfiedByGroup }}</div>
-                  <div>isPendingApproval: {{ isPendingApproval }}</div>
-                  <div>isDisapproved: {{ isDisapproved }}</div>
-                  <div>currentUser.emplId: {{ currentUser?.emplId }}</div>
-                  <div>finalDecision: {{ exemptionData?.finalDecision }}</div>
-                  <div>exemptionData.status: {{ exemptionData?.status }}</div>
-                  <div>--- approvers ---</div>
-                  <div v-for="(a, idx) in approversData" :key="idx" class="ml-2">
-                    {{ idx }}: {{ a.approverName }} - empId={{ a.employeeId }}, respond={{ a.respond }}, seq={{ a.lineSequence }}, sort={{ a.sort }}
-                  </div>
-                  <div>=== END DEBUG ===</div>
-                </div> -->
                 <Button
                   variant="primary"
                   size="lg"
@@ -998,8 +972,8 @@ onMounted(async () => {
       </div>
 
       <!-- Not Found State -->
-      <div v-else class="bg-white rounded-lg shadow px-6 py-12 text-center">
-        <p class="text-gray-500 text-lg mb-4">No exemption details found.</p>
+      <div v-else class="bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-12 text-center">
+        <p class="text-gray-500 dark:text-gray-400 text-lg mb-4">No exemption details found.</p>
         <Button variant="primary" size="lg" @onclick="handleBack">
           Back to List
         </Button>

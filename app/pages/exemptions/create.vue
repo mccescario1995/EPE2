@@ -753,8 +753,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh">
-    <header class="bg-white shadow">
+  <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900">
+    <header class="bg-white dark:bg-gray-800 shadow">
       <div
         class="max-w-7xl me-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-start items-center"
       >
@@ -765,19 +765,22 @@ onMounted(async () => {
           iconPosition="center"
           customClass="rounded-full"
           @onclick="handleCancel"
+          class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
         />
-        <h1 class="text-3xl ps-5 font-bold text-gray-900">
+        <h1 class="text-3xl ps-5 font-bold text-gray-900 dark:text-gray-100">
           {{ draftId ? "Edit Draft" : "Create Exemption Request" }}
         </h1>
       </div>
     </header>
 
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div class="bg-white rounded-lg shadow px-6 py-6">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-6">
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <!-- Policy Selection -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               Policy To Override
               <span v-if="!isDraftMode" class="text-red-500">*</span>
             </label>
@@ -786,15 +789,21 @@ onMounted(async () => {
               :initialItems="policyOptions"
               placeholder="Select a policy"
               :disabled="isLoadingPolicies"
+              class="dark:bg-gray-700 dark:text-gray-300"
             />
-            <p v-if="errors.policyid" class="mt-1 text-xs text-red-500">
+            <p
+              v-if="errors.policyid"
+              class="mt-1 text-xs text-red-500 dark:text-red-400"
+            >
               {{ errors.policyid }}
             </p>
           </div>
 
           <!-- Details -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               Additional Comment/Detailed Info
               <span class="text-red-500">*</span>
             </label>
@@ -807,19 +816,22 @@ onMounted(async () => {
               :error="errors.details"
               :maxCharCount="1000"
               :minCharCount="10"
+              class="mt-1 block w-full focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
 
           <!-- Attachments -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               Attachments <span class="text-red-500">*</span> (Max 5 files, 10MB
               each)
             </label>
 
             <p
               v-if="errors.attachments"
-              class="mt-1 text-xs text-red-500 border border-red-500 rounded px-2 py-3 mb-3"
+              class="mt-1 text-xs text-red-500 dark:text-red-400 border border-red-500 dark:border-red-400 rounded px-2 py-3 mb-3"
             >
               {{ errors.attachments }}
             </p>
@@ -831,18 +843,18 @@ onMounted(async () => {
               <div
                 v-for="(attachment, index) in newAttachments"
                 :key="index"
-                class="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg"
+                class="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700"
               >
                 <div class="flex items-center gap-3 min-w-0">
-                  <span class="text-sm font-medium text-gray-900 truncate">{{
+                  <span class="text-sm font-medium text-gray-900 truncate dark:text-gray-100">{{
                     attachment.file.name
                   }}</span>
-                  <span class="text-xs text-gray-500 whitespace-nowrap">
+                  <span class="text-xs text-gray-500 whitespace-nowrap dark:text-gray-400">
                     ({{ (attachment.file.size / 1024 / 1024).toFixed(2) }} MB)
                   </span>
                 </div>
                 <Button
-                  variant="outline-danger"
+                  variant="dark:outline-danger"
                   size="sm"
                   @onclick="() => removeAttachment(index)"
                   icon="trash"
@@ -862,7 +874,7 @@ onMounted(async () => {
                 remainingAttachmentSlots <= 0 ||
                 totalNewAttachmentsSize >= MAX_TOTAL_SIZE
               "
-              class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                                                      
             />
             <p
               v-if="newAttachments.length < MAX_FILES"
@@ -886,7 +898,9 @@ onMounted(async () => {
 
           <!-- Approvers List -->
           <div v-if="formData.policyid">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               Approvers
             </label>
             <div
@@ -913,11 +927,13 @@ onMounted(async () => {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
               </svg>
-              <span class="ml-2 text-gray-500">Loading approvers...</span>
+              <span class="ml-2 text-gray-500 dark:text-gray-400"
+                >Loading approvers...</span
+              >
             </div>
             <div
               v-else-if="approvers.length > 0"
-              class="bg-gray-50 rounded-lg border border-gray-200 divide-y divide-gray-200"
+              class="bg-gray-50 rounded-lg border border-gray-200 divide-y divide-gray-200 dark:bg-gray-700 pl-8 pr-3 py-2 rounded-b-lg"
             >
               <template
                 v-for="(approver, index) in groupedApprovers.mainApprovers"
@@ -925,17 +941,19 @@ onMounted(async () => {
               >
                 <!-- Main Approver (numbered) -->
                 <div class="p-3 flex items-center justify-between">
-                  <div class="flex items-center">
+                  <div class="flex items-center ">
                     <span
                       class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium mr-3"
                     >
                       {{ index + 1 }}
                     </span>
                     <div>
-                      <p class="text-sm font-medium text-gray-900">
+                      <p
+                        class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                      >
                         {{ approver.approvername }}
                       </p>
-                      <p class="text-sm text-gray-500">
+                      <p class="text-sm text-gray-500 dark:text-gray-400">
                         {{ approver.approveremail }}
                       </p>
                     </div>
@@ -945,9 +963,9 @@ onMounted(async () => {
                       v-if="approver.approverRole"
                       class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
                       :class="{
-                        'bg-blue-100 text-blue-800':
+                        'bg-blue-100 text-blue-800 dark:bg-blue-200 dark:text-blue-700':
                           approver.linesequence === 1,
-                        'bg-orange-100 text-orange-800':
+                        'bg-orange-100 text-orange-800 dark:bg-orange-800/20 dark:text-orange-500':
                           approver.linesequence !== 1,
                       }"
                     >
@@ -959,26 +977,32 @@ onMounted(async () => {
                 <!-- Proxies (indented bullet points) -->
                 <div
                   v-if="getProxies(approver.id).length > 0"
-                  class="bg-gray-100 pl-8 pr-3 py-2"
+                  class="bg-gray-100 dark:bg-gray-700 pl-8 pr-3 py-2 rounded-b-lg"
                 >
                   <div
                     v-for="proxy in getProxies(approver.id)"
                     :key="proxy.id"
                     class="flex items-center py-1"
                   >
-                    <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                    <span
+                      class="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400 mr-2"
+                    ></span>
                     <div class="flex-1 flex items-center justify-between">
                       <div>
-                        <p class="text-sm text-gray-700">
+                        <p class="text-sm text-gray-900 dark:text-gray-100">
                           {{ proxy.approvername }}
                         </p>
-                        <p class="text-xs text-gray-500">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
                           {{ proxy.approveremail }}
                         </p>
                       </div>
                       <span
                         v-if="proxy.approverRole"
-                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800"
+                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                        :class="{
+                          'bg-orange-100 text-orange-800 dark:bg-orange-800/20 dark:text-orange-300':
+                            proxy.linesequence !== 1,
+                        }"
                       >
                         {{ proxy.approverRole }}
                       </span>

@@ -43,16 +43,23 @@
         </svg>
       </span>
 
-
-        <!-- Added "center"  : mccesccario --> 
+      <!-- Added "center"  : mccesccario -->
       <!-- Icon -->
       <span
         v-if="icon && !loading"
         class="transition-transform duration-300 group-hover:scale-110"
-        :class="iconPosition === 'right' ? 'order-2 ml-2' : iconPosition === 'center' ? 'mx-auto' : 'mr-2'" 
+        :class="
+          iconPosition === 'right'
+            ? 'order-2 ml-2'
+            : iconPosition === 'center'
+              ? 'mx-auto'
+              : 'mr-2'
+        "
       >
         <component
-          v-if="typeof icon === 'string' && iconComponents[getIconComponent(icon)]"
+          v-if="
+            typeof icon === 'string' && iconComponents[getIconComponent(icon)]
+          "
           :is="iconComponents[getIconComponent(icon)]"
           :class="iconSizeClasses[size]"
         />
@@ -64,7 +71,9 @@
       </span>
 
       <!-- Slot content -->
-      <span class="transition-transform duration-300 group-hover:translate-x-0.5">
+      <span
+        class="transition-transform duration-300 group-hover:translate-x-0.5"
+      >
         <slot></slot>
       </span>
     </span>
@@ -100,6 +109,19 @@ const props = defineProps({
         "ghost",
         "ghost-primary",
         "gradient",
+        "dark:primary",
+        "dark:success",
+        "dark:danger",
+        "dark:warning",
+        "dark:info",
+        "dark:outline-primary",
+        "dark:outline-success",
+        "dark:outline-danger",
+        "dark:outline-warning",
+        "dark:outline-info",
+        "dark:ghost",
+        "dark:ghost-primary",
+        "dark:gradient",
       ].includes(value),
   },
   size: {
@@ -134,7 +156,7 @@ const emit = defineEmits(["onclick"]);
 
 const handleClick = (event) => {
   if (props.loading || props.disabled) return;
-  
+
   emit("onclick", event);
 };
 
@@ -180,6 +202,32 @@ const variantClasses = {
     "text-blue-600 hover:bg-blue-50 hover:text-blue-700 active:scale-95 focus:ring-blue-500",
   gradient:
     "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg hover:shadow-blue-500/50 active:scale-95 focus:ring-blue-500",
+  "dark:primary":
+    "dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 dark:hover:shadow-lg dark:hover:shadow-blue-500/50 dark:active:scale-95 dark:focus:ring-blue-500",
+  "dark:success":
+    "dark:bg-green-600 dark:text-white dark:hover:bg-green-700 dark:hover:shadow-lg dark:hover:shadow-green-500/50 dark:active:scale-95 dark:focus:ring-green-500",
+  "dark:danger":
+    "dark:bg-red-600 dark:text-white dark:hover:bg-red-700 dark:hover:shadow-lg dark:hover:shadow-red-500/50 dark:active:scale-95 dark:focus:ring-red-500",
+  "dark:warning":
+    "dark:bg-yellow-600 dark:text-white dark:hover:bg-yellow-700 dark:hover:shadow-lg dark:hover:shadow-yellow-500/50 dark:active:scale-95 dark:focus:ring-yellow-500",
+  "dark:info":
+    "dark:bg-gray-600 dark:text-white dark:hover:bg-gray-700 dark:hover:shadow-lg dark:hover:shadow-gray-500/50 dark:active:scale-95 dark:focus:ring-gray-500",
+  "dark:outline-primary":
+    "dark:border-2 dark:border-blue-600 dark:text-blue-600 dark:hover:text-white dark:hover:bg-blue-500 dark:hover:border-blue-700 dark:hover:shadow-md dark:active:scale-95 dark:focus:ring-blue-500",
+  "dark:outline-success":
+    "dark:border-2 dark:border-green-600 dark:text-green-600 dark:hover:text-white dark:hover:bg-green-500 dark:hover:border-green-700 dark:hover:shadow-md dark:active:scale-95 dark:focus:ring-green-500",
+  "dark:outline-danger":
+    "dark:border-2 dark:border-red-600 dark:text-red-600 dark:hover:text-white dark:hover:bg-red-500 dark:hover:border-red-700 dark:hover:shadow-md dark:active:scale-95 dark:focus:ring-red-500",
+  "dark:outline-warning":
+    "dark:border-2 dark:border-yellow-600 dark:text-yellow-600 dark:hover:text-white dark:hover:bg-yellow-500 dark:hover:border-yellow-700 dark:hover:shadow-md dark:active:scale-95 dark:focus:ring-yellow-500",
+  "dark:outline-info":
+    "dark:border-2 dark:border-gray-600 dark:text-gray-600 dark:hover:text-white dark:hover:bg-gray-500 dark:hover:border-gray-700 dark:hover:shadow-md dark:active:scale-95 dark:focus:ring-gray-500",
+  "dark:ghost":
+    "dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white dark:active:scale-95 dark:focus:ring-gray-500",
+  "dark:ghost-primary":
+    "dark:text-blue-400 dark:hover:bg-blue-700 dark:hover:text-white dark:active:scale-95 dark:focus:ring-blue-500",
+  "dark:gradient":
+    "dark:bg-gradient-to-r dark:from-blue-600 dark:to-indigo-600 dark:text-white dark:hover:from-blue-700 dark:hover:to-indigo-700 dark:hover:shadow-lg dark:hover:shadow-blue-500/50 dark:active:scale-95 dark:focus:ring-blue-500",
 };
 
 const glowClasses = {
@@ -218,7 +266,9 @@ const iconComponents = {
   EditIcon: defineAsyncComponent(() => import("./icon/Edit.vue")), // Added EditIcon component
   ViewIcon: defineAsyncComponent(() => import("./icon/View.vue")), // Added ViewIcon component
   SaveIcon: defineAsyncComponent(() => import("./icon/Save.vue")), // Added SaveIcon component
-  UserApproverIcon: defineAsyncComponent(() => import("./icon/UserApprover.vue")), // Added UserApproverIcon component
+  UserApproverIcon: defineAsyncComponent(
+    () => import("./icon/UserApprover.vue"),
+  ), // Added UserApproverIcon component
 };
 </script>
 

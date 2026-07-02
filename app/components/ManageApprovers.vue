@@ -849,7 +849,7 @@ onMounted(() => {
         class="flex items-start justify-between border-b border-gray-100 bg-gray-50"
       >
         <div>
-          <h2 class="text-lg font-semibold text-gray-900">Manage Approvers</h2>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Manage Approvers</h2>
           <p class="text-sm text-gray-500 mt-0.5">
             {{ policy?.description }}
             <span
@@ -1403,9 +1403,9 @@ onMounted(() => {
 
   <div v-if="props.inline">
     <div class="space-y-4">
-      <div class="flex items-start justify-between bg-gray-50">
+      <div class="flex items-start justify-between bg-gray-50 dark:bg-gray-800">
         <div>
-          <h2 class="text-lg font-semibold text-gray-900 -mb-4">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 -mb-4">
             Manage Approvers
           </h2>
         </div>
@@ -1454,7 +1454,7 @@ onMounted(() => {
               />
             </svg>
           </div>
-          <p class="text-sm font-medium text-gray-700">No approvers yet</p>
+          <p class="text-sm font-medium text-gray-700 dark:text-gray-200">No approvers yet</p>
           <p class="text-xs text-gray-400 mt-1">
             Add the first approver for this policy
           </p>
@@ -1488,14 +1488,14 @@ onMounted(() => {
             :animation="150"
             ghost-class="ghost"
             :fallbackOnBody="true"
-            class="flex flex-col gap-2"
+            class="flex flex-col gap-2 overflow-y-auto max-h-97"
           >
             <div
               v-for="(element, index) in groups"
               :key="element.id"
-              class="bg-white border rounded p-3"
+              class="bg-white dark:bg-gray-700 border rounded p-3"
             >
-              <div class="font-medium text-gray-900 flex items-center gap-2">
+              <div class="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 <div
                   class="group-drag-handle cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 select-none px-0.5 text-lg leading-none flex-shrink-0"
                   title="Drag to reorder step"
@@ -1503,7 +1503,7 @@ onMounted(() => {
                   ⠿
                 </div>
                 <span
-                  class="rounded-full bg-blue-200 h-7 w-7 flex justify-center"
+                  class="rounded-full bg-blue-200 h-7 w-7 flex justify-center dark:text-gray-700"
                   >{{ index + 1 }}</span
                 >
                 <div class="uppercase">
@@ -1514,7 +1514,7 @@ onMounted(() => {
                 </div>
 
                 <button
-                  class="ml-auto text-red-500 hover:text-red-700 transition-colors"
+                  class="ml-auto text-red-500 hover:text-red-600 dark:text-red-400 transition-colors"
                   title="Delete approver"
                   @click="confirmDelete(element.approver)"
                 >
@@ -1542,7 +1542,7 @@ onMounted(() => {
                 <div
                   v-for="child in element.children"
                   :key="child.id"
-                  class="bg-gray-100 p-2 rounded flex items-center gap-2 text-sm text-gray-700"
+                  class="bg-gray-100 p-2 rounded flex items-center gap-2 text-sm text-gray-700 dark:bg-gray-600 dark:text-gray-200"
                 >
                   <div
                     class="group-drag-handle cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 select-none px-0.5 text-lg leading-none flex-shrink-0"
@@ -1556,7 +1556,7 @@ onMounted(() => {
                   >
                   {{ child.name }}
                   <button
-                    class="ml-auto text-red-400 hover:text-red-600 transition-colors"
+                    class="ml-auto text-red-400 hover:text-red-600 transition-colors dark:hover:text-red-500"
                     title="Delete approver"
                     @click="confirmDelete(child.approver)"
                   >
@@ -1785,41 +1785,6 @@ onMounted(() => {
           </button>
         </div>
       </div>
-      <!-- <div
-        v-if="!loading && groups.length > 0"
-        class="flex items-center justify-between"
-      >
-        <p class="text-xs text-gray-400">
-          {{ groups.length }} Main{{ groups.length == 1 ? "s" : "" }}
-        </p>
-        <button
-          class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-          :disabled="saving || !hasUnsavedOrder || justOppened"
-          @click="saveOrder"
-        >
-          <svg
-            v-if="saving"
-            class="animate-spin w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            />
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-          {{ saving ? "Saving..." : "Save Order" }}
-        </button>
-      </div> -->
     </div>
   </div>
 </template>
