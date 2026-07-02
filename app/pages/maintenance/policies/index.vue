@@ -745,19 +745,22 @@ const createManageApproversRef = ref();
               label: IconView,
               tooltip: 'View Details',
               handler: viewPolicy,
-              iconClass: 'text-indigo-500',
+              iconClass: 'text-indigo-500 dark:text-indigo-400',
+              buttonClass: 'hover:bg-indigo-100 dark:hover:bg-indigo-100 hover:text-indigo-600 !dark:hover:text-indigo-900',
             },
             {
               label: IconEdit,
               tooltip: 'Edit Request',
               handler: editPolicy,
-              iconClass: 'text-blue-500',
+              iconClass: '!text-blue-500 dark:text-blue-400',
+              buttonClass: 'hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900',
             },
             {
               label: IconDelete,
               tooltip: 'Delete Request',
               handler: confirmDeletePolicy,
-              iconClass: 'text-red-500',
+              iconClass: 'text-red-500 dark:text-red-400',
+              buttonClass: 'hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900',
             },
           ]"
         />

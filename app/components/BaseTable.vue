@@ -352,20 +352,14 @@
                   :key="'inline-action-' + i"
                   @click="action.handler(row)"
                   :disabled="action.disabled && action.disabled(row)"
-                  class="flex items-center justify-center w-8 h-8 text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-indigo-50 hover:text-gray-700 hover:shadow-md transition-all duration-200 group"
+                  class="flex items-center justify-center w-8 h-8 text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-indigo-50 hover:text-gray-700 hover:shadow-md transition-all duration-200 group dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-white-600"
+                  :class="action.buttonClass"
                 >
-                  <svg
+                  <component
+                    :is="action.label"
                     class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      v-if="typeof action.iconClass === 'string'"
-                      :class="action.iconClass"
-                    />
-                    <slot v-else :name="action.iconClass" />
-                  </svg>
+                    :class="action.iconClass"
+                  />
                 </button>
               </div>
             </td>
@@ -464,6 +458,7 @@
               @click="(action.handler(row), closeDropdown())"
               :disabled="action.disabled && action.disabled(row)"
               class="w-full px-4 py-3 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
+              :class="action.class"
             >
               <!-- added -->
               {{
@@ -483,6 +478,7 @@
           @click="action.handler(row)"
           :disabled="action.disabled && action.disabled(row)"
           class="px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
+          :class="action.buttonClass"
         >
           <!-- added -->
           {{
@@ -524,6 +520,7 @@ type TableAction = {
   tooltip?: string | ((row: Record<string, any>) => string); //added
   handler: (row: Record<string, any>) => void;
   class?: string;
+  buttonClass?: string;
   iconClass?: string;
   text?: string;
   showLabelOn?: "all" | "md" | "lg";

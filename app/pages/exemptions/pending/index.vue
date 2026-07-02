@@ -231,20 +231,23 @@ const fetchExemptionData = async (params: {
               label: IconView,
               tooltip: 'View Details',
               handler: viewProduct,
-              iconClass: 'text-indigo-500',
+              iconClass: 'text-indigo-500 dark:text-indigo-400',
+              buttonClass: 'hover:bg-indigo-100 dark:hover:bg-indigo-100 hover:text-indigo-600 !dark:hover:text-indigo-900',
             },
             {
               label: IconApproval,
               tooltip: 'Approve Request',
               handler: approveRequest,
-              iconClass: 'text-teal-500',
+              iconClass: '!text-teal-500 dark:!text-teal-400',
+              buttonClass: 'hover:bg-teal-100 dark:hover:bg-teal-100 hover:text-teal-600 dark:hover:text-teal-900',
               visible: (row) => row.canApprove && row.status !== 'C', // This will only be visible to the approver not he requester and for non-completed requests
             },
             {
               label: IconEdit,
               tooltip: 'Edit Request',
               handler: editProduct,
-              iconClass: 'text-blue-500',
+              iconClass: '!text-blue-500 dark:text-blue-400',
+              buttonClass: 'hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900',
               visible: (row) => row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
@@ -252,7 +255,8 @@ const fetchExemptionData = async (params: {
               label: IconDelete,
               tooltip: 'Delete Request',
               handler: confirmDelete,
-              iconClass: 'text-red-500',
+              iconClass: 'text-red-500 dark:text-red-400',
+              buttonClass: 'hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900',
               visible: (row) => row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
