@@ -27,7 +27,9 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API || 'https://apps.fastlogistics.com.ph/epe2apidev',
+      apiBase:
+        process.env.NUXT_PUBLIC_API ||
+        "https://apps.fastlogistics.com.ph/epe2apidev",
     },
   },
   app: {
@@ -40,5 +42,23 @@ export default defineNuxtConfig({
       title: "TBS",
     }, */
     baseURL: "/epe2dev/",
+    head: {
+      script: [
+        {
+          innerHTML: `
+            (function() {
+              try {
+                var saved = localStorage.getItem('theme');
+                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (saved ? saved === 'dark' : prefersDark) {
+                  document.documentElement.classList.add('dark');
+                }
+              } catch (e) {}
+            })();
+          `,
+          type: "text/javascript",
+        },
+      ],
+    },
   },
 });

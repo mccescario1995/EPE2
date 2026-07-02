@@ -1,48 +1,60 @@
 // app/stores/useThemeStore.ts
-import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
+import { defineStore } from "pinia";
 
-export const useThemeStore = defineStore('theme', () => {
-  const isDark = ref(false);
+export const useThemeStore = defineStore("theme", {
+  state: () => ({
+    isDark: false,
+    initialized: false,
+  }),
 
-  // Check localStorage on client-side
-  const initializeTheme = () => {
-    if (process.client) {
-      const savedTheme = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia('(prefers-dark-scheme: dark)').matches;
-      
-      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-        isDark.value = true;
-        document.documentElement.classList.add('dark');
-      }
-    }
-  };
+  actions: {
+    /**
+     * Reads saved preference (or OS preference) and applies it.
+     * Must run client-side only — called from a client plugin on app boot.
+     */
+    initTheme() {
+      if (this.initialized || !import.meta.client) return;
 
-  const toggleTheme = () => {
-    isDark.value = !isDark.value;
-  };
+      const saved = localStorage.getItem("theme");
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
 
-  const setTheme = (dark: boolean) => {
-    isDark.value = dark;
-  };
+      this.isDark = saved ? saved === "dark" : prefersDark;
+      this.applyTheme();
+      this.initialized = true;
 
-  // Watch for changes and update DOM
-  watch(isDark, (newDark) => {
-    if (process.client) {
-      if (newDark) {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
+      // Keep in sync if the OS theme changes and the user hasn't set an explicit preference
+      window
+        .matchMedia("(prefers-color-scheme: dark)")
+        .addEventListener("change", (e) => {
+          if (!localStorage.getItem("theme")) {
+            this.isDark = e.matches;
+            this.applyTheme();
+          }
+        });
+    },
+
+    toggleTheme() {
+      this.isDark = !this.isDark;
+      this.applyTheme();
+    },
+
+    setTheme(dark: boolean) {
+      this.isDark = dark;
+      this.applyTheme();
+    },
+
+    applyTheme() {
+      if (!import.meta.client) return;
+      const root = document.documentElement;
+      if (this.isDark) {
+        root.classList.add("dark");
+        localStorage.setItem("theme", "dark");
       } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
+        root.classList.remove("dark");
+        localStorage.setItem("theme", "light");
       }
-    }
-  });
-
-  // Initialize on mount
-  if (process.client) {
-    initializeTheme();
-  }
-
-  return { isDark, toggleTheme, setTheme };
+    },
+  },
 });
