@@ -366,7 +366,7 @@
                     />
                     <slot v-else :name="action.iconClass" />
                   </svg>
-                </button>                                                                                                                                                                                   ````dddddddd              
+                </button>
               </div>
             </td>
           </tr>
