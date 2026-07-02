@@ -46,7 +46,7 @@ const mobileOrientationClasses = {
 </script>
 
 <template>
-  <div class="app">
+  <div class="app ">
     <!-- Backdrop for mobile -->
     <Transition name="fade">
       <div 
@@ -58,7 +58,7 @@ const mobileOrientationClasses = {
 
     <aside
       ref="menu"
-      class="sidebar bg-white border-r border-gray-100 shadow-lg flex flex-col h-screen fixed lg:sticky top-0 z-40 transition-all duration-300 ease-in-out"
+      class="sidebar bg-white border-r dark:bg-gray-800  shadow-lg flex flex-col h-screen fixed lg:sticky top-0 z-40 transition-all duration-300 ease-in-out"
       :class="[
         mobileOrientationClasses[mobileOrientation],
         sidebarOpen 
@@ -67,7 +67,7 @@ const mobileOrientationClasses = {
       ]"
     >
       <!-- Logo Section -->
-      <div class="px-4 py-5 flex justify-center items-center border-b border-gray-100">
+      <div class="px-4 py-5 flex justify-center items-center border-b border-gray-100 dark:border-gray-700">
         <NuxtLink
           to="/dashboard"
           class="flex items-center justify-center transition-all duration-300 hover:bg-gray-50 rounded-lg p-2"
@@ -88,7 +88,7 @@ const mobileOrientationClasses = {
         <!-- Menu Label -->
         <Transition name="fade-slide" mode="out-in">
           <div v-if="sidebarOpen" class="px-3 mb-2">
-            <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-100 uppercase tracking-wider">
               Menus
             </span>
           </div>
@@ -103,23 +103,26 @@ const mobileOrientationClasses = {
 
 <style scoped>
 /* Custom scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 2px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
-}
+   .custom-scrollbar::-webkit-scrollbar {
+     width: 4px;
+     height: 4px;
+   }
+   
+   .custom-scrollbar::-webkit-scrollbar-track {
+     background: transparent;
+   }
+   
+   .custom-scrollbar::-webkit-scrollbar-thumb {
+     background: #cbd5e1;
+     /* Dark mode: background: #4b5563; */
+     background: #6b7280; /* Darker gray for dark mode */
+   
+     border-radius: 2px;
+   }
+   
+   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+     background: #a0aec0;
+   }
 
 /* Transitions */
 .fade-enter-active,

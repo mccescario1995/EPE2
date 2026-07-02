@@ -4,3 +4,9 @@
 .grid-stack {
   background: #f9fafb;
 }
+
+/* Base dark mode background for main layout */
+.dark body {
+  background: #111827;
+  color: #f3f4f6;
+}

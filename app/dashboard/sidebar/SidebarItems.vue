@@ -47,52 +47,7 @@ async function refreshAll() {
 
 onMounted(async () => {
   const staticMenus = [
-    // {
-    //   id: 1,
-    //   title: "Activity",
-    //   isopen: false,
-    //   isActive: false,
-    //   submenu: [
-    //     {
-    //       id: "A1",
-    //       title: "Notification",
-    //       route: "/activity/notificationpage",
-    //     },
-    //     { id: "A2", title: "Modal", route: "/activity/modal" },
-    //     { id: "A3", title: "Buttons", route: "/activity/buttons" },
-    //     { id: "A4", title: "Table", route: "/activity/table" },
-    //     { id: "A5", title: "Cards", route: "/activity/cards" },
-    //     { id: "A6", title: "Forms", route: "/activity/forms" },
-    //     { id: "A7", title: "Nested Modal", route: "/activity/nestedmodal" },
-    //   ],
-    // },
-    // {
-    //   id: 2,
-    //   title: "Documentation",
-    //   isopen: false,
-    //   isActive: false,
-    //   submenu: [
-    //     { id: "D1", title: "Table", route: "/documentation/table" },
-    //     { id: "D2", title: "Sidebar", route: "/documentation/sidebar" },
-    //     {
-    //       id: "D3",
-    //       title: "Notification",
-    //       route: "/documentation/notification",
-    //     },
-    //     { id: "D4", title: "Cards", route: "/documentation/card" },
-    //     { id: "D5", title: "Modals", route: "/documentation/modal" },
-    //     { id: "D6", title: "Dropdown", route: "/documentation/dropdown" },
-    //     { id: "D7", title: "Input", route: "/documentation/input" },
-    //   ],
-    // },
-    // {
-    //   id: 3,
-    //   title: "Report",
-    //   route: "/dashboard",
-    //   iswithfunction: true,
-    //   isopen: false,
-    //   isActive: true,
-    // },
+    
   ];
 
   const dynamicmenu = await fetchMenuList();
@@ -234,9 +189,9 @@ watch(searchQuery, (val) => {
 </script>
 
 <template>
-  <nav class="h-full flex flex-col bg-white shadow-sm overflow-y-auto">
+  <nav class="h-full flex flex-col bg-white dark:bg-gray-800 shadow-sm overflow-y-auto">
     <!-- 🔍 Search -->
-    <div v-if="sidebarOpen" class="px-3 py-3 border-b border-gray-100">
+    <div v-if="sidebarOpen" class="px-3 py-3 border-b border-gray-100 dark:border-gray-600">
       <div class="relative">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -256,7 +211,7 @@ watch(searchQuery, (val) => {
           v-model="searchQuery"
           type="text"
           placeholder="Search menu or ID..."
-          class="w-full rounded-lg border border-gray-200 pl-9 pr-3 py-2 text-sm focus:border-primary-400 focus:ring-1 focus:ring-primary-300 outline-none"
+          class="w-full rounded-lg border border-gray-200 dark:bg-gray-900 dark:border-gray-600 placeholder-gray-500 pl-9 pr-3 py-2 text-sm focus:border-primary-400 dark:focus:border-gray-100 focus:ring-1 focus:ring-primary-300 outline-none text-gray-200"
         />
       </div>
     </div>
@@ -277,8 +232,8 @@ watch(searchQuery, (val) => {
           class="group flex w-full items-center rounded-lg p-3 transition-all duration-200"
           :class="[
             route.path === '/dashboard'
-              ? 'bg-gray-200 text-primary-700 font-semibold'
-              : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
+              ? 'bg-gray-200 text-primary-700 font-semibold dark:bg-gray-600 dark:text-gray-200'
+              : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-100',
           ]"
         >
           <span class="text-lg">📊</span>
@@ -302,8 +257,8 @@ watch(searchQuery, (val) => {
             item.isActive ||
             (item.submenu &&
               item.submenu.some((sub) => sub.route === route.path))
-              ? 'bg-gray-200 text-primary-700 font-semibold'
-              : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
+              ? 'bg-gray-200 text-primary-700 font-semibold dark:bg-gray-600 dark:text-gray-200'
+              : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-100',
           ]"
         >
           <div class="flex items-center">
@@ -336,8 +291,8 @@ watch(searchQuery, (val) => {
           class="flex w-full flex-col items-start rounded-lg px-3 py-2 text-sm transition-colors duration-150"
           :class="[
             item.isclick
-              ? 'bg-primary-50 text-primary-600 font-medium'
-              : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
+              ? 'bg-primary-50 text-primary-600 font-medium dark:bg-gray-600 dark:text-gray-200'
+              : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-100',
           ]"
         >
           <span v-if="sidebarOpen">
@@ -360,11 +315,11 @@ watch(searchQuery, (val) => {
         >
           <ul
             v-if="item.isopen"
-            :class="[
-              isMobile || sidebarOpen
-                ? 'ml-8 mt-1 space-y-1 border-l border-gray-200 rounded'
-                : 'absolute left-full ml-1 w-56 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 z-10',
-            ]"
+:class="[
+               isMobile || sidebarOpen
+                 ? 'ml-8 mt-1 space-y-1 border-l border-gray-200 rounded bg-white dark:border-gray-600 dark:bg-gray-700'
+                 : 'absolute left-full ml-1 w-56 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 z-10 dark:bg-gray-700 dark:border-gray-600',
+             ]"
           >
             <li v-for="(sub, i2) in item.submenu" :key="i2">
               <button
@@ -372,8 +327,8 @@ watch(searchQuery, (val) => {
                 class="flex flex-col w-full items-start rounded-md px-3 py-2 text-sm transition-colors duration-150"
                 :class="[
                   sub.route === route.path
-                    ? 'bg-gray-200 text-primary-700 font-semibold'
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
+                    ? 'bg-gray-200 text-primary-700 font-semibold dark:bg-gray-600 dark:text-gray-200'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-100',
                 ]"
               >
                 <span>{{ sub.title }}</span>
@@ -393,17 +348,33 @@ watch(searchQuery, (val) => {
 </template>
 
 <style scoped>
-nav {
-  transition: all 0.3s ease;
-}
-nav::-webkit-scrollbar {
-  width: 4px;
-}
-nav::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-  border-radius: 2px;
-}
-nav::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
-}
+
+   nav {
+      transition: all 0.3s ease;
+   }
+   nav::-webkit-scrollbar {
+      width: 4px;
+   }
+   nav::-webkit-scrollbar-thumb {
+      background: #cbd5e0;
+      border-radius: 2px;
+   }
+   nav::-webkit-scrollbar-thumb:hover {
+      background: #a0aec0;
+   }
+   /* Dark mode scrollbar */
+   .dark:not(.dark) nav::-webkit-scrollbar-thumb {
+      background: #6b7280;
+   }
+   .dark:not(.dark) nav::-webkit-scrollbar-thumb:hover {
+      background: #4b5563;
+   }
+   /* Actually, let's use a simpler approach - dark class on html/body */
+   nav.dark::-webkit-scrollbar-thumb {
+      background: #6b7280;
+   }
+   nav.dark::-webkit-scrollbar-thumb:hover {
+      background: #4b5563;
+   }
+   
 </style>

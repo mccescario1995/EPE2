@@ -5,7 +5,7 @@
     <label
       v-if="label"
       :for="id"
-      class="block mb-1 text-sm font-medium text-gray-700"
+      class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
     >
       {{ label }}
     </label>
@@ -24,8 +24,8 @@
         :disabled="disabled"
         :class="[
           customClass ||
-            'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-3 px-4 border',
-          disabled && 'cursor-not-allowed bg-gray-100',
+            'block w-full rounded-md border border-gray-300 bg-white shadow-sm text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-3 px-4 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:placeholder-gray-400',
+          disabled && 'cursor-not-allowed bg-gray-100 dark:bg-gray-600',
         ]"
         @input="handleInput"
         @blur="validateInput"
@@ -36,7 +36,7 @@
         v-if="type === 'password'"
         type="button"
         @click="togglePassword"
-        class="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700 text-sm"
+        class="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700 text-sm dark:text-gray-400 dark:hover:text-gray-300"
       >
         <!-- If custom icons passed in props, use them -->
         <component
@@ -78,22 +78,22 @@
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            d="M2.458 12C3.732 12.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
           />
         </svg>
       </button>
     </div>
 
-    <div class="flex justify-between">
+    <div class="flex justify-between mt-1">
       <!-- Error message -->
-      <p v-if="errorMessage" class="mt-1 text-xs text-red-500">
+      <p v-if="errorMessage" class="text-xs text-red-500 dark:text-red-400">
         {{ errorMessage }}
       </p>
       <!-- Character counter -->
       <!-- Show character counter if either maxCharCount or minCharCount is provided -->
       <div
         v-if="maxCharCount || minCharCount"
-        class="mt-1 text-xs text-gray-500 flex justify-end"
+        class="mt-1 text-xs text-gray-500 dark:text-gray-400 flex justify-end"
       >
         {{ charCounterText }}
         <!-- Updated to use computed property for character counter text -->

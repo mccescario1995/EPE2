@@ -1,100 +1,53 @@
 <template>
-  <!-- Global Search -->
-  <!-- <div v-if="props.showSearch" class="flex mb-6">
-    <div class="relative text-gray-400 focus-within:text-indigo-600 flex-1">
-      <div
-        class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none"
-      >
-        <svg
-          class="w-5 h-5 transition-colors duration-200"
-          viewBox="0 0 20 20"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M17.5 17.5L15.4167 15.4167M15.8333 9.16667C15.8333 5.48477 12.8486 2.5 9.16667 2.5C5.48477 2.5 2.5 5.48477 2.5 9.16667C2.5 12.8486 5.48477 15.8333 9.16667 15.8333C11.0005 15.8333 12.6614 15.0929 13.8667 13.8947C15.0814 12.6872 15.8333 11.0147 15.8333 9.16667Z"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-          />
-        </svg>
-      </div>
-      <input
-        type="text"
-        id="default-search"
-        class="block w-full h-12 pr-5 pl-12 py-3 text-base font-medium shadow-sm text-gray-900 bg-white border border-gray-200 rounded-l-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-        v-if="props.showSearch"
-        v-model="globalSearch"
-        placeholder="Search across all data..."
-        @keypress.enter="handleGlobalSearch"
-      />
-    </div>
-    <Button
-      variant="primary"
-      size="sm"
-      custom-class="rounded-r-xl rounded-l-none h-12 px-6 bg-linear-to-r from-indigo-600 to-indigo-600 hover:from-indigo-700 hover:to-purple-700 border-0 shadow-sm font-medium transition-all duration-200"
-      @onclick="handleGlobalSearch"
-    >
-      <div class="flex items-center">
-        <svg
-          class="w-4 h-4 mr-2"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
-        Search
-      </div>
-</Button>
-  </div> -->
-
   <Button
     v-if="props.showExport"
     variant="secondary"
     size="sm"
     icon="download"
     @onclick="openExportModal"
-    class="border hover:bg-gray-300 mb-3"
+    class="border hover:bg-gray-300 mb-3 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
   >
     Export Excel
   </Button>
 
   <div
     v-if="showExportModal"
-    class="fixed inset-0 z-50 flex items-center justify-center"
+    class="fixed inset-0 z-50 flex items-center justify-center dark:border-gray-50"
     style="background-color: rgba(0, 0, 0, 0.5)"
     @click.self="closeExportModal"
   >
-    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+    <div
+      class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800 dark:*:text-gray-200"
+    >
       <h3 class="text-lg font-semibold text-gray-800 mb-4">Export Data</h3>
       <div class="space-y-4">
         <div class="flex flex-col">
-          <label class="text-sm font-medium text-gray-700 mb-1">From Date</label>
+          <label
+            class="text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
+            >From Date</label
+          >
           <input
             type="date"
             v-model="exportStartDate"
-            class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
           />
         </div>
         <div class="flex flex-col">
-          <label class="text-sm font-medium text-gray-700 mb-1">To Date</label>
+          <label
+            class="text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
+            >To Date</label
+          >
           <input
             type="date"
             v-model="exportEndDate"
-            class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
           />
         </div>
       </div>
       <div class="flex justify-end gap-3 mt-6">
         <button
           @click="closeExportModal"
-          class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+          class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
         >
           Cancel
         </button>
@@ -102,24 +55,14 @@
           variant="primary"
           size="sm"
           @onclick="confirmExport"
+          class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:text-gray-200 transition-all duration-200"
         >
           Export
-</Button>
+        </Button>
       </div>
     </div>
   </div>
 
-  <!-- <Button
-    v-else-if="props.showExport"
-    variant="secondary"
-    size="sm"
-    icon="download"
-    @onclick="exportToExcel"
-    class="border hover:bg-gray-300 mb-3"
-  >
-    Export Excel
-  </Button> -->
-  <!-- Added if condition  : mccesccario  (to remove floating div with margin)-->
   <div
     v-if="showFilterControls || props.showlimitfilter || props.showSearch"
     class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6"
@@ -154,20 +97,22 @@
     <!-- Items per page -->
     <div v-if="props.showlimitfilter" class="flex items-center">
       <div
-        class="flex items-center bg-white rounded-xl border border-gray-200 px-4 py-2 shadow-sm hover:shadow-md transition-shadow duration-200"
+        class="flex items-center bg-white rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-800 px-4 py-2 shadow-sm hover:shadow-md transition-shadow duration-200"
       >
-        <label class="mr-3 text-sm font-medium text-gray-700 whitespace-nowrap">
+        <label
+          class="mr-3 text-sm font-medium text-gray-700 whitespace-nowrap dark:text-gray-200"
+        >
           Items per page:
         </label>
         <select
           v-model="limit"
-          class="bg-transparent border-0 text-sm font-medium text-gray-600 focus:outline-none focus:text-gray-900 cursor-pointer min-w-[60px]"
+          class="bg-transparent border-0 text-sm font-medium text-gray-600 focus:outline-none focus:text-gray-900 cursor-pointer min-w-[60px] dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600"
           @change="handleLimitChange"
         >
           <option
             v-for="option in props.limitfilter"
             :value="option"
-            class="py-2"
+            class="py-2 dark:text-gray-200 dark:bg-gray-700"
           >
             {{ option }}
           </option>
@@ -176,77 +121,81 @@
     </div>
 
     <div v-if="props.showSearch" class="flex">
-    <div class="relative text-gray-400 focus-within:text-indigo-600 flex-1">
       <div
-        class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none"
+        class="relative text-gray-400 focus-within:text-indigo-600 flex-1 dark:*:text-gray-200 dark:*:placeholder-gray-400 *:bg-gray-800 dark:border-gray-600 dark:focus-within:text-gray-100"
       >
-        <svg
-          class="w-5 h-5 transition-colors duration-200"
-          viewBox="0 0 20 20"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+        <div
+          class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none"
         >
-          <path
-            d="M17.5 17.5L15.4167 15.4167M15.8333 9.16667C15.8333 5.48477 12.8486 2.5 9.16667 2.5C5.48477 2.5 2.5 5.48477 2.5 9.16667C2.5 12.8486 5.48477 15.8333 9.16667 15.8333C11.0005 15.8333 12.6614 15.0929 13.8667 13.8947C15.0814 12.6872 15.8333 11.0147 15.8333 9.16667Z"
+          <svg
+            class="w-5 h-5 transition-colors duration-200"
+            viewBox="0 0 20 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M17.5 17.5L15.4167 15.4167M15.8333 9.16667C15.8333 5.48477 12.8486 2.5 9.16667 2.5C5.48477 2.5 2.5 5.48477 2.5 9.16667C2.5 12.8486 5.48477 15.8333 9.16667 15.8333C11.0005 15.8333 12.6614 15.0929 13.8667 13.8947C15.0814 12.6872 15.8333 11.0147 15.8333 9.16667Z"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+          </svg>
+        </div>
+        <input
+          type="text"
+          id="default-search"
+          class="block w-full h-12 pr-5 pl-12 py-3 text-base font-medium shadow-sm text-gray-900 bg-white border border-gray-200 rounded-l-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-indigo-500 dark:focus:border-transparent"
+          v-if="props.showSearch"
+          v-model="globalSearch"
+          placeholder="Search across all data..."
+          @input="handleGlobalSearch"
+        />
+      </div>
+      <Button
+        variant="primary"
+        size="sm"
+        custom-class="rounded-r-xl rounded-l-none h-12 px-6 bg-linear-to-r from-indigo-600 to-indigo-600  border-0 shadow-sm font-medium transition-all duration-200 dark:bg-indigo-500 dark:text-gray-200"
+        @onclick="handleGlobalSearch"
+      >
+        <div class="flex items-center">
+          <svg
+            class="w-4 h-4 mr-2"
+            fill="none"
             stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-          />
-        </svg>
-      </div>
-      <input
-        type="text"
-        id="default-search"
-        class="block w-full h-12 pr-5 pl-12 py-3 text-base font-medium shadow-sm text-gray-900 bg-white border border-gray-200 rounded-l-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-        v-if="props.showSearch"
-        v-model="globalSearch"
-        placeholder="Search across all data..."
-        @input="handleGlobalSearch"
-      />
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          Search
+        </div>
+      </Button>
     </div>
-    <Button
-      variant="primary"
-      size="sm"
-      custom-class="rounded-r-xl rounded-l-none h-12 px-6 bg-linear-to-r from-indigo-600 to-indigo-600 hover:from-indigo-700 hover:to-purple-700 border-0 shadow-sm font-medium transition-all duration-200"
-      @onclick="handleGlobalSearch"
-    >
-      <div class="flex items-center">
-        <svg
-          class="w-4 h-4 mr-2"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
-        Search
-      </div>
-    </Button>
-  </div>
   </div>
 
   <!-- Table -->
   <div
     class="hidden md:block"
     :class="[
-      'overflow-hidden rounded-2xl border border-gray-200 shadow-lg bg-white',
+      'overflow-hidden rounded-2xl border border-gray-200 shadow-lg bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200',
       tableClass,
     ]"
   >
     <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-100">
+      <table class="min-w-full divide-y divide-gray-100 dark:*:divide-gray-700">
         <!-- Table Headers -->
-        <thead class="bg-linear-to-r from-gray-50 to-gray-100">
+        <thead
+          class="bg-linear-to-r from-gray-50 to-gray-100 dark:bg-gray-700 dark:text-gray-200"
+        >
           <tr>
             <th
               v-for="key in resolvedHeaders"
               :key="key"
-              class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200"
+              class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200 dark:bg-gray-700 dark:text-gray-200"
             >
               <div class="flex flex-col gap-2">
                 <div class="flex items-center justify-between">
@@ -255,7 +204,7 @@
                   <button
                     v-if="isColumnSortable(key)"
                     @click="toggleSort(key)"
-                    class="ml-2 p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200"
+                    class="ml-2 p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50/50 rounded-lg transition-all duration-200 dark:text-gray-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-600/50"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -298,7 +247,7 @@
             </th>
             <th
               v-if="actions?.length"
-              class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200"
+              class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200 dark:bg-gray-700 dark:text-gray-200"
             >
               Actions
             </th>
@@ -306,7 +255,9 @@
         </thead>
 
         <!-- Table Body -->
-        <tbody class="bg-white divide-y divide-gray-50">
+        <tbody
+          class="bg-white divide-y divide-gray-50 dark:*:divide-gray-700 dark:bg-gray-800"
+        >
           <tr
             v-for="(row, rowIndex) in paginatedData"
             :key="'row-' + rowIndex"
@@ -316,9 +267,9 @@
             @drop="onDrop"
             @dragleave="onDragLeave"
             :class="[
-              'transition-all duration-200 hover:bg-linear-to-r hover:from-indigo-50 hover:to-purple-50',
+              'transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700',
               targetIndex === rowIndex
-                ? 'ring-2 ring-indigo-500 bg-indigo-100'
+                ? 'ring-2 ring-indigo-500 bg-indigo-100 '
                 : '',
               draggingIndex === rowIndex ? 'opacity-50 scale-[0.98]' : '',
             ]"
@@ -326,7 +277,7 @@
             <td
               v-for="(key, colIndex) in resolvedHeaders"
               :key="'col-' + colIndex"
-              class="px-6 py-4 text-sm text-gray-700 font-medium"
+              class="px-6 py-4 text-sm text-gray-700 font-medium dark:text-gray-200 dark:border-gray-700"
             >
               <!-- Badge display -->
               <StatusBadge
@@ -348,124 +299,74 @@
             <!-- Action buttons column -->
             <td
               v-if="hasActions"
-              class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
+              class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200"
             >
               <!-- Grouped actions (dropdown style) -->
               <div v-if="props.groupActions" class="relative">
                 <button
                   class="inline-flex items-center justify-center w-8 h-8 text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:text-gray-700 hover:shadow-md transition-all duration-200 group"
-                  @click="toggleDropdown(rowIndex)"
                 >
                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    class="group-hover:scale-110 transition-transform duration-200"
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
                     <path
-                      fill="currentColor"
-                      d="M8 2.5a1.22 1.22 0 0 1 1.25 1.17A1.21 1.21 0 0 1 8 4.84a1.21 1.21 0 0 1-1.25-1.17A1.22 1.22 0 0 1 8 2.5m0 8.66a1.17 1.17 0 1 1-1.25 1.17A1.21 1.21 0 0 1 8 11.16m0-4.33a1.17 1.17 0 1 1 0 2.34a1.17 1.17 0 1 1 0-2.34"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 5v0m0 0v0m0 0v6m0 0H9m5-3V9m4 3v0m0 0v6m0 0H9m5 3V9m4 3v0"
                     />
                   </svg>
                 </button>
 
-                <!-- Actions dropdown menu -->
+                <!-- Dropdown menu -->
                 <div
                   v-if="openDropdownIndex === rowIndex"
-                  class="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-10 overflow-hidden"
+                  class="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 border border-gray-200 z-20 dark:bg-gray-800 dark:border-gray-700"
                 >
-                  <div
-                    v-for="(action, actionIndex) in props.actions"
-                    :key="`action-${rowIndex}-${actionIndex}`"
-                  >
+                  <div class="px-2 py-2">
                     <button
-                      class="w-full text-left px-4 py-3 text-sm hover:bg-linear-to-r hover:from-indigo-50 hover:to-purple-50 flex gap-3 items-center transition-all duration-200 group"
+                      v-for="(action, i) in props.actions"
+                      :key="'action-' + i"
                       @click="(action.handler(row), closeDropdown())"
-                      v-if="!action.visible || action.visible(row)"
                       :disabled="action.disabled && action.disabled(row)"
-                      :class="{
-                        'opacity-50 cursor-not-allowed':
-                          action.disabled && action.disabled(row),
-                      }"
+                      class="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200"
                     >
-                      <component
-                        v-if="typeof action.label !== 'string'"
-                        :is="action.label"
-                        :class="[
-                          action.iconClass,
-                          'group-hover:scale-110 transition-transform duration-200',
-                        ]"
-                      />
-                      <span class="font-medium">{{
+                      <!-- added -->
+                      {{
                         typeof action.tooltip === "function"
                           ? action.tooltip(row)
                           : action.tooltip
-                      }}</span>
-                      <!-- added -->
+                      }}
                     </button>
                   </div>
                 </div>
               </div>
 
-              <!-- Individual action buttons (not grouped) -->
-              <div v-else class="flex gap-2">
-                <div
-                  v-for="(action, actionIndex) in props.actions"
-                  :key="'action-' + rowIndex + '-' + actionIndex"
-                  class="relative group"
+              <!-- Inline actions -->
+              <div v-else class="flex space-x-2">
+                <button
+                  v-for="(action, i) in props.actions"
+                  :key="'inline-action-' + i"
+                  @click="action.handler(row)"
+                  :disabled="action.disabled && action.disabled(row)"
+                  class="flex items-center justify-center w-8 h-8 text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-indigo-50 hover:text-gray-700 hover:shadow-md transition-all duration-200 group"
                 >
-                  <button
-                    v-if="!action.visible || action.visible(row)"
-                    @click="() => action.handler(row)"
-                    :disabled="action.disabled && action.disabled(row)"
-                    class="inline-flex items-center justify-center w-8 h-8 text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 hover:shadow-md transition-all duration-200 group"
-                    :class="[
-                      action.class,
-                      {
-                        'opacity-50 cursor-not-allowed':
-                          action.disabled && action.disabled(row),
-                      },
-                    ]"
-                    @mouseenter="
-                      hoveredTooltip = `action-${rowIndex}-${actionIndex}`
-                    "
-                    @mouseleave="hoveredTooltip = null"
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <span
-                      v-if="typeof action.label === 'string'"
-                      v-html="action.label"
-                      class="group-hover:scale-110 transition-transform duration-200"
+                    <path
+                      v-if="typeof action.iconClass === 'string'"
+                      :class="action.iconClass"
                     />
-                    <span
-                      v-else
-                      class="group-hover:scale-110 transition-transform duration-200"
-                    >
-                      <component
-                        :is="action.label"
-                        :class="[action.iconClass || 'w-4 h-4']"
-                      />
-                    </span>
-                  </button>
-
-                  <!-- Action tooltip -->
-                  <div
-                    v-if="
-                      hoveredTooltip === `action-${rowIndex}-${actionIndex}`
-                    "
-                    class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap z-10 animate-in fade-in slide-in-from-bottom-1 duration-200"
-                  >
-                    <!-- added -->
-                    {{
-                      (typeof action.tooltip === "function"
-                        ? action.tooltip(row)
-                        : action.tooltip) || action.label
-                    }}
-                    <div
-                      class="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45 -mt-1"
-                    ></div>
-                  </div>
-                </div>
+                    <slot v-else :name="action.iconClass" />
+                  </svg>
+                </button>                                                                                                                                                                                   ````dddddddd              
               </div>
             </td>
           </tr>
@@ -478,7 +379,7 @@
             >
               <div class="flex flex-col items-center justify-center space-y-3">
                 <svg
-                  class="w-12 h-12 text-gray-300"
+                  class="w-12 h-12 text-gray-400 dark:text-gray-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -491,10 +392,12 @@
                   />
                 </svg>
                 <div>
-                  <p class="text-sm font-medium text-gray-500">
+                  <p
+                    class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                  >
                     No data available
                   </p>
-                  <p class="text-xs text-gray-400 mt-1">
+                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
                     Try adjusting your filters or search terms
                   </p>
                 </div>
@@ -511,7 +414,7 @@
     <div
       v-for="(row, rowIndex) in paginatedData"
       :key="'mobile-row-' + rowIndex"
-      class="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-3"
+      class="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-3 dark:bg-gray-800 dark:border-gray-700"
     >
       <!-- Fields -->
       <div
@@ -519,11 +422,11 @@
         :key="'mobile-field-' + key"
         class="flex justify-between gap-4 text-sm"
       >
-        <span class="text-gray-500 font-medium">
+        <span class="text-gray-500 font-medium dark:text-gray-400">
           {{ formatHeader(key) }}
         </span>
 
-        <span class="text-gray-800 text-right break-all">
+        <span class="text-gray-800 text-right break-all dark:text-gray-200">
           <StatusBadge
             v-if="props.badgeFields?.includes(key)"
             :value="row[key]"
@@ -540,27 +443,27 @@
       <!-- Actions -->
       <div
         v-if="hasActions"
-        class="pt-3 border-t border-gray-100 flex justify-end gap-2"
+        class="pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-2"
       >
         <!-- Grouped actions -->
         <div v-if="props.groupActions" class="relative">
           <button
             @click="toggleDropdown(rowIndex)"
-            class="px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50"
+            class="px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-700 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
           >
             Actions
           </button>
 
           <div
             v-if="openDropdownIndex === rowIndex"
-            class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-20"
+            class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700"
           >
             <button
               v-for="(action, i) in props.actions"
               :key="'mobile-action-' + i"
               @click="(action.handler(row), closeDropdown())"
               :disabled="action.disabled && action.disabled(row)"
-              class="w-full px-4 py-3 text-left text-sm hover:bg-indigo-50"
+              class="w-full px-4 py-3 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
             >
               <!-- added -->
               {{
@@ -579,7 +482,7 @@
           :key="'mobile-action-inline-' + i"
           @click="action.handler(row)"
           :disabled="action.disabled && action.disabled(row)"
-          class="px-3 py-2 text-sm rounded-lg border border-gray-200"
+          class="px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
         >
           <!-- added -->
           {{
@@ -594,7 +497,7 @@
     <!-- Empty state -->
     <div
       v-if="tableData && !tableData.length"
-      class="text-center py-12 text-gray-400"
+      class="text-center py-12 text-gray-400 dark:text-gray-500"
     >
       No data available
     </div>
@@ -647,7 +550,7 @@ const props = defineProps<{
   showExport?: boolean;
   serverPagination?: boolean;
   totalItems?: number | undefined;
-fetchData?: (params: {
+  fetchData?: (params: {
     page: number;
     limit: number;
     search: string;
@@ -657,7 +560,10 @@ fetchData?: (params: {
     startDate?: string;
     endDate?: string;
   }) => Promise<{ data: Array<Record<string, any>>; total: number }>;
-  exportFetchData?: (params: { startDate?: string; endDate?: string }) => Promise<{ data: Array<Record<string, any>>; total: number }>;
+  exportFetchData?: (params: {
+    startDate?: string;
+    endDate?: string;
+  }) => Promise<{ data: Array<Record<string, any>>; total: number }>;
   showSearch?: boolean;
   groupActions?: boolean;
   filterableColumns?: string[] | "all";
@@ -743,7 +649,7 @@ async function exportToExcel() {
       });
       data = res.data;
     } catch (error) {
-      console.error('Export error:', error);
+      console.error("Export error:", error);
       return;
     }
   } else {
@@ -773,7 +679,7 @@ async function exportToExcel() {
     const headerLen = headerText.length;
     const maxDataLen = Math.max(
       ...data.map((row) => String(formatValue(header, row[header])).length),
-      0
+      0,
     );
     return { wch: Math.max(headerLen, maxDataLen) + 2 }; // +2 for padding
   });
@@ -838,7 +744,7 @@ const showFilterControls = computed(
 );
 
 const paginatedData = computed(() => {
-  if (props.serverPagination) return filteredData.value;  // ← already paginated
+  if (props.serverPagination) return filteredData.value; // ← already paginated
   if (!props.pagination || !filteredData.value) return filteredData.value || [];
   const start = (currentPage.value - 1) * limit.value;
   const end = start + limit.value;
@@ -850,9 +756,9 @@ const filteredData = computed(() => {
   // No client-side filtering/sorting — server already did it
   let data = props.serverPagination
     ? internalData.value
-    : (props.tableData || []);
+    : props.tableData || [];
 
-  if (props.serverPagination) return data;  // ← skip all client-side logic
+  if (props.serverPagination) return data; // ← skip all client-side logic
 
   const search = globalSearch.value?.toLowerCase() ?? "";
 
@@ -916,14 +822,11 @@ watch(
 //});
 
 // Replace the existing watch
-watch(
-  [currentPage, sortField, sortDirection],
-  () => {
-    if (props.serverPagination && props.fetchData) {
-      fetchTable();
-    }
+watch([currentPage, sortField, sortDirection], () => {
+  if (props.serverPagination && props.fetchData) {
+    fetchTable();
   }
-);
+});
 
 watch(
   () => props.totalItems,
@@ -932,7 +835,7 @@ watch(
       totalItemsInternal.value = val;
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Methods
@@ -1180,7 +1083,7 @@ const fetchTable = async () => {
     internalData.value = res.data;
     totalItemsInternal.value = res.total;
   } catch (e) {
-    console.error('Error fetching data:', e);
+    console.error("Error fetching data:", e);
   } finally {
     loading.value = false;
     stopLoading();

@@ -173,8 +173,8 @@ const handleCreate = () => {
 </script>
 
 <template>
-  <div class="bg-gray-50 overflow-auto h-100vh">
-    <header class="bg-white shadow">
+  <div class="bg-gray-50 overflow-auto h-100vh dark:bg-gray-900 dark:text-gray-200 dark:border-gray-3000">
+    <header class="bg-white dark:bg-gray-800 shadow">
       <div
         class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
       >
@@ -185,9 +185,11 @@ const handleCreate = () => {
             icon="left_arrow"
             iconPosition="center"
             customClass="rounded-full"
+            class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+
             @onclick="$router.back()"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900">Closed Requests</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">Closed Requests</h1>
         </div>
 
         <Button
@@ -202,7 +204,7 @@ const handleCreate = () => {
         </Button>
       </div>
     </header>
-    <main class="max-w-full mx-auto py-6 sm:px-6">
+    <main class="max-w-full mx-auto py-6 sm:px-6 ">
       <!-- Exemption Requests List -->
       <div class="mb-6 px-2 rounded-lg">
         <base-table

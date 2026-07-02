@@ -1,17 +1,17 @@
 <template>
   <nav class="flex" aria-label="Breadcrumb">
     <ol
-      class="inline-flex items-center space-x-1 md:space-x-3 bg-white/50 backdrop-blur-sm rounded-xl px-4 py-3 shadow-sm border border-gray-100"
+      class="inline-flex items-center space-x-1 md:space-x-3 bg-white/50 backdrop-blur-sm rounded-xl px-4 py-3 shadow-sm border border-gray-100 dark:border-0 dark:*:bg-gray-800 dark:text-gray-200 dark:bg-gray-800"
     >
       <!-- Home icon with enhanced hover state -->
       <li class="inline-flex items-center group">
         <NuxtLink
           to="/dashboard/"
-          class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-blue-600 transition-all duration-300 hover:scale-105"
+          class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-blue-600 transition-all duration-300 hover:scale-105 dark:text-gray-400 dark:hover:text-blue-500"
         >
           <div class="relative">
             <svg
-              class="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-300"
+              class="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-300 dark:text-gray-500 dark:hover:text-blue-400"
               fill="currentColor"
               viewBox="0 0 20 20"
               aria-hidden="true"
@@ -22,7 +22,7 @@
             </svg>
             <!-- Hover effect circle -->
             <div
-              class="absolute inset-0 bg-blue-100 rounded-full scale-0 group-hover:scale-150 transition-transform duration-300 -z-10 opacity-0 group-hover:opacity-100"
+              class="absolute inset-0 bg-blue-100/50 rounded-full scale-0 group-hover:scale-150 transition-transform duration-300 -z-10 opacity-0 group-hover:opacity-100 dark:bg-blue-600/20"
             ></div>
           </div>
           <span class="sr-only">Home</span>
@@ -35,7 +35,7 @@
           <div class="flex items-center group">
             <!-- Separator with animation -->
             <svg
-              class="w-5 h-5 text-gray-300 mx-1 md:mx-2 transition-transform duration-300 group-hover:translate-x-1"
+              class="w-5 h-5 text-gray-300 mx-1 md:mx-2 transition-transform duration-300 group-hover:translate-x-1 dark:text-gray-400"
               fill="currentColor"
               viewBox="0 0 20 20"
               aria-hidden="true"
@@ -51,12 +51,12 @@
             <NuxtLink
               v-if="index !== breadcrumbs.length - 1 && crumb.clickable"
               :to="crumb.to"
-              class="relative text-sm font-medium text-gray-600 hover:text-blue-600 transition-all duration-300 px-2 py-1 rounded-lg hover:bg-blue-50"
+              class="relative text-sm font-medium text-gray-600 hover:text-blue-600 transition-all duration-300 px-2 py-1 rounded-lg hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-500 dark:hover:bg-blue-600/20"
             >
               <span class="relative z-10">{{ crumb.label }}</span>
               <!-- Underline effect -->
               <span
-                class="absolute bottom-0 left-2 right-2 h-0.5 bg-blue-600 scale-x-0 transition-transform duration-300 origin-left group-hover:scale-x-100"
+                class="absolute bottom-0 left-2 right-2 h-0.5 bg-blue-600 scale-x-0 transition-transform duration-300 origin-left group-hover:scale-x-100 dark:bg-blue-500"
               ></span>
             </NuxtLink>
 
@@ -66,7 +66,7 @@
                 'text-sm font-semibold text-gray-800 px-3 py-1.5 rounded-lg border shadow-sm',
                 crumb.clickable && index === breadcrumbs.length - 1
                   ? 'bg-linear-to-r from-blue-50 to-indigo-50 border-blue-100'
-                  : 'bg-gray-100 border-gray-200',
+                  : 'bg-gray-100 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200',
               ]"
               :aria-current="
                 index === breadcrumbs.length - 1 ? 'page' : undefined

@@ -145,8 +145,8 @@ const fetchExemptionData = async (params: {
 </script>
 
 <template>
-  <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh">
-    <header class="bg-white shadow">
+  <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900 dark:text-gray-200 dark:border-gray-3000">
+    <header class="bg-white dark:bg-gray-800 shadow">
       <div
         class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
       >
@@ -157,9 +157,10 @@ const fetchExemptionData = async (params: {
             icon="left_arrow"
             iconPosition="center"
             customClass="rounded-full"
+            class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             @onclick="$router.back()"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900">Pending Requests</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">Pending Requests</h1>
         </div>
 
         <Button
@@ -272,7 +273,7 @@ const fetchExemptionData = async (params: {
 
           <!-- Modal Content -->
           <div
-            class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+            class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"
           >
             <div
               class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4"
@@ -291,17 +292,17 @@ const fetchExemptionData = async (params: {
                 />
               </svg>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 text-center mb-2">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-200 text-center mb-2">
               Delete Request
             </h3>
-            <p class="text-gray-500 text-center mb-6">
+            <p class="text-gray-500 dark:text-gray-400 text-center mb-6">
               Are you sure you want to delete this exemption request? This
               action cannot be undone.
             </p>
             <div class="flex gap-3 justify-center">
               <button
                 @click="cancelDelete"
-                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                 :disabled="deleteLoading"
               >
                 Cancel

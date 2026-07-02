@@ -119,19 +119,19 @@ watch([periodType, periodCount], () => fetchAnalytics());
 </script>
 
 <template>
-  <div class="bg-gray-50">
+  <div class="bg-gray-50 dark:bg-gray-900">
     <!-- Header -->
-    <header class="bg-white shadow">
+    <header class="bg-white dark:bg-gray-800 shadow">
       <div
         class="max-w-full mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
       >
         <div class="flex items-center">
-          <h1 class="text-2xl ps-5 font-bold text-gray-900">Dashboard</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
         </div>
 
         <!-- Period filter -->
         <div class="flex items-center gap-3">
-          <label class="text-sm text-gray-600">Period:</label>
+          <label class="text-sm text-gray-600 dark:text-gray-300">Period:</label>
 
           <!-- Period Type Buttons -->
           <div class="flex items-center gap-1">
@@ -143,7 +143,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
                 'px-3 py-1.5 text-sm rounded-lg border transition-colors',
                 periodType === option.value
                   ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50',
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600',
               ]"
             >
               {{ option.label }}
@@ -157,7 +157,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
       <!-- Loading -->
       <div v-if="loading" class="flex items-center justify-center py-24">
         <svg
-          class="animate-spin h-8 w-8 text-blue-600"
+          class="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -176,15 +176,15 @@ watch([periodType, periodCount], () => fetchAnalytics());
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           />
         </svg>
-        <span class="ml-3 text-gray-600">Loading analytics...</span>
+        <span class="ml-3 text-gray-600 dark:text-gray-300">Loading analytics...</span>
       </div>
 
       <!-- Error -->
       <div
         v-else-if="error"
-        class="bg-red-50 border border-red-200 rounded-lg p-6 text-center"
+        class="bg-red-50 border border-red-200 rounded-lg p-6 text-center dark:bg-red-900 dark:border-red-800"
       >
-        <p class="text-red-700">{{ error }}</p>
+        <p class="text-red-700 dark:text-red-400">{{ error }}</p>
         <button
           @click="fetchAnalytics"
           class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
@@ -197,42 +197,42 @@ watch([periodType, periodCount], () => fetchAnalytics());
       <div v-else-if="summary">
         <!-- KPI Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div class="bg-white rounded-lg border border-gray-200 p-4">
-            <p class="text-xs text-gray-500 mb-1">Total requests</p>
-            <p class="text-2xl font-semibold text-gray-900">
+          <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Total requests</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
               {{ summary.totalRequests }}
             </p>
-            <p class="text-xs text-gray-400 mt-1">All time</p>
+            <p class="text-xs text-gray-400 dark:text-gray-300 mt-1">All time</p>
           </div>
-          <div class="bg-white rounded-lg border border-gray-200 p-4">
-            <p class="text-xs text-gray-500 mb-1">Approval rate</p>
-            <p class="text-2xl font-semibold text-green-700">
+          <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Approval rate</p>
+            <p class="text-2xl font-semibold text-green-700 dark:text-green-400">
               {{ summary.overallApprovalRate }}%
             </p>
-            <p class="text-xs text-gray-400 mt-1">
+            <p class="text-xs text-gray-400 dark:text-gray-300 mt-1">
               {{ summary.totalApproved }} of
               {{ summary.totalApproved + summary.totalDisapproved }} closed
             </p>
           </div>
-          <div class="bg-white rounded-lg border border-gray-200 p-4">
-            <p class="text-xs text-gray-500 mb-1">Pending decisions</p>
-            <p class="text-2xl font-semibold text-amber-600">
+          <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Pending decisions</p>
+            <p class="text-2xl font-semibold text-amber-600 dark:text-amber-400">
               {{ summary.totalPending }}
             </p>
-            <p class="text-xs text-gray-400 mt-1">Awaiting response</p>
+            <p class="text-xs text-gray-400 dark:text-gray-300 mt-1">Awaiting response</p>
           </div>
         </div>
 
         <!-- Charts row 1 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-3">
           <!-- Approval Rates Over Time -->
-          <div class="bg-white rounded-lg border border-gray-200 p-5">
+          <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-5">
             <div class="flex items-center justify-between mb-3">
               <div>
-                <h2 class="text-sm font-medium text-gray-700 mb-1">
+                <h2 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                   Approval Rates Over Time
                 </h2>
-                <p class="text-xs text-gray-400 mb-3">
+                <p class="text-xs text-gray-400 dark:text-gray-300 mb-3">
                   {{
                     periodType === "daily"
                       ? "Daily breakdown"
@@ -249,7 +249,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
               <select
                 v-model="periodCount"
                 v-if="periodType !== 'all'"
-                class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
               >
                 <option
                   v-for="count in periodOptions.find(
@@ -267,7 +267,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
                   }}
                 </option>
               </select>
-              <div v-else class="text-sm text-gray-500">All time</div>
+              <div v-else class="text-sm text-gray-500 dark:text-gray-400">All time</div>
             </div>
             <div style="position: relative">
               <BarChart
@@ -276,34 +276,40 @@ watch([periodType, periodCount], () => fetchAnalytics());
                 :y-axis="['approved', 'disapproved', 'pending']"
                 v-bind="approvalChartOptions"
               />
-              <!-- 
-                :x-axis="approvalChartData.map((d) => d.period)"
-              :tickTextHideOverlapping="false"
-                :tickTextAngle="-45"
-              
-               -->
             </div>
           </div>
 
           <!-- Common Policy Overrides -->
-          <div class="bg-white rounded-lg border border-gray-200 p-5">
-            <h2 class="text-sm font-medium text-gray-700 mb-1">
+          <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-5">
+            <h2 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Common Policy Overrides
             </h2>
-            <p class="text-xs text-gray-400 mb-3">
+            <p class="text-xs text-gray-400 dark:text-gray-300 mb-3">
               By number of exemption requests
             </p>
             <div style="position: relative">
               <div class="mt-6">
                 <table class="w-full table-auto">
                   <thead>
-                    <tr class="border-b text-left">
-                      <th>#</th>
-                      <th>Policy</th>
-                      <th>Total</th>
-                      <th>Approved</th>
-                      <th>Disapproved</th>
-                      <th>Pending</th>
+                    <tr class="border-b">
+                      <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        #
+                      </th>
+                      <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Policy
+                      </th>
+                      <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Total
+                      </th>
+                      <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Approved
+                      </th>
+                      <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Disapproved
+                      </th>
+                      <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Pending
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -312,20 +318,19 @@ watch([periodType, periodCount], () => fetchAnalytics());
                       :key="p.policyId"
                       class="border-b"
                     >
-                      <td class="text-gray-700 pe-2">
+                      <td class="px-4 py-2 text-gray-700 dark:text-gray-200 pe-2">
                         {{ policyOverrides.indexOf(p) + 1 }}
                       </td>
-                      <td class="font-medium text-gray-700">
+                      <td class="px-4 py-2 font-medium text-gray-700 dark:text-gray-200">
                         {{ p.policyName }}
                       </td>
-                      <td>{{ p.totalRequests }}</td>
-                      <td class="text-green-600">{{ p.approved }}</td>
-                      <td class="text-red-600">{{ p.disapproved }}</td>
-                      <td class="text-yellow-600">{{ p.pending }}</td>
+                      <td class="px-4 py-2">{{ p.totalRequests }}</td>
+                      <td class="px-4 py-2 text-green-600 dark:text-green-400">{{ p.approved }}</td>
+                      <td class="px-4 py-2 text-red-600 dark:text-red-400">{{ p.disapproved }}</td>
+                      <td class="px-4 py-2 text-yellow-600 dark:text-yellow-400">{{ p.pending }}</td>
                     </tr>
-                     
                     <tr v-if="policyOverrides.length === 0">
-                      <td colspan="6" class="text-center text-gray-400 py-4">
+                      <td colspan="6" class="px-4 py-4 text-center text-gray-400 dark:text-gray-300">
                         No policy overrides found.
                       </td>
                     </tr>
@@ -335,18 +340,19 @@ watch([periodType, periodCount], () => fetchAnalytics());
             </div>
           </div>
         </div>
+
         <!-- Decision breakdown pills -->
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
-          <h2 class="text-sm font-medium text-gray-700 mb-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-5">
+          <h2 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-4">
             Overall Decision Breakdown
           </h2>
           <div class="flex items-center gap-2 mb-2">
             <div
-              class="h-4 rounded-l-full bg-green-500 transition-all"
+              class="h-4 rounded-l-full bg-green-500 dark:bg-green-400 transition-all"
               :style="`width:${summary.overallApprovalRate}%`"
             ></div>
             <div
-              class="h-4 bg-red-400 transition-all"
+              class="h-4 bg-red-400 dark:bg-red-300 transition-all"
               :style="`width:${
                 summary.totalRequests > 0
                   ? (
@@ -357,13 +363,13 @@ watch([periodType, periodCount], () => fetchAnalytics());
               }%`"
             ></div>
             <div
-              class="h-4 rounded-r-full bg-amber-300 flex-1 transition-all"
+              class="h-4 rounded-r-full bg-amber-300 dark:bg-amber-200 flex-1 transition-all"
             ></div>
           </div>
-          <div class="flex gap-6 text-xs text-gray-600 mt-2">
+          <div class="flex gap-6 text-xs text-gray-600 dark:text-gray-300 mt-2">
             <span class="flex items-center gap-1.5">
               <span
-                class="w-2.5 h-2.5 rounded-sm inline-block bg-green-500"
+                class="w-2.5 h-2.5 rounded-sm inline-block bg-green-500 dark:bg-green-400"
               ></span>
               Approved {{ summary.totalApproved }} ({{
                 summary.overallApprovalRate
@@ -371,7 +377,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
             </span>
             <span class="flex items-center gap-1.5">
               <span
-                class="w-2.5 h-2.5 rounded-sm inline-block bg-red-400"
+                class="w-2.5 h-2.5 rounded-sm inline-block bg-red-400 dark:bg-red-300"
               ></span>
               Disapproved {{ summary.totalDisapproved }} ({{
                 summary.totalRequests > 0
@@ -384,7 +390,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
             </span>
             <span class="flex items-center gap-1.5">
               <span
-                class="w-2.5 h-2.5 rounded-sm inline-block bg-amber-300"
+                class="w-2.5 h-2.5 rounded-sm inline-block bg-amber-300 dark:bg-amber-200"
               ></span>
               Pending {{ summary.totalPending }}
             </span>
@@ -393,12 +399,13 @@ watch([periodType, periodCount], () => fetchAnalytics());
       </div>
 
       <!-- Empty state -->
-      <div v-else class="text-center py-24 text-gray-400">
+      <div v-else class="text-center py-24 text-gray-400 dark:text-gray-500">
         No analytics data available.
       </div>
     </main>
-  </div>
-</template>
+    </div>
+  </template>
+
 
 <style scoped>
 /* rotate x-axis tick labels */

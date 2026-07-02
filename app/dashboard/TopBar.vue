@@ -1,5 +1,5 @@
   <template>
-  <header class="sticky top-0 z-50 bg-white shadow-sm">
+  <header class="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-sm">
     <div class="mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex h-16 items-center justify-between">
         <!-- Left section - Logo and menu button -->
@@ -7,7 +7,7 @@
           <button
             type="button"
             @click="toggleSidebar"
-            class="mr-4 rounded-md p-1 text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="mr-4 rounded-md p-1 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-expanded="false"
             aria-label="Toggle navigation"
           >
@@ -24,7 +24,7 @@
           <div class="hidden md:flex items-center">
             <span
               @click="Dashboard()"
-              class="cursor-pointer text-xl font-bold text-gray-800 hover:text-blue-600 transition-colors duration-200"
+              class="cursor-pointer text-xl font-bold text-gray-800 dark:text-gray-200 hover:text-blue-600 transition-colors duration-200"
             >
               Executive Process Exemption
             </span>
@@ -33,12 +33,16 @@
 
         <!-- Right section - Notification bell and User dropdown -->
         <div class="relative ml-4 flex items-center">
+        
+          <div class="mr-4 relative">
+            <ThemeToggle />
+          </div>
           <!-- Notification Bell -->
           <div class="mr-4 relative">
             <button
               type="button"
               @click="toggleNotificationDropdown"
-              class="flex items-center border rounded-full p-1 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              class="flex items-center border rounded-full p-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               id="notification-button"
               aria-expanded="false"
               aria-haspopup="true"
@@ -69,7 +73,7 @@
             >
               <div
                 v-if="isNotificationDropdownOpen"
-                class="absolute top-10 right-0 mt-2 w-90 origin-top-right rounded-md bg-white py-1 shadow-md ring-1 ring-black ring-opacity-5 focus:outline-none"
+                class="absolute top-10 right-0 mt-2 w-90 origin-top-right rounded-md bg-white dark:bg-gray-700 py-1 shadow-md ring-1 ring-black ring-opacity-5 focus:outline-none"
                 role="menu"
                 aria-orientation="vertical"
                 aria-labelledby="notification-button"
@@ -77,7 +81,7 @@
                 @click.outside="closeNotificationDropdown"
               >
                 <div class="px-4 py-2 flex items-center justify-between">
-                  <span class="block text-sm font-medium text-gray-700"
+                  <span class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                     >Notifications
                     <span
                       v-if="notificationStore.unreadCount > 0"
@@ -94,7 +98,7 @@
 
                 <div class="overflow-y-auto max-h-83">
                   <template v-if="notificationStore.notifications.length === 0">
-                    <div class="px-4 py-3 text-center text-sm text-gray-500">
+                    <div class="px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
                       No notifications
                     </div>
                   </template>
@@ -116,40 +120,16 @@
                         @click="markAsReadAndNavigate(notification)"
                       >
                         <div class="flex items-start space-x-3">
-                          <!-- <div class="flex-shrink-0">
-
-                            <svg
-                              class="h-5 w-5 text-gray-400"
-                              :class="{
-                                'text-green-500':
-                                  notification.type === 'success',
-                                'text-red-500': notification.type === 'error',
-                                'text-yellow-500':
-                                  notification.type === 'warning',
-                                'text-blue-500': notification.type === 'info',
-                              }"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                            >
-                              <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                :d="getNotificationIconPath(notification.type)"
-                              />
-                            </svg>
-                          </div> -->
                           <div class="flex-1">
                             <h3
-                              class="mb-1 text-sm font-medium text-gray-900 line-clamp-1"
+                              class="mb-1 text-sm font-medium text-gray-900 dark:text-gray-300 line-clamp-1"
                             >
                               {{ notification.title }}
                             </h3>
-                            <p class="mb-1 text-sm text-gray-500 line-clamp-2">
+                            <p class="mb-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
                               {{ notification.message }}
                             </p>
-                            <p class="text-xs text-gray-400">
+                            <p class="text-xs text-gray-400 dark:text-gray-500">
                               {{ formatDate(notification.createdDate) }}
                             </p>
                           </div>
@@ -158,14 +138,14 @@
                     </template>
                   </template>
                 </div>
-                <div class="px-4 py-3 text-center">
-                  <button
-                    @click="markAllAsRead"
-                    class="w-full text-left text-sm text-gray-600 hover:text-gray-800"
-                  >
-                    Mark all as read
-                  </button>
-                </div>
+<div class="px-4 py-3 text-center">
+                   <button
+                     @click="markAllAsRead"
+                     class="w-full text-left text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                   >
+                     Mark all as read
+                   </button>
+                 </div>
               </div>
             </transition>
           </div>
@@ -183,12 +163,10 @@
             <div class="flex items-center">
               <img
                 class="h-8 w-8 rounded-full"
-                src="../static/images/UserIcon.png"
+                :src="`https://apps.fastlogistics.com.ph/fpma2api/api/Access/get-employee-picture?userid=${userId}&empid=${employeeId}`"
                 alt="User profile"
               />
-              <span class="ml-2 hidden text-sm font-medium text-gray-700 md:block">{{
-                profile.employeename2
-              }}</span>
+              <span class="ml-2 hidden text-sm font-medium text-gray-700 dark:text-gray-300 md:block">{{ profile.employeename2 }}</span>
               <svg
                 class="ml-1 h-4 w-4 text-gray-400"
                 :class="{ 'transform rotate-180': isDropdownOpen }"
@@ -217,36 +195,23 @@
           >
             <div
               v-if="isDropdownOpen"
-              class="absolute top-10 right-0 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+              class="absolute top-10 right-0 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-700 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
               role="menu"
               aria-orientation="vertical"
               aria-labelledby="user-menu-button"
               tabindex="-1"
               @click.outside="closeDropdown"
             >
-              <!-- <a 
-                href="#" 
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                role="menuitem"
-                tabindex="-1"
-              >
-                <div class="flex items-center">
-                  <svg class="mr-3 h-4 w-4 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 3a3 3 0 1 1-3 3 3 3 0 0 1 3-3zm0 14.2a7.2 7.2 0 0 1-6-3.22c.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08a7.2 7.2 0 0 1-6 3.22z"/>
-                  </svg>
-                  View Profile
-                </div>
-              </a> -->
 
               <button
                 @click="Dashboard"
-                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
                 role="menuitem"
                 tabindex="-1"
               >
                 <div class="flex items-center">
                   <svg
-                    class="mr-3 h-4 w-4 text-gray-500"
+                    class="mr-3 h-4 w-4 text-gray-500 dark:text-gray-400"
                     fill="currentColor"
                     viewBox="0 0 24 24"
                   >
@@ -264,7 +229,7 @@
                     'https://apps.fastlogistics.com.ph/utility/#/Setting/Account'
                   )
                 "
-                class="py-2.5 px-5 flex items-center hover:bg-gray-100 text-[#333] text-sm cursor-pointer"
+                class="py-2.5 px-5 flex items-center hover:bg-gray-100 dark:hover:bg-gray-600 text-[#333] dark:text-gray-300 text-sm cursor-pointer"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -288,13 +253,13 @@
 
               <button
                 @click="Logout"
-                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
                 role="menuitem"
                 tabindex="-1"
               >
                 <div class="flex items-center">
                   <svg
-                    class="mr-3 h-4 w-4 text-gray-500"
+                    class="mr-3 h-4 w-4 text-gray-500 dark:text-gray-400"
                     fill="currentColor"
                     viewBox="0 0 24 24"
                   >
@@ -319,13 +284,13 @@
         style="background-color: rgba(0, 0, 0, 0.5)"
       >
         <div class="bg-white rounded-xl shadow-lg max-w-4xl w-full p-4 relative">
-          <!-- Close Button -->
-          <button
-            @click="show = false"
-            class="absolute top-2 right-2 pr-5 text-black hover:text-red-500 text-5xl"
-          >
-            &times;
-          </button>
+<!-- Close Button -->
+           <button
+             @click="show = false"
+             class="absolute top-2 right-2 pr-5 text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 text-5xl"
+           >
+             &times;
+           </button>
           <!-- Iframe -->
           <div class="aspect-video">
             <iframe
@@ -351,18 +316,20 @@ import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import BellIcon from "../components/icon/Bell.vue";
 import { useAuth } from "~/composables/useAuth";
+import ThemeToggle from "../components/ThemeToggle.vue";
 const router = useRouter();
 const userStore = useUserStore();
 const notificationStore = useNotificationStore();
 const auth = useAuth();
 const profile = userStore.profile;
 const userDATA = userStore.profile;
+const employeeId = userStore.profile.emplId;
+const userId = userStore.profile.userId;
 
 const isDropdownOpen = ref(false);
 const isNotificationDropdownOpen = ref(false);
 
 function toggleDropdown() {
-  console.log(userStore);
   isDropdownOpen.value = !isDropdownOpen.value;
 }
 
