@@ -271,7 +271,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
             </div>
             <div style="position: relative">
               <BarChart
-                :height="270"
+                :height="330"
                 :stacked="false"
                 :y-axis="['approved', 'disapproved', 'pending']"
                 v-bind="approvalChartOptions"
@@ -318,16 +318,16 @@ watch([periodType, periodCount], () => fetchAnalytics());
                       :key="p.policyId"
                       class="border-b"
                     >
-                      <td class="px-4 py-2 text-gray-700 dark:text-gray-200 pe-2">
+                      <td class="px-4 py-1 text-gray-700 dark:text-gray-200 pe-2">
                         {{ policyOverrides.indexOf(p) + 1 }}
                       </td>
-                      <td class="px-4 py-2 font-medium text-gray-700 dark:text-gray-200">
+                      <td class="px-4 py-1 font-medium text-gray-700 dark:text-gray-200">
                         {{ p.policyName }}
                       </td>
-                      <td class="px-4 py-2">{{ p.totalRequests }}</td>
-                      <td class="px-4 py-2 text-green-600 dark:text-green-400">{{ p.approved }}</td>
-                      <td class="px-4 py-2 text-red-600 dark:text-red-400">{{ p.disapproved }}</td>
-                      <td class="px-4 py-2 text-yellow-600 dark:text-yellow-400">{{ p.pending }}</td>
+                      <td class="px-4 py-1">{{ p.totalRequests }}</td>
+                      <td class="px-4 py-1 text-green-600 dark:text-green-400">{{ p.approved }}</td>
+                      <td class="px-4 py-1 text-red-600 dark:text-red-400">{{ p.disapproved }}</td>
+                      <td class="px-4 py-1 text-yellow-600 dark:text-yellow-400">{{ p.pending }}</td>
                     </tr>
                     <tr v-if="policyOverrides.length === 0">
                       <td colspan="6" class="px-4 py-4 text-center text-gray-400 dark:text-gray-300">

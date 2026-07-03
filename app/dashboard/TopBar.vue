@@ -34,7 +34,7 @@
         <!-- Right section - Notification bell and User dropdown -->
         <div class="relative ml-4 flex items-center">
         
-          <div class="mr-4 relative">
+          <div class="mr-4 flex items-center justify-center">
             <ThemeToggle />
           </div>
           <!-- Notification Bell -->

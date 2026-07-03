@@ -15,7 +15,9 @@ export default defineNuxtConfig({
   },
   modules: ["@pinia/nuxt", "nuxt-charts"],
   css: ["~/assets/css/main.css"],
-  plugins: ["~/plugins/pinia-persisted-state.ts"],
+  plugins: ["~/plugins/pinia-persisted-state.ts",
+    "~/plugins/theme.client.ts"
+  ],
   build: {
     transpile: ["gridstack"],
   },
@@ -32,7 +34,7 @@ export default defineNuxtConfig({
         "https://apps.fastlogistics.com.ph/epe2apidev",
     },
   },
-  app: {
+app: {
     /* head: {
       link: [
         { rel: "icon", type: "image/x-icon", href: "/tbs/favicon.ico" }, 
@@ -42,23 +44,5 @@ export default defineNuxtConfig({
       title: "TBS",
     }, */
     baseURL: "/epe2dev/",
-    head: {
-      script: [
-        {
-          innerHTML: `
-            (function() {
-              try {
-                var saved = localStorage.getItem('theme');
-                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                if (saved ? saved === 'dark' : prefersDark) {
-                  document.documentElement.classList.add('dark');
-                }
-              } catch (e) {}
-            })();
-          `,
-          type: "text/javascript",
-        },
-      ],
-    },
   },
 });

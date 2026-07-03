@@ -122,7 +122,7 @@
 
     <div v-if="props.showSearch" class="flex">
       <div
-        class="relative text-gray-400 focus-within:text-indigo-600 flex-1 dark:*:text-gray-200 dark:*:placeholder-gray-400 *:bg-gray-800 dark:border-gray-600 dark:focus-within:text-gray-100"
+        class="relative text-gray-400  focus-within:text-indigo-600 flex-1 bg-white dark:text-gray-200 dark:placeholder-gray-400  dark:border-gray-600 dark:focus-within:text-gray-100 dark:rounded-l-full"
       >
         <div
           class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none"
@@ -144,7 +144,7 @@
         <input
           type="text"
           id="default-search"
-          class="block w-full h-12 pr-5 pl-12 py-3 text-base font-medium shadow-sm text-gray-900 bg-white border border-gray-200 rounded-l-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-indigo-500 dark:focus:border-transparent"
+          class="block bg-white w-full h-12 pr-5 pl-12 py-3 text-base font-medium shadow-sm text-gray-900  border border-gray-200 rounded-l-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-indigo-500 dark:focus:border-transparent"
           v-if="props.showSearch"
           v-model="globalSearch"
           placeholder="Search across all data..."

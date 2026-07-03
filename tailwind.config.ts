@@ -23,6 +23,7 @@ export default <Partial<Config>>{
   },
   plugins: [],
   content: [
+    `app/**/*.{vue,js,ts}`,
     `./components/**/*.{vue,js,ts}`,
     `./dashboard/**/*.vue`,
     `./layouts/**/*.vue`,
