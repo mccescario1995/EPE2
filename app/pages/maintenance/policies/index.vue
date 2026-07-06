@@ -699,7 +699,7 @@ const createManageApproversRef = ref();
           iconPosition="left"
           @onclick="handleCreatePolicy"
         >
-          Create Request
+          Create Policy
         </Button>
       </div>
     </header>
@@ -850,7 +850,7 @@ const createManageApproversRef = ref();
       position="center"
       :closeOnOverlayClick="false"
       :closeOnEsc="false"
-      class="dark:bg-gray-900"
+      class="dark:bg-0 "
     >
       <template #header>
         <h3

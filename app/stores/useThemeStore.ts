@@ -4,37 +4,31 @@ import { defineStore } from "pinia";
 export const useThemeStore = defineStore("theme", {
   state: () => ({
     isDark: false,
-    initialized: false,
+    // Tracks whether the USER explicitly picked a theme (via toggle/setTheme),
+    // vs. just following the OS preference.
+    hasUserPreference: false,
   }),
 
-  persist: true, // Enable persistence for this store
+  persist: true,
 
   actions: {
-    /**
-     * Reads saved preference (or OS preference) and applies it.
-     * Must run client-side only — called from a client plugin on app boot.
-     */
     initTheme() {
-      if (this.initialized || !import.meta.client) return;
+      if (!import.meta.client) return;
 
-      console.log("Initializing theme store...");
+      if (!this.hasUserPreference) {
+        this.isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      }
 
-      const saved = localStorage.getItem("theme");
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-
-      console.log(`Saved theme: ${saved}, prefers dark: ${prefersDark}`);
-
-      this.isDark = saved ? saved === "dark" : prefersDark;
+      // Always apply on boot — this used to be gated behind a persisted
+      // "initialized" flag, which is what caused the light-on-reload bug:
+      // that flag survived reload, so this function returned early and
+      // never touched the DOM, even though isDark was correctly restored.
       this.applyTheme();
-      this.initialized = true;
 
-      // Keep in sync if the OS theme changes and the user hasn't set an explicit preference
       window
         .matchMedia("(prefers-color-scheme: dark)")
         .addEventListener("change", (e) => {
-          if (!localStorage.getItem("theme")) {
+          if (!this.hasUserPreference) {
             this.isDark = e.matches;
             this.applyTheme();
           }
@@ -43,13 +37,13 @@ export const useThemeStore = defineStore("theme", {
 
     toggleTheme() {
       this.isDark = !this.isDark;
-      console.log(`Toggling theme. New isDark: ${this.isDark}`);
+      this.hasUserPreference = true;
       this.applyTheme();
     },
 
     setTheme(dark: boolean) {
       this.isDark = dark;
-      console.log(`Setting theme. New isDark: ${this.isDark}`);
+      this.hasUserPreference = true;
       this.applyTheme();
     },
 
@@ -58,13 +52,12 @@ export const useThemeStore = defineStore("theme", {
       const root = document.documentElement;
       if (this.isDark) {
         root.classList.add("dark");
-        console.log("Applied dark theme");
-        localStorage.setItem("theme", "dark");
       } else {
         root.classList.remove("dark");
-        console.log("Applied light theme");
-        localStorage.setItem("theme", "light");
       }
+      // No manual localStorage writes here anymore — persist: true
+      // already handles saving isDark/hasUserPreference for us,
+      // and there's nothing left to collide with.
     },
   },
 });

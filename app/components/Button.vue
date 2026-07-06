@@ -187,15 +187,15 @@ const variantClasses = {
     "bg-yellow-600 text-white hover:bg-yellow-700 hover:shadow-lg hover:shadow-yellow-500/50 active:scale-95 focus:ring-yellow-500",
   info: "bg-gray-600 text-white hover:bg-gray-700 hover:shadow-lg hover:shadow-gray-500/50 active:scale-95 focus:ring-gray-500",
   "outline-primary":
-    "border-2 border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 hover:shadow-md active:scale-95 focus:ring-blue-500",
+    "border-2 border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 hover:shadow-md active:scale-95 focus:ring-blue-500 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 dark:hover:shadow-lg dark:hover:shadow-blue-500/50 dark:active:scale-95 dark:focus:ring-blue-500",
   "outline-success":
-    "border-2 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 hover:shadow-md active:scale-95 focus:ring-green-500",
+    "border-2 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 hover:shadow-md active:scale-95 focus:ring-green-500 dark:border-2 dark:border-green-600 dark:text-green-600 dark:hover:text-white dark:hover:bg-green-500 dark:hover:border-green-700 dark:hover:shadow-md dark:active:scale-95 dark:focus:ring-green-500",
   "outline-danger":
-    "border-2 border-red-600 text-red-600 hover:bg-red-50 hover:border-red-700 hover:shadow-md active:scale-95 focus:ring-red-500",
+    "border-2 border-red-600 text-red-600 hover:bg-red-50 hover:border-red-700 hover:shadow-md active:scale-95 focus:ring-red-500 dark:bg-red-600 dark:text-white dark:hover:bg-red-700 dark:hover:shadow-lg dark:hover:shadow-red-500/50 dark:active:scale-95 dark:focus:ring-red-500",
   "outline-warning":
-    "border-2 border-yellow-600 text-yellow-600 hover:bg-yellow-50 hover:border-yellow-700 hover:shadow-md active:scale-95 focus:ring-yellow-500",
+    "border-2 border-yellow-600 text-yellow-600 hover:bg-yellow-50 hover:border-yellow-700 hover:shadow-md active:scale-95 focus:ring-yellow-500 dark:border-2 dark:border-yellow-600 dark:text-yellow-600 dark:hover:text-white dark:hover:bg-yellow-500 dark:hover:border-yellow-700 dark:hover:shadow-md dark:active:scale-95 dark:focus:ring-yellow-500",
   "outline-info":
-    "border-2 border-gray-600 text-gray-600 hover:bg-gray-50 hover:border-gray-700 hover:shadow-md active:scale-95 focus:ring-gray-500",
+    "border-2 border-gray-600 text-gray-600 hover:bg-gray-50 hover:border-gray-700 hover:shadow-md active:scale-95 focus:ring-gray-500 dark:border-2 dark:border-gray-600 dark:text-white dark:hover:text-white dark:hover:bg-gray-500 dark:hover:border-gray-700 dark:hover:shadow-md dark:active:scale-95 dark:focus:ring-gray-500",
   ghost:
     "text-gray-700 hover:bg-gray-100 hover:text-gray-900 active:scale-95 focus:ring-gray-500",
   "ghost-primary":

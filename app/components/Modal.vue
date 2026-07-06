@@ -11,7 +11,7 @@
     >
       <!-- Overlay -->
       <div
-        class="fixed inset-0 bg-black opacity-50 transition-opacity"
+        class="fixed inset-0 bg-black dark:bg-0 opacity-50 transition-opacity"
         @click.self="handleOutsideClick"
       ></div>
 

@@ -328,7 +328,7 @@ const currentUserPendingAction = computed((): boolean => {
           </h1>
         </div>
         <div class="flex items-center gap-3">
-          <Button variant="outline-primary" size="md" @onclick="handleBack">
+          <Button variant="outline-info" size="md" @onclick="handleBack">
             Back to List
           </Button>
           <Button
@@ -534,8 +534,8 @@ const currentUserPendingAction = computed((): boolean => {
                     :download="!isViewableInBrowser(attachment.filetype)"
                     :class="
                       isViewableInBrowser(attachment.filetype)
-                        ? 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-800/20 dark:text-blue-300'
-                        : 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800/20 dark:text-green-300'
+                        ? 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200  dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700 dark:hover:text-white'
+                        : 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white'
                     "
                     target="_blank"
                   >

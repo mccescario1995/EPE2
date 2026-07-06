@@ -738,6 +738,12 @@ const loadDraft = async (id: number) => {
   }
 };
 
+const fileInput = ref<HTMLInputElement | null>(null);
+
+const openFilePicker = () => {
+  fileInput.value?.click();
+};
+
 // Fetch policies on mount and check for draft
 onMounted(async () => {
   fetchPolicies();
@@ -846,15 +852,18 @@ onMounted(async () => {
                 class="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700"
               >
                 <div class="flex items-center gap-3 min-w-0">
-                  <span class="text-sm font-medium text-gray-900 truncate dark:text-gray-100">{{
-                    attachment.file.name
-                  }}</span>
-                  <span class="text-xs text-gray-500 whitespace-nowrap dark:text-gray-400">
+                  <span
+                    class="text-sm font-medium text-gray-900 truncate dark:text-gray-100"
+                    >{{ attachment.file.name }}</span
+                  >
+                  <span
+                    class="text-xs text-gray-500 whitespace-nowrap dark:text-gray-400"
+                  >
                     ({{ (attachment.file.size / 1024 / 1024).toFixed(2) }} MB)
                   </span>
                 </div>
                 <Button
-                  variant="dark:outline-danger"
+                  variant="outline-danger"
                   size="sm"
                   @onclick="() => removeAttachment(index)"
                   icon="trash"
@@ -864,7 +873,7 @@ onMounted(async () => {
               </div>
             </div>
 
-            <input
+            <!-- <input
               v-if="newAttachments.length < MAX_FILES"
               type="file"
               multiple
@@ -873,9 +882,38 @@ onMounted(async () => {
               :disabled="
                 remainingAttachmentSlots <= 0 ||
                 totalNewAttachmentsSize >= MAX_TOTAL_SIZE
-              "
-                                                                                      
-            />
+              "                                                                                                    
+            /> -->
+            <div>
+              <!-- Hidden file input -->
+              <input
+                ref="fileInput"
+                v-if="newAttachments.length < MAX_FILES"
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
+                class="hidden"
+                @change="handleMultipleFileSelect"
+                :disabled="
+                  remainingAttachmentSlots <= 0 ||
+                  totalNewAttachmentsSize >= MAX_TOTAL_SIZE
+                "
+              />
+
+              <!-- Custom button -->
+              <Button
+                v-if="newAttachments.length < MAX_FILES"
+                variant="outline-primary"
+                type="button"
+                @click="openFilePicker()"
+                :disabled="
+                  remainingAttachmentSlots <= 0 ||
+                  totalNewAttachmentsSize >= MAX_TOTAL_SIZE
+                "
+              >
+                Choose Files
+              </Button>
+            </div>
             <p
               v-if="newAttachments.length < MAX_FILES"
               class="text-xs text-gray-500 mt-1 ps-2 py-2"
@@ -941,7 +979,7 @@ onMounted(async () => {
               >
                 <!-- Main Approver (numbered) -->
                 <div class="p-3 flex items-center justify-between">
-                  <div class="flex items-center ">
+                  <div class="flex items-center">
                     <span
                       class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium mr-3"
                     >
@@ -1034,7 +1072,7 @@ onMounted(async () => {
               size="lg"
               @onclick="handleSaveDraft"
               :loading="isSavingDraft"
-              :disabled="!isDraftValid"
+              :disabled="!isDraftValid || isSubmitting || isSavingDraft || approvers.length === 0"
             >
               {{ draftId ? "Update Draft" : "Save as Draft" }}
             </Button>
@@ -1043,7 +1081,7 @@ onMounted(async () => {
               size="lg"
               type="submit"
               :loading="isSubmitting"
-              :disabled="!isFormValid"
+              :disabled="!isFormValid || isSavingDraft || isSubmitting || approvers.length === 0"
             >
               Submit Request
             </Button>

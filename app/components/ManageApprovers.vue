@@ -1508,7 +1508,7 @@ onMounted(() => {
                 >
                 <div class="uppercase">
                   {{ element.name }}
-                  <div class="lowercase text-gray-500 ps-2 -mt-1 text-sm">
+                  <div class="lowercase text-gray-500 ps-2 -mt-1 text-sm dark:text-gray-400">
                     {{ element.approver.approveremail }}
                   </div>
                 </div>
@@ -1551,10 +1551,15 @@ onMounted(() => {
                     ⠿
                   </div>
                   <span
-                    class="rounded-full bg-orange-200 h-5 w-5 flex justify-center"
+                    class="rounded-full bg-orange-200 h-5 w-5 flex justify-center dark:text-gray-700"
                     >{{ index + 1 }}</span
                   >
+                  <div class="uppercase ">
                   {{ child.name }}
+                  <div class="lowercase text-gray-500 ps-2 -mt-1 text-sm dark:text-gray-400">
+                    {{ child.approver.approveremail }}
+                  </div>
+                </div>
                   <button
                     class="ml-auto text-red-400 hover:text-red-600 transition-colors dark:hover:text-red-500"
                     title="Delete approver"
@@ -1600,7 +1605,7 @@ onMounted(() => {
           </VueDraggable>
           <div
             v-if="showAddForm"
-            class="mt-3 border-2 border-dashed rounded-xl p-4"
+            class="mt-3 border-2 border-dashed rounded-xl p-4 dark:bg-gray-700 dark:border-gray-600 dark:border-solid"
             :class="
               addingAsProxy !== null
                 ? 'border-orange-200 bg-orange-50'
@@ -1610,7 +1615,7 @@ onMounted(() => {
             <p
               class="text-xs font-semibold mb-3 uppercase tracking-wide"
               :class="
-                addingAsProxy !== null ? 'text-orange-700' : 'text-blue-700'
+                addingAsProxy !== null ? 'text-orange-700 dark:text-orange-400' : 'text-blue-700 dark:text-blue-400'
               "
             >
               {{
@@ -1648,7 +1653,7 @@ onMounted(() => {
             </div>
             <div
               v-if="addingAsProxy === null && newApprover.approvertype === 'IM'"
-              class="flex items-start gap-2 p-3 bg-purple-50 rounded-lg mb-3 text-xs text-purple-700"
+              class="flex items-start gap-2 p-3 bg-purple-50 rounded-lg mb-3 text-xs text-purple-700 dark:bg-purple-900 dark:text-gray-200"
             >
               <svg
                 class="w-4 h-4 mt-0.5 flex-shrink-0"

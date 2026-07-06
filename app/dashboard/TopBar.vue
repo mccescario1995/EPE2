@@ -283,7 +283,10 @@
         class="fixed inset-0 flex items-center justify-center z-50"
         style="background-color: rgba(0, 0, 0, 0.5)"
       >
-        <div class="bg-white rounded-xl shadow-lg max-w-4xl w-full p-4 relative">
+        <div class="bg-white rounded-xl shadow-lg max-w-4xl w-full p-4 relative dark:bg-gray-800">
+          <h2 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">
+            Account Settings
+          </h2>
 <!-- Close Button -->
            <button
              @click="show = false"
