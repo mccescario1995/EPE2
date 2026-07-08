@@ -561,7 +561,7 @@ namespace EPEAPI.Controllers
 
             var searchWords = q.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            var query = _context.CoreVEmployeeDetails.AsNoTracking(); // IMPORTANT for views / keyless entities
+            var query = _context.CoreVEmployeeDetails.Where(e => e.Typedescription == "ACTIVE").AsNoTracking(); // IMPORTANT for views / keyless entities
 
             foreach (var word in searchWords)
             {
