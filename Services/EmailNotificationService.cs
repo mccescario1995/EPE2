@@ -146,9 +146,9 @@ public class EmailNotificationService
             };
 
             var authHeader = "65d9ec1b-316f-4294-a294-d8d54f-utility";
-            var apiUrl = "https://apps.fastlogistics.com.ph/utilityapi/api/Emailer/send-email";
+            var emailUrl = _urlBaseSettings.Emailer;
 
-            var request = new HttpRequestMessage(HttpMethod.Post, apiUrl)
+            var request = new HttpRequestMessage(HttpMethod.Post, emailUrl)
             {
                 Headers =
                 {
@@ -309,9 +309,9 @@ public class EmailNotificationService
             };
 
             var authHeader = "65d9ec1b-316f-4294-a294-d8d54f-utility";
-            var apiUrl = "https://apps.fastlogistics.com.ph/utilityapi/api/Emailer/send-email";
+            var emailUrl = _urlBaseSettings.Emailer;
 
-            var request = new HttpRequestMessage(HttpMethod.Post, apiUrl)
+            var request = new HttpRequestMessage(HttpMethod.Post, emailUrl)
             {
                 Headers =
                 {
@@ -464,9 +464,9 @@ public class EmailNotificationService
             };
 
             var authHeader = "65d9ec1b-316f-4294-a294-d8d54f-utility";
-            var apiUrl = "https://apps.fastlogistics.com.ph/utilityapi/api/Emailer/send-email";
+            var emailUrl = _urlBaseSettings.Emailer;
 
-            var request = new HttpRequestMessage(HttpMethod.Post, apiUrl)
+            var request = new HttpRequestMessage(HttpMethod.Post, emailUrl)
             {
                 Headers =
                 {
@@ -563,9 +563,9 @@ public class EmailNotificationService
             };
 
             var authHeader = "65d9ec1b-316f-4294-a294-d8d54f-utility";
-            var apiUrl = "https://apps.fastlogistics.com.ph/utilityapi/api/Emailer/send-email";
+            var emailUrl = _urlBaseSettings.Emailer;
 
-            var request = new HttpRequestMessage(HttpMethod.Post, apiUrl)
+            var request = new HttpRequestMessage(HttpMethod.Post, emailUrl)
             {
                 Headers =
                 {
@@ -809,9 +809,9 @@ public class EmailNotificationService
     private async Task SendEmailAsync(object requestBody)
     {
         var authHeader = "65d9ec1b-316f-4294-a294-d8d54f-utility";
-        var apiUrl = "https://apps.fastlogistics.com.ph/utilityapi/api/Emailer/send-email";
+        var emailUrl = _urlBaseSettings.Emailer;
 
-        var request = new HttpRequestMessage(HttpMethod.Post, apiUrl)
+        var request = new HttpRequestMessage(HttpMethod.Post, emailUrl)
         {
             Headers = { { "Authorization", authHeader } },
             Content = JsonContent.Create(requestBody)

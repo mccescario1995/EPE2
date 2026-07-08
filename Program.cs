@@ -98,7 +98,8 @@ Console.WriteLine($"Environment: {app.Configuration["About:Environment"]}\n");
 // Print the base URLs to the terminal
 Console.WriteLine("Base URLs from appsettings.json:");
 Console.WriteLine($"---> API Base URL: {app.Configuration["UrlBase:Api"]}");
-Console.WriteLine($"---> View Base URL: {app.Configuration["UrlBase:View"]} \n");
+Console.WriteLine($"---> View Base URL: {app.Configuration["UrlBase:View"]}");
+Console.WriteLine($"---> Emailer Base URL: {app.Configuration["UrlBase:Emailer"]} \n");
 
 Console.WriteLine("-------------------------------------------------- \n");
 
@@ -111,6 +112,10 @@ if (app.Configuration["About:Environment"] == "Development")
     Console.WriteLine("Swagger Enabled... \n");
 
     Console.WriteLine("-------------------------------------------------- \n");
+}
+else
+{
+    Console.WriteLine("Swagger Disabled... \n");
 }
 
 //app.UseHttpsRedirection();
