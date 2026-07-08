@@ -6,7 +6,7 @@
       <!-- Home icon with enhanced hover state -->
       <li class="inline-flex items-center group">
         <NuxtLink
-          to="/dashboard/"
+          to="/main/dashboard/"
           class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-blue-600 transition-all duration-300 hover:scale-105 dark:text-gray-400 dark:hover:text-blue-500"
         >
           <div class="relative">
@@ -49,7 +49,7 @@
 
             <!-- Clickable breadcrumb (only if has index.vue) -->
             <NuxtLink
-              v-if="index !== breadcrumbs.length - 1 && crumb.clickable"
+              v-if="crumb.clickable && crumb.to"
               :to="crumb.to"
               class="relative text-sm font-medium text-gray-600 hover:text-blue-600 transition-all duration-300 px-2 py-1 rounded-lg hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-500 dark:hover:bg-blue-600/20"
             >
@@ -62,6 +62,7 @@
 
             <!-- Non-clickable breadcrumb (last item OR folder without index.vue) -->
             <span
+              v-else
               :class="[
                 'text-sm font-semibold text-gray-800 px-3 py-1.5 rounded-lg border shadow-sm',
                 crumb.clickable && index === breadcrumbs.length - 1

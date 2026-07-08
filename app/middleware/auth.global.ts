@@ -20,7 +20,7 @@ export default defineNuxtRouteMiddleware((to) => {
   }
   
   if (isAuthenticated && isPublicRoute) {
-    const redirectTo = to.query.redirect as string || '/dashboard';
+    const redirectTo = to.query.redirect as string || '/main/dashboard';
     return navigateTo(redirectTo);
   }
 });

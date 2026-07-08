@@ -419,7 +419,7 @@ async function Login() {
     });
   }
 
-  const redirectTo = route.query.redirect || "/dashboard";
+  const redirectTo = route.query.redirect || "/main/dashboard";
   router.push(redirectTo);
 }
 

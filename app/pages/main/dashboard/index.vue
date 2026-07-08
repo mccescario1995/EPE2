@@ -90,16 +90,6 @@ const fetchAnalytics = async () => {
       policyOverrides.value = response.policyOverrides;
       processingByPolicy.value = response.processingByPolicy;
       approverWorkload.value = response.approverWorkload;
-
-      console.log(
-        "Raw Approval Rates:",
-        approvalRates.value
-      );
-      console.log("Approval Chart Data:", approvalChartData.value);
-      console.log(
-        "Approval Chart Data Length:",
-        approvalChartData.value.length,
-      );
     }
   } catch (e: any) {
     error.value = e.message || "Failed to load analytics";

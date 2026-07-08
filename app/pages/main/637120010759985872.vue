@@ -3,6 +3,12 @@
 const router = useRouter();
 
 import { IconView, IconEdit, IconDelete, IconApproval } from "#components";
+const { breadcrumbs, currentMenuLabel } = useBreadcrumbs();
+
+// Get the current page's menu name (should be "Policy")
+const currentPageName = breadcrumbs.value[breadcrumbs.value.length - 1]?.label;
+console.log("Current page Name: ", currentPageName);
+
 
 const userStore = useUserStore();
 
@@ -156,7 +162,10 @@ const handleCreate = () => {
             class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             @onclick="$router.back()"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">All Requests</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
+            
+             {{ currentMenuLabel || currentPageName  || "All Requests"}}
+          </h1>
         </div>
 
         <Button

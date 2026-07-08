@@ -9,6 +9,11 @@ definePageMeta({
 const router = useRouter();
 import { IconView, IconEdit, IconDelete, IconUserApprover } from "#components";
 import ManageApprovers from "~/components/ManageApprovers.vue";
+const { breadcrumbs, currentMenuLabel } = useBreadcrumbs();
+
+// Get the current page's menu name (should be "Policy")
+const currentPageName = breadcrumbs.value[breadcrumbs.value.length - 1]?.label;
+console.log("Current page Name: ", currentPageName);
 
 type PolicyApiItem = {
   policyid: string;
@@ -688,7 +693,7 @@ const createManageApproversRef = ref();
             @onclick="$router.back()"
           />
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
-            Policies
+            {{ currentMenuLabel || currentPageName  || "Policies"}}
           </h1>
         </div>
 

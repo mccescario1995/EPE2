@@ -93,25 +93,26 @@
 //       console.error("Error fetching menu:", error);
 //       return [];
 //     }
-  // };
+// };
 
-  export const useMenuService = () => {
+// menuService.js
+export const useMenuService = () => {
   const fetchMenuList = async () => {
     try {
       const userStore = useUserStore();
       const userId = userStore.profile?.userId;
-      
+
       if (!userId) {
-        console.error("[menuService] No userId in profile — cannot fetch menu.");
+        console.error(
+          "[menuService] No userId in profile — cannot fetch menu.",
+        );
         return [];
       }
 
-      // console.log(token);
       startLoading();
       const response = await apiFetch("/api/Account/get-user-menu", {
         method: "POST",
         body: JSON.stringify({
-          // sysid: EPE_SYSID,
           userid: userId,
         }),
         headers: {
@@ -119,7 +120,7 @@
         },
         parseJson: true,
       });
-      
+
       const data = response;
       const routeMap = {};
       data.forEach((menuGroup) => {
@@ -133,12 +134,13 @@
       return data.map((menuGroup) => ({
         title: menuGroup.name,
         isopen: false,
-            icon: menuGroup.icon, // Optional icon mapping
-          route: routeMap[menuGroup.stage] || `/main/${menuGroup.stage}`,
+        icon: menuGroup.icon, // Optional icon mapping
+        route: routeMap[menuGroup.stage] || `/main/${menuGroup.stage}`,
         isActive: false,
+        isClick: menuGroup.isclick,
         submenu: menuGroup.pages.map((page) => ({
           title: page.name,
-          isclick: false,
+          isclick: page.isclick,
           route: routeMap[page.stage] || `/main/${page.stage}`,
           icon: page.icon,
         })),
@@ -146,13 +148,13 @@
     } catch (error) {
       console.error("Error fetching menu:", error);
       alert("Unauthorized!");
-   
+
       return navigateTo("/");
     } finally {
       stopLoading();
     }
   };
- 
+
   return { fetchMenuList };
 };
 

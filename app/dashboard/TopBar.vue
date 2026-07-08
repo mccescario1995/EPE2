@@ -420,7 +420,7 @@ async function Logout() {
 
 function Dashboard() {
   closeDropdown();
-  router.push("/dashboard");
+  router.push("/main/dashboard");
 }
 const show = ref(false);
 const link = ref("");

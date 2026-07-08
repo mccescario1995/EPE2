@@ -69,7 +69,7 @@ const mobileOrientationClasses = {
       <!-- Logo Section -->
       <div class="px-4 py-5 flex justify-center items-center border-b border-gray-100 dark:border-gray-700">
         <NuxtLink
-          to="/dashboard"
+          to="/main/dashboard"
           class="flex items-center justify-center transition-all duration-300 hover:bg-gray-50 rounded-lg p-2"
         >
           <img

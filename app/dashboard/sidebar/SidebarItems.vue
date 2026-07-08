@@ -281,7 +281,7 @@ watch(searchQuery, (val) => {
           @click="router.push('/main/dashboard')"
           class="group flex w-full items-start rounded-lg p-2 transition-all duration-200"
           :class="[
-            route.path === '/dashboard'
+            route.path === '/main/dashboard'
               ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 font-semibold'
               : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white',
           ]"
