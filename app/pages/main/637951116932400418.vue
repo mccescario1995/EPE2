@@ -8,10 +8,13 @@ const userStore = useUserStore();
 const userId = userStore.profile;
 
 const loading = ref(false);
-const exemptionData: any = ref(null);
+const exemptionData :any = ref(null);
 const showDeleteConfirm = ref(false);
 const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
+
+// reactive length used to force BaseTable to remount when data arrives
+const exemptionDataLength = computed(() => exemptionData.value?.length ?? 0);
 
 const viewProduct = (row: any) => {
   router.push(`/exemptions/view?id=${row.transactionId}`);
@@ -73,7 +76,7 @@ const deleteRequest = async () => {
       });
 
       await fetchExemptionRequests();
-      tableRef.value?.refresh();
+      reloadTable();
     } else {
       console.error("Delete failed:", response.message);
     }
@@ -87,7 +90,7 @@ const deleteRequest = async () => {
 const fetchExemptionRequests = async () => {
   loading.value = true;
   try {
-    const responseExemptions = await apiFetch("/api/exemption", {
+    const responseExemptions = await apiFetch("/api/exemption/pending", {
       method: "POST",
       body: JSON.stringify({ UserId: parseInt(userId.emplId) }),
       headers: {
@@ -103,17 +106,23 @@ const fetchExemptionRequests = async () => {
   }
 };
 
+// Handle create navigation
+const handleCreate = () => {
+  router.push(`/exemptions/create`);
+};
+
 const fetchExemptionData = async (params: {
   page: number;
   limit: number;
   search: string;
   filters: Record<string, string>;
   sortField?: string;
-  sortDirection?: "asc" | "desc";
+  sortDirection?: 'asc' | 'desc';
 }) => {
+
   loading.value = true;
-  const response = await apiFetch("/api/exemption", {
-    method: "POST",
+  const response = await apiFetch('/api/exemption/pending', {
+    method: 'POST',
     body: JSON.stringify({
       UserId: parseInt(userId.emplId),
       page: params.page,
@@ -122,7 +131,7 @@ const fetchExemptionData = async (params: {
       sortField: params.sortField,
       sortDirection: params.sortDirection,
     }),
-    headers: { "Content-Type": "application/json" },
+    headers: { 'Content-Type': 'application/json' },
     parseJson: true,
   });
   loading.value = false;
@@ -133,10 +142,6 @@ const fetchExemptionData = async (params: {
   };
 };
 
-// Handle create navigation
-const handleCreate = () => {
-  router.push(`/exemptions/create`);
-};
 </script>
 
 <template>
@@ -155,7 +160,7 @@ const handleCreate = () => {
             class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             @onclick="$router.back()"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">All Requests</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">Pending Requests</h1>
         </div>
 
         <Button
@@ -201,13 +206,11 @@ const handleCreate = () => {
               O: 'Open',
               P: 'Open',
               C: 'Closed',
-              D: 'Draft',
             },
             finalDecision: {
               Pending: 'Pending',
               Approved: 'Approved',
               Disapproved: 'Disapproved',
-              Draft: 'Draft',
             },
           }"
           :field-colors="{
@@ -215,13 +218,11 @@ const handleCreate = () => {
               O: 'bg-blue-100 text-blue-800 border border-blue-900',
               P: 'bg-blue-100 text-blue-800 border border-blue-900',
               C: 'bg-gray-200 text-gray-800 border border-gray-900',
-              D: 'bg-gray-100 text-gray-800 border border-gray-900',
             },
             finalDecision: {
               Pending: 'bg-yellow-100 text-yellow-800',
               Approved: 'bg-green-100 text-green-800',
               Disapproved: 'bg-red-100 text-red-800',
-              Draft: 'bg-gray-100 text-gray-800 border border-gray-900',
             },
           }"
           :date-fields="['createdDate']"
@@ -243,13 +244,11 @@ const handleCreate = () => {
             },
             {
               label: IconEdit,
-              tooltip: (row) =>
-                row.status == 'D' ? 'Edit Draft' : 'Edit Request',
+              tooltip: 'Edit Request',
               handler: editProduct,
               iconClass: '!text-blue-500 dark:text-blue-400',
               buttonClass: 'hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900',
-              visible: (row) =>
-                row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
+              visible: (row) =>  row.status !== 'C', // Show if user is requester or request is not Completed
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
             {
@@ -258,8 +257,7 @@ const handleCreate = () => {
               handler: confirmDelete,
               iconClass: 'text-red-500 dark:text-red-400',
               buttonClass: 'hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900',
-              visible: (row) =>
-                row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
+              visible: (row) => row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
           ]"
