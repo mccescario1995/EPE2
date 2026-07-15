@@ -1,3 +1,4 @@
+using System.Data.Entity;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Net.NetworkInformation;
@@ -57,8 +58,17 @@ namespace EPEAPI.Controllers
         {
             try
             {
+                //var currentUserEmplId = request.UserId; // this is int
+                //var User = _context.CoreVUsers.Where(u => u.EmplId == currentUserEmplId.ToString()).FirstOrDefault();
+                //var query = _context.EpeVTransactionHeaders.Where(u => u.IsDelete == 0 && u.CreatedBy == User.UserId.ToString());
+
                 var currentUserEmplId = request.UserId;
-                var query = _context.EpeVTransactionHeaders.Where(u => u.IsDelete == 0);
+                var query = _context.EpeVTransactionHeaders
+                .Where(u =>
+                    u.FinalDecision == "Pending" &&
+                    u.IsDelete == 0 &&
+                    u.RequesterId == currentUserEmplId.ToString()
+                );
 
                 // Use body search over query param
                 var searchTerm = request.Search ?? search;
@@ -155,7 +165,7 @@ namespace EPEAPI.Controllers
             {
                 var currentUserEmplId = request.UserId;
                 var query = _context.EpeVTransactionHeaders.Where(u =>
-                    u.FinalDecision == "Pending" && u.IsDelete == 0
+                    u.FinalDecision == "Pending" && u.IsDelete == 0 && u.RequesterId == currentUserEmplId.ToString()
                 );
 
                 var searchTerm = request.Search ?? search;
@@ -254,10 +264,12 @@ namespace EPEAPI.Controllers
         {
             try
             {
-                var currentUserEmplId = request.UserId;
+                var currentUserEmplId = request.UserId.ToString();
                 var query = _context.EpeVTransactionHeaders.Where(u =>
                     u.FinalDecision == "Approved"
-                    || u.FinalDecision == "Disapproved" && u.IsDelete == 0
+                    || u.FinalDecision == "Disapproved"
+                    && u.RequesterId == currentUserEmplId
+                    && u.IsDelete == 0 
                 );
 
                 var searchTerm = request.Search ?? search;
