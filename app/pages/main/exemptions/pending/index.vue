@@ -162,7 +162,7 @@ const fetchExemptionData = async (params: {
           />
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">Pending Requests</h1>
         </div>
-
+<!-- 
         <Button
           variant="primary"
           size="md"
@@ -171,7 +171,7 @@ const fetchExemptionData = async (params: {
           @onclick="handleCreate"
         >
           Create Request
-        </Button>
+        </Button> -->
       </div>
     </header>
     <main class="max-w-full mx-auto py-6 sm:px-6">

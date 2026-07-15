@@ -10,90 +10,24 @@
 //  * CoreUserMenuLists, using its Menucode (or MenuId if Menucode is null)
 //  * as the key.
 //  */
-// const STAGE_ROUTE_MAP = {
-//   "637120010759985872": "/exemptions/all",       // Create Exemption Approval
-//   "637951116932400418": "/exemptions/pending",   // Pending for Approval
-//   "637262075600163869": "/maintenance/policies", // Policy
-//   "637951226932433418": "/exemptions/closed",    // All Request (Reports)
-// };
+const STAGE_ROUTE_MAP = {
+  "637120010759985872": "/main/exemptions/all", // Create Exemption Approval
+  "637951116932400418": "/main/exemptions/pending", // Pending for Approval
+  "637262075600163869": "/maintenance/policies", // Maintenance Policy
+  "637951226932433418": "/main/reports/closed", // All Request (Reports)
+};
 
-// // EPE's own sysid for get-app-menu. Distinct from the "utility" iframe
-// // system's systemid (101 is used there too, but that's a coincidence —
-// // verify with backend/DB if these apps ever diverge).
-// const EPE_SYSID = 101;
+function resolvePageRoute(stage, menuGroupName) {
+  if (!stage) return null;
+  if (STAGE_ROUTE_MAP[stage]) return STAGE_ROUTE_MAP[stage];
+  return `/main/${menuGroupName}/${stage}`;
+}
 
-// function resolveRoute(item) {
-//   if (item.route) return item.route;
-
-//   const key = item.stage ?? item.id;
-//   const resolved = STAGE_ROUTE_MAP[key];
-
-//   if (!resolved) {
-//     console.warn(
-//       `[menuService] No route mapping found for menu item "${item.title}" (stage/id: ${key}). ` +
-//       `Add it to STAGE_ROUTE_MAP in menuService.js.`,
-//     );
-//   }
-
-//   return resolved ?? null;
-// }
-
-// function normalizeMenuGroup(group) {
-//   return {
-//     title: group.title,
-//     isopen: false,
-//     isActive: false,
-//     submenu: (group.submenu || []).map((item) => ({
-//       id: item.id,
-//       title: item.title,
-//       route: resolveRoute(item),
-//       icon: item.icon || "",
-//       isclick: false,
-//       canadd: !!item.canadd,
-//       canedit: !!item.canedit,
-//       candelete: !!item.candelete,
-//     })),
-//   };
-// }
-
-// export const useMenuService = () => {
-//   /**
-//    * Fetches the raw menu tree from /api/Account/get-app-menu and
-//    * normalizes it into the shape SidebarItems.vue expects (route
-//    * resolved client-side, ui-state flags added).
-//    */
-//   const fetchMenuList = async () => {
-//     const userStore = useUserStore();
-//     const userId = userStore.profile?.userId;
-
-//     if (!userId) {
-//       console.error("[menuService] No userId in profile — cannot fetch menu.");
-//       return [];
-//     }
-
-//     try {
-//       const response = await apiFetch("/api/Account/get-user-menu", {
-//         method: "POST",
-//         body: JSON.stringify({
-//           // sysid: EPE_SYSID,
-//           userid: userId,
-//         }),
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         parseJson: true,
-//       });
-
-//       // Controller returns StatusCode(200, parentMenuResult) — a bare array,
-//       // NOT wrapped in { items: [...] }. Guard anyway in case that changes.
-//       const data = Array.isArray(response) ? response : (response?.items ?? []);
-
-//       return data.map(normalizeMenuGroup);
-//     } catch (error) {
-//       console.error("Error fetching menu:", error);
-//       return [];
-//     }
-// };
+function resolveGroupRoute(stage) {
+  if (!stage) return null;
+  if (STAGE_ROUTE_MAP[stage]) return STAGE_ROUTE_MAP[stage];
+  return `/main/${stage}`;
+}
 
 // menuService.js
 export const useMenuService = () => {
@@ -122,26 +56,40 @@ export const useMenuService = () => {
       });
 
       const data = response;
-      const routeMap = {};
-      data.forEach((menuGroup) => {
-        (menuGroup.pages || []).forEach((page) => {
-          if (page.stage) {
-            routeMap[page.stage] = `/main/${menuGroup.name}/${page.stage}`;
-          }
-        });
-      });
+      // const routeMap = {};
+      // data.forEach((menuGroup) => {
+      //   (menuGroup.pages || []).forEach((page) => {
+      //     if (page.stage) {
+      //       routeMap[page.stage] = `/main/${menuGroup.name}/${page.stage}`;
+      //     }
+      //   });
+      // });
       // Map API response to our menu structure
+      // return data.map((menuGroup) => ({
+      //   title: menuGroup.name,
+      //   isopen: false,
+      //   icon: menuGroup.icon, // Optional icon mapping
+      //   route: routeMap[menuGroup.stage] || `/main/${menuGroup.stage}`,
+      //   isActive: false,
+      //   isClick: menuGroup.isclick,
+      //   submenu: menuGroup.pages.map((page) => ({
+      //     title: page.name,
+      //     isclick: page.isclick,
+      //     route: routeMap[page.stage] || `/main/${page.stage}`,
+      //     icon: page.icon,
+      //   })),
+      // }));
       return data.map((menuGroup) => ({
         title: menuGroup.name,
         isopen: false,
-        icon: menuGroup.icon, // Optional icon mapping
-        route: routeMap[menuGroup.stage] || `/main/${menuGroup.stage}`,
+        icon: menuGroup.icon,
+        route: resolveGroupRoute(menuGroup.stage),
         isActive: false,
         isClick: menuGroup.isclick,
         submenu: menuGroup.pages.map((page) => ({
           title: page.name,
           isclick: page.isclick,
-          route: routeMap[page.stage] || `/main/${page.stage}`,
+          route: resolvePageRoute(page.stage, menuGroup.name),
           icon: page.icon,
         })),
       }));
@@ -157,6 +105,3 @@ export const useMenuService = () => {
 
   return { fetchMenuList };
 };
-
-//   return { fetchMenuList, resolveRoute, STAGE_ROUTE_MAP };
-// };

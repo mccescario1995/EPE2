@@ -7,8 +7,6 @@ const { breadcrumbs, currentMenuLabel } = useBreadcrumbs();
 
 // Get the current page's menu name (should be "Policy")
 const currentPageName = breadcrumbs.value[breadcrumbs.value.length - 1]?.label;
-console.log("Current page Name: ", currentPageName);
-
 
 const userStore = useUserStore();
 

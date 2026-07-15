@@ -122,7 +122,7 @@
 
     <div v-if="props.showSearch" class="flex">
       <div
-        class="relative text-gray-400  focus-within:text-indigo-600 flex-1 bg-white dark:text-gray-200 dark:placeholder-gray-400  dark:border-gray-600 dark:focus-within:text-gray-100 dark:rounded-l-full"
+        class="relative text-gray-400 focus-within:text-indigo-600 flex-1 bg-white dark:text-gray-200 dark:placeholder-gray-400 dark:border-gray-600 dark:focus-within:text-gray-100 dark:rounded-l-full"
       >
         <div
           class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none"
@@ -144,7 +144,7 @@
         <input
           type="text"
           id="default-search"
-          class="block bg-white w-full h-12 pr-5 pl-12 py-3 text-base font-medium shadow-sm text-gray-900  border border-gray-200 rounded-l-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-indigo-500 dark:focus:border-transparent"
+          class="block bg-white w-full h-12 pr-5 pl-12 py-3 text-base font-medium shadow-sm text-gray-900 border border-gray-200 rounded-l-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-indigo-500 dark:focus:border-transparent"
           v-if="props.showSearch"
           v-model="globalSearch"
           placeholder="Search across all data..."
@@ -287,6 +287,16 @@
                 :field-mappings="props.fieldMappings"
                 :field-colors="props.fieldColors"
               />
+              <div
+                v-else-if="props.dateTimeFields?.includes(key)"
+                class="flex flex-col"
+                :title="formatValue(key, row[key])"
+              >
+                <span>{{ getDateTimeParts(key, row[key])?.date }}</span>
+                <span class="text-gray-500 dark:text-gray-400">{{
+                  getDateTimeParts(key, row[key])?.time
+                }}</span>
+              </div>
               <span
                 v-else
                 class="block truncate max-w-xs"
@@ -428,6 +438,15 @@
             :field-mappings="props.fieldMappings"
             :field-colors="props.fieldColors"
           />
+          <div
+            v-else-if="props.dateTimeFields?.includes(key)"
+            class="flex flex-col items-end"
+          >
+            <span>{{ getDateTimeParts(key, row[key])?.date }}</span>
+            <span class="text-gray-500 dark:text-gray-400">{{
+              getDateTimeParts(key, row[key])?.time
+            }}</span>
+          </div>
           <span v-else>
             {{ formatValue(key, row[key]) }}
           </span>
@@ -540,6 +559,8 @@ const props = defineProps<{
   fieldColors?: Record<string, Record<any, string>>;
   dateFields?: string[];
   dateFormat?: string;
+  dateTimeFields?: string[];
+  dateTimeFormat?: string;
   filter?: boolean;
   draggable?: boolean;
   pagination?: boolean;
@@ -730,7 +751,8 @@ const filterableColumns = computed(() => {
       (key) =>
         props.filterableColumns?.includes(key) &&
         !props.badgeFields?.includes(key) &&
-        !props.dateFields?.includes(key),
+        !props.dateFields?.includes(key) &&
+        !props.dateTimeFields?.includes(key),
     );
   }
   return [];
@@ -865,6 +887,20 @@ function formatValue(key: string, value: any): string {
       : value.toString();
   }
 
+  // Explicit date-time field handling
+  if (props.dateTimeFields?.includes(key)) {
+    // <-- add this block
+    try {
+      const parsed =
+        typeof value === "string" ? parseISO(value) : new Date(value);
+      return isValid(parsed)
+        ? format(parsed, props.dateTimeFormat || "MMM d, yyyy h:mm:ss a")
+        : value.toString();
+    } catch (e) {
+      return value.toString();
+    }
+  }
+
   // Explicit date field handling
   if (props.dateFields?.includes(key)) {
     try {
@@ -891,6 +927,27 @@ function formatValue(key: string, value: any): string {
   }
 
   return value.toString();
+}
+
+function getDateTimeParts(
+  key: string,
+  value: any,
+): { date: string; time: string } | null {
+  if (!props.dateTimeFields?.includes(key)) return null;
+  if (value == null || value === "") return { date: "-", time: "" };
+
+  try {
+    const parsed =
+      typeof value === "string" ? parseISO(value) : new Date(value);
+    if (!isValid(parsed)) return { date: value.toString(), time: "" };
+
+    return {
+      date: format(parsed, "MMMM d, yyyy"),
+      time: format(parsed, "h:mm:ss a"),
+    };
+  } catch (e) {
+    return { date: value.toString(), time: "" };
+  }
 }
 
 function getFilterOptions(key: string) {

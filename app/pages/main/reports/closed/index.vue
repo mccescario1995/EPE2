@@ -2,6 +2,11 @@
 const router = useRouter();
 
 import { IconView, IconEdit, IconDelete, IconApproval } from "#components";
+const { breadcrumbs, currentMenuLabel } = useBreadcrumbs();
+
+// Get the current page's menu name (should be "Policy")
+const currentPageName = breadcrumbs.value[breadcrumbs.value.length - 1]?.label;
+console.log("Current page Name: ", currentPageName);
 
 const userStore = useUserStore();
 
@@ -14,13 +19,7 @@ const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
 
 const viewProduct = (row: any) => {
-  router.push(`/exemptions/view?id=${row.transactionId}`);
-};
-const editProduct = (row: any) => {
-  router.push(`/exemptions/edit?id=${row.transactionId}`);
-};
-const approveRequest = (row: any) => {
-  router.push(`/exemptions/approve?id=${row.transactionId}`);
+  router.push(`/main/reports/closed/view?id=${row.transactionId}`);
 };
 
 const confirmDelete = (row: any) => {
@@ -169,7 +168,7 @@ const fetchAllForExport = async (params: {
 
 // Handle create navigation
 const handleCreate = () => {
-  router.push(`/exemptions/create`);
+  router.push(`/main/exemptions/create`);
 };
 
 </script>
@@ -191,10 +190,12 @@ const handleCreate = () => {
 
             @onclick="$router.back()"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">Closed Requests</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
+           {{ currentMenuLabel || currentPageName  || "Closed Requests"}}
+          </h1>
         </div>
 
-        <Button
+        <!-- <Button
           v-if="exemptionData"
           variant="primary"
           size="md"
@@ -203,7 +204,7 @@ const handleCreate = () => {
           @onclick="handleCreate"
         >
           Create Request
-        </Button>
+        </Button> -->
       </div>
     </header>
     <main class="max-w-full mx-auto py-6 sm:px-6 ">
@@ -257,7 +258,8 @@ const handleCreate = () => {
               Disapproved: 'bg-red-100 text-red-800',
             },
           }"
-          :date-fields="['createdDate']"
+          :date-time-fields="['createdDate']"
+          date-time-format="'MMM d, yyyy h:mm a'"
           :show-export="true"
           :actions="[
             {
@@ -267,7 +269,12 @@ const handleCreate = () => {
               iconClass: 'text-indigo-500 dark:text-indigo-400',
               buttonClass: 'hover:bg-indigo-100 dark:hover:bg-indigo-100 hover:text-indigo-600 !dark:hover:text-indigo-900',
             },
-            {
+           
+          ]"
+          :export-fetch-data="(params) => fetchAllForExport(params)"
+        />
+      </div>
+       <!-- {
               label: IconApproval,
               tooltip: 'Approve Request',
               handler: approveRequest,
@@ -294,11 +301,7 @@ const handleCreate = () => {
               visible: (row) =>
                 row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
-            },
-          ]"
-          :export-fetch-data="(params) => fetchAllForExport(params)"
-        />
-      </div>
+            }, -->
     </main>
 
     <!-- Delete Confirmation Modal -->

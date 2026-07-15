@@ -1,7 +1,14 @@
+  
 <script setup lang="ts">
 const router = useRouter();
 
 import { IconView, IconEdit, IconDelete, IconApproval } from "#components";
+const { breadcrumbs, currentMenuLabel } = useBreadcrumbs();
+
+// Get the current page's menu name (should be "Policy")
+const currentPageName = breadcrumbs.value[breadcrumbs.value.length - 1]?.label;
+console.log("Current page Name: ", currentPageName);
+
 
 const userStore = useUserStore();
 
@@ -14,13 +21,13 @@ const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
 
 const viewProduct = (row: any) => {
-  router.push(`/exemptions/view?id=${row.transactionId}`);
+  router.push(`/main/exemptions/view?id=${row.transactionId}`);
 };
 const editProduct = (row: any) => {
-  router.push(`/exemptions/edit?id=${row.transactionId}`);
+  router.push(`/main/exemptions/edit?id=${row.transactionId}`);
 };
 const approveRequest = (row: any) => {
-  router.push(`/exemptions/approve?id=${row.transactionId}`);
+  router.push(`/main/exemptions/approve?id=${row.transactionId}`);
 };
 
 const confirmDelete = (row: any) => {
@@ -135,12 +142,12 @@ const fetchExemptionData = async (params: {
 
 // Handle create navigation
 const handleCreate = () => {
-  router.push(`/exemptions/create`);
+  router.push(`/main/exemptions/create`);
 };
 </script>
 
 <template>
-  <div class="min-h-[50vh] bg-gray-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             50 overflow-auto h-100vh dark:bg-gray-900 dark:text-gray-200 dark:border-gray-3000">
+  <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900 dark:text-gray-200 dark:border-gray-3000">
     <header class="bg-white dark:bg-gray-800 shadow">
       <div
         class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
@@ -155,7 +162,10 @@ const handleCreate = () => {
             class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             @onclick="$router.back()"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">All Requests</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
+            
+             {{ currentMenuLabel || currentPageName  || "All Requests"}}
+          </h1>
         </div>
 
         <Button

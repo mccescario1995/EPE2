@@ -1,25 +1,24 @@
 <script setup>
-import '@fortawesome/fontawesome-free/css/all.min.css'
+import "@fortawesome/fontawesome-free/css/all.min.css";
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { sidebarOpen } from "../store";
 import { useMenuService } from "~/services/menuService";
-import { startLoading,stopLoading } from "~/stores/globalvar";
- 
- 
+import { startLoading, stopLoading } from "~/stores/globalvar";
+
 const { fetchMenuList } = useMenuService();
 const route = useRoute();
 const router = useRouter();
- 
+
 const menulist = ref([]);
 const isMobile = ref(false);
 const searchQuery = ref("");
-const activeQuery = ref('') // the query used for filtering
- 
+const activeQuery = ref(""); // the query used for filtering
+
 const checkMobile = () => {
   isMobile.value = window.innerWidth < 1024;
 };
- 
+
 onMounted(async () => {
   const staticMenus = [
     // {
@@ -64,48 +63,47 @@ onMounted(async () => {
     //   isActive: false,
     // },
   ];
- 
+
   const dynamicmenu = await fetchMenuList();
   menulist.value = [...staticMenus, ...dynamicmenu];
   checkMobile();
   window.addEventListener("resize", checkMobile);
 });
- 
+
 onBeforeUnmount(() => {
   window.removeEventListener("resize", checkMobile);
 });
- 
+
 const updateActiveStates = (path) => {
- 
   const normalizedPath = path.toLowerCase();
- 
+
   menulist.value.forEach((menu) => {
     menu.isActive = false;
- 
-    if (menu.submenu && menu.submenu.length > 0 ) {
+
+    if (menu.submenu && menu.submenu.length > 0) {
       menu.submenu.forEach((sub) => {
         const base = sub.route.toLowerCase();
         const isExact = normalizedPath === base;
         const isChild = normalizedPath.startsWith(base + "/");
- 
+
         sub.isclick = isExact || isChild;
       });
- 
+
       // Keep parent menu open if any child is active
       menu.isopen = menu.submenu.some((sub) => sub.isclick);
       menu.isActive = menu.isopen;
-      console.log("here",menu.isActive);
+      console.log("here", menu.isActive);
     } else {
       const base = menu.route.toLowerCase();
       const isExact = normalizedPath === base;
       const isChild = normalizedPath.startsWith(base + "/");
- 
+
       menu.isActive = isExact || isChild;
-      console.log("here",menu.isActive);
+      console.log("here", menu.isActive);
     }
   });
 };
- 
+
 const navigateToMenu = async (menu) => {
   console.log(menu);
   if (!menu.route) return;
@@ -117,7 +115,7 @@ const navigateToMenu = async (menu) => {
     stopLoading();
   }
 };
- 
+
 const toggleMenu = (menu) => {
   // If menu has submenu, toggle open/close
   if (menu.submenu && menu.submenu.length > 0) {
@@ -131,7 +129,7 @@ const toggleMenu = (menu) => {
     navigateToMenu(menu);
   }
 };
- 
+
 // ✅ Centralized click handler
 const handleClick = (item) => {
   if (item.submenu && item.submenu.length > 0) {
@@ -142,28 +140,28 @@ const handleClick = (item) => {
     navigateToMenu(item);
   }
 };
- 
+
 // 🧠 Smart Search
 const filteredMenus = computed(() => {
- const query = activeQuery.value.trim().toLowerCase()
-  if (!query) return menulist.value
+  const query = activeQuery.value.trim().toLowerCase();
+  if (!query) return menulist.value;
   const matches = [];
- 
+
   menulist.value.forEach((menu) => {
     const mainMatch =
       menu.title.toLowerCase().includes(query) ||
       menu.id?.toString().includes(query);
- 
+
     const subMatches =
       menu.submenu?.filter(
         (sub) =>
           sub.title.toLowerCase().includes(query) ||
-          sub.id?.toLowerCase().includes(query)
+          sub.id?.toLowerCase().includes(query),
       ) || [];
- 
+
     // If main menu matches, include it normally
     if (mainMatch) matches.push({ ...menu, isopen: true });
- 
+
     // If submenu matches and main doesn't, flatten them as independent items
     if (!mainMatch && subMatches.length > 0) {
       subMatches.forEach((sub) => {
@@ -178,28 +176,27 @@ const filteredMenus = computed(() => {
       });
     }
   });
- 
+
   return matches;
 });
- 
+
 const applySearch = () => {
-  activeQuery.value = searchQuery.value
-}
- 
+  activeQuery.value = searchQuery.value;
+};
+
 // Clear both fields
 const clearSearch = () => {
-  searchQuery.value = ''
-  activeQuery.value = ''
-}
- 
- 
+  searchQuery.value = "";
+  activeQuery.value = "";
+};
+
 const handleHover = (menu, isHovering) => {
   if (!sidebarOpen.value) menu.isopen = isHovering;
 };
- 
+
 updateActiveStates(route.path);
 router.afterEach((to) => updateActiveStates(to.path));
- 
+
 watch(sidebarOpen, (newVal) => {
   if (!newVal) menulist.value.forEach((m) => (m.isopen = false));
   else updateActiveStates(route.path);
@@ -207,20 +204,24 @@ watch(sidebarOpen, (newVal) => {
 watch(sidebarOpen, (newVal) => {
   if (!newVal) searchQuery.value = "";
 });
- 
+
 watch(searchQuery, (val) => {
   if (!val) {
     menulist.value.forEach((m) => (m.isopen = false));
   }
 });
 </script>
- 
+
 <template>
-  <nav class="h-full flex flex-col bg-white dark:bg-gray-800 shadow-sm overflow-y-auto">
+  <nav
+    class="h-full flex flex-col bg-white dark:bg-gray-800 shadow-sm overflow-y-auto"
+  >
     <!-- 🔍 Search -->
-    <div v-if="sidebarOpen" class="px-2 py-2 border-b border-gray-100 dark:border-gray-700">
+    <div
+      v-if="sidebarOpen"
+      class="px-2 py-2 border-b border-gray-100 dark:border-gray-700"
+    >
       <div class="relative">
-       
         <div class="relative w-full">
           <!-- Search icon (left side) -->
           <svg
@@ -237,7 +238,7 @@ watch(searchQuery, (val) => {
               d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"
             />
           </svg>
- 
+
           <!-- Search input -->
           <input
             v-model="searchQuery"
@@ -246,7 +247,7 @@ watch(searchQuery, (val) => {
             placeholder="Enter to search menu"
             class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 pl-7 pr-2 py-1.5 text-base focus:border-primary-400 focus:ring-1 focus:ring-primary-300 outline-none"
           />
- 
+
           <!-- Clear (remove) icon (right side) -->
           <button
             v-if="searchQuery"
@@ -272,7 +273,7 @@ watch(searchQuery, (val) => {
         </div>
       </div>
     </div>
- 
+
     <!-- 🧭 Menu List -->
     <ul class="flex-1 space-y-0.5 px-2 py-2">
       <!-- Dashboard -->
@@ -286,12 +287,13 @@ watch(searchQuery, (val) => {
               : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white',
           ]"
         >
-          <span class="text-base">📊</span>
-          <span v-if="sidebarOpen" class="ml-2 text-base">Dashboard</span>
+          <div class="flex items-center">
+            <span class="fa-solid fa-square-poll-vertical text-[20px] w-0"></span>
+            <span v-if="sidebarOpen" class="ml-0.5 text-base">Dashboard</span>
+          </div>
         </button>
       </li>
- 
-   
+
       <!-- Dynamic Menus -->
       <li
         v-for="(item, index) in filteredMenus"
@@ -307,17 +309,23 @@ watch(searchQuery, (val) => {
             class="group flex w-full items-center justify-between rounded-lg p-2 transition-all duration-200"
             :class="[
               item.isActive
-                 ? 'bg-gray-100 dark:bg-gray-700 text-black dark:text-white'
-      : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white',
+                ? 'bg-gray-100 dark:bg-gray-700 text-black dark:text-white'
+                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white',
             ]"
           >
             <div class="flex items-center">
-              <span v-if="item.icon" :class="item.icon" class="text-base flex-shrink-0"></span>
-            <span v-else class="text-base flex-shrink-0">📁</span>
- 
-              <span v-if="sidebarOpen" class="ml-2 text-base">{{ item.title }}</span>
+              <span
+                v-if="item.icon"
+                :class="item.icon"
+                class="text-base flex-shrink-0"
+              ></span>
+              <span v-else class="text-base flex-shrink-0">📁</span>
+
+              <span v-if="sidebarOpen" class="ml-2 text-base">{{
+                item.title
+              }}</span>
             </div>
- 
+
             <svg
               v-if="sidebarOpen && item.submenu"
               xmlns="http://www.w3.org/2000/svg"
@@ -335,7 +343,7 @@ watch(searchQuery, (val) => {
               />
             </svg>
           </button>
- 
+
           <!-- Flattened submenu (search result only) -->
           <button
             v-else
@@ -358,20 +366,26 @@ watch(searchQuery, (val) => {
         </div>
         <div v-else>
           <!-- If NO submenu or empty submenu, make it clickable -->
-       <button
-  v-if="!item.isSubmenuItem"
-  @click="navigateToMenu(item)"
-  class="group flex w-full items-center justify-start text-left rounded-lg p-2 transition-all duration-200"
-  :class="[
-    item.isActive
-      ? 'bg-gray-100 dark:bg-gray-700 text-black dark:text-white'
-      : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white',
-  ]"
->
-  <span v-if="item.icon" :class="item.icon" class="text-base flex-shrink-0"></span>
-  <span v-else class="text-base flex-shrink-0">📊</span>
-  <span v-if="sidebarOpen" class="ml-2 text-base">{{ item.title }}</span>
-</button>
+          <button
+            v-if="!item.isSubmenuItem"
+            @click="navigateToMenu(item)"
+            class="group flex w-full items-center justify-start text-left rounded-lg p-2 transition-all duration-200"
+            :class="[
+              item.isActive
+                ? 'bg-gray-100 dark:bg-gray-700 text-black dark:text-white'
+                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white',
+            ]"
+          >
+            <span
+              v-if="item.icon"
+              :class="item.icon"
+              class="text-base flex-shrink-0"
+            ></span>
+            <span v-else class="text-base flex-shrink-0">📊</span>
+            <span v-if="sidebarOpen" class="ml-2 text-base">{{
+              item.title
+            }}</span>
+          </button>
           <button
             v-else
             @click="navigateToMenu(item)"
@@ -391,7 +405,7 @@ watch(searchQuery, (val) => {
             <span v-else>{{ item.title }}</span>
           </button>
         </div>
- 
+
         <!-- Submenu (only visible when expanded) -->
         <Transition
           enter-active-class="transition-all duration-200 ease-out"
@@ -412,34 +426,37 @@ watch(searchQuery, (val) => {
             <li v-for="(sub, i2) in item.submenu" :key="i2">
               <button
                 @click="navigateToMenu(sub)"
-              class="group flex flex-col w-full justify-start items-start text-left break-words rounded-md px-2 py-1.5 text-base transition-colors duration-150"
+                class="group flex flex-col w-full justify-start items-start text-left break-words rounded-md px-2 py-1.5 text-base transition-colors duration-150"
                 :class="[
                   sub.isclick
-                     ? 'bg-gray-100 dark:bg-gray-700 text-black dark:text-white'
-      : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white',
+                    ? 'bg-gray-100 dark:bg-gray-700 text-black dark:text-white'
+                    : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white',
                 ]"
               >
-              <div class="flex items-center">
-                  <span v-if="sub.icon" :class="sub.icon" class="text-base flex-shrink-0"></span>
-                <span class="ml-1">{{ sub.title }} </span>
-               
-                <span
-                  v-if="searchQuery != ''"
-                  class="text-base text-gray-400 dark:text-gray-500 ml-1"
-                >
-                  ({{ item.title }})
-                </span>
+                <div class="flex items-center">
+                  <span
+                    v-if="sub.icon"
+                    :class="sub.icon"
+                    class="text-base flex-shrink-0"
+                  ></span>
+                  <span class="ml-1">{{ sub.title }} </span>
+
+                  <span
+                    v-if="searchQuery != ''"
+                    class="text-base text-gray-400 dark:text-gray-500 ml-1"
+                  >
+                    ({{ item.title }})
+                  </span>
                 </div>
               </button>
             </li>
           </ul>
         </Transition>
       </li>
-       
     </ul>
   </nav>
 </template>
- 
+
 <style scoped>
 nav {
   transition: all 0.3s ease;
@@ -454,7 +471,7 @@ nav::-webkit-scrollbar-thumb {
 nav::-webkit-scrollbar-thumb:hover {
   background: #a0aec0;
 }
- 
+
 @media (prefers-color-scheme: dark) {
   nav::-webkit-scrollbar-thumb {
     background: #4a5568;
