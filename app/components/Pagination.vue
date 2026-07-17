@@ -10,9 +10,6 @@ const emit = defineEmits<{
 }>();
 
 const totalPages = computed(() => {
-  console.log("this is items", props.totalItems);
-  console.log("this is page", props.perPage);
-
   return Math.ceil(props.totalItems / (props.perPage || 10));
 });
 

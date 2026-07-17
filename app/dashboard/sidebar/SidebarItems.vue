@@ -92,14 +92,12 @@ const updateActiveStates = (path) => {
       // Keep parent menu open if any child is active
       menu.isopen = menu.submenu.some((sub) => sub.isclick);
       menu.isActive = menu.isopen;
-      console.log("here", menu.isActive);
     } else {
       const base = menu.route.toLowerCase();
       const isExact = normalizedPath === base;
       const isChild = normalizedPath.startsWith(base + "/");
 
       menu.isActive = isExact || isChild;
-      console.log("here", menu.isActive);
     }
   });
 };

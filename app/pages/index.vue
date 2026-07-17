@@ -15,19 +15,6 @@
       ></div>
     </div>
 
-    <!-- Floating particles -->
-    <!-- <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div v-for="i in 20" :key="i" 
-        class="absolute w-2 h-2 bg-red-500 rounded-full animate-pulse"
-        :style="{
-          left: `${Math.random() * 100}%`,
-          top: `${Math.random() * 100}%`,
-          animationDelay: `${Math.random() * 3}s`,
-          animationDuration: `${2 + Math.random() * 3}s`
-        }">
-      </div>
-    </div> -->
-
     <!-- Main card -->
     <div class="w-full max-w-md relative z-10">
       <div

@@ -1,14 +1,26 @@
-  
 <script setup lang="ts">
-const router = useRouter();
+import { useMenuService } from "~/services/menuService";
+const {
+  fetchMenuList,
+  canAdd: checkCanAdd,
+  canEdit: checkCanEdit,
+  canDelete: checkCanDelete,
+} = useMenuService();
 
+const canAdd = ref(false);
+const canEdit = ref(false);
+const canDelete = ref(false);
+
+const router = useRouter();
 import { IconView, IconEdit, IconDelete, IconApproval } from "#components";
 const { breadcrumbs, currentMenuLabel } = useBreadcrumbs();
 
 // Get the current page's menu name (should be "Policy")
 const currentPageName = breadcrumbs.value[breadcrumbs.value.length - 1]?.label;
-console.log("Current page Name: ", currentPageName);
-
+console.log(
+  "Current page Name: ",
+  breadcrumbs.value[breadcrumbs.value.length - 1]?.label,
+);
 
 const userStore = useUserStore();
 
@@ -119,7 +131,7 @@ const fetchExemptionData = async (params: {
   sortDirection?: "asc" | "desc";
 }) => {
   loading.value = true;
-  const response = await apiFetch("/api/exemption", {
+  const response = await apiFetch("/api/exemption/all", {
     method: "POST",
     body: JSON.stringify({
       UserId: parseInt(userId.emplId),
@@ -133,7 +145,8 @@ const fetchExemptionData = async (params: {
     parseJson: true,
   });
   loading.value = false;
-
+  // 250725606
+  console.log("User Id: ", parseInt(userId.emplId));
   return {
     data: response.items ?? [],
     total: response.totalCount ?? 0,
@@ -144,10 +157,68 @@ const fetchExemptionData = async (params: {
 const handleCreate = () => {
   router.push(`/main/exemptions/create`);
 };
+
+const actions = computed(() => {
+  const list = [];
+
+  list.push(
+    {
+      label: IconView,
+      tooltip: "View Details",
+      handler: viewProduct,
+      iconClass: "text-indigo-500 dark:text-indigo-400",
+      buttonClass:
+        "hover:bg-indigo-100 dark:hover:bg-indigo-100 hover:text-indigo-600 !dark:hover:text-indigo-900",
+    },
+    {
+      label: IconApproval,
+      tooltip: "Approve Request",
+      handler: approveRequest,
+      iconClass: "!text-teal-500 dark:!text-teal-400",
+      buttonClass:
+        "hover:bg-teal-100 dark:hover:bg-teal-100 hover:text-teal-600 dark:hover:text-teal-900",
+      visible: (row) => row.canApprove && row.status !== "C", // This will only be visible to the approver not he requester and for non-completed requests
+    },
+  );
+
+  if (canEdit.value) {
+    list.push({
+      label: IconEdit,
+      tooltip: (row) => (row.status == "D" ? "Edit Draft" : "Edit Request"),
+      handler: editProduct,
+      iconClass: "!text-blue-500 dark:text-blue-400",
+      buttonClass:
+        "hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900",
+      disabled: (row) => row.status === "P" || row.status === "C", // Disable for Pending or Completed
+    });
+  }
+  if (canDelete.value) {
+    list.push({
+      label: IconDelete,
+      tooltip: "Delete Request",
+      handler: confirmDelete,
+      iconClass: "text-red-500 dark:text-red-400",
+      buttonClass:
+        "hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900",
+      disabled: (row) => row.status === "P" || row.status === "C", // Disable for Pending or Completed
+    });
+  }
+
+  return list;
+});
+
+onMounted(async () => {
+  await fetchMenuList();
+  canAdd.value = checkCanAdd("/main/exemptions/");
+  canEdit.value = checkCanEdit("/main/exemptions/");
+  canDelete.value = checkCanDelete("/main/exemptions/");
+});
 </script>
 
 <template>
-  <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900 dark:text-gray-200 dark:border-gray-3000">
+  <div
+    class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900 dark:text-gray-200 dark:border-gray-3000"
+  >
     <header class="bg-white dark:bg-gray-800 shadow">
       <div
         class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
@@ -163,12 +234,12 @@ const handleCreate = () => {
             @onclick="$router.back()"
           />
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
-            
-             {{ currentMenuLabel || currentPageName  || "All Requests"}}
+            {{ currentMenuLabel || currentPageName || "All Requests" }}
           </h1>
         </div>
 
         <Button
+          v-if="canAdd"
           variant="primary"
           size="md"
           icon="add"
@@ -235,44 +306,7 @@ const handleCreate = () => {
             },
           }"
           :date-fields="['createdDate']"
-          :actions="[
-            {
-              label: IconView,
-              tooltip: 'View Details',
-              handler: viewProduct,
-              iconClass: 'text-indigo-500 dark:text-indigo-400',
-              buttonClass: 'hover:bg-indigo-100 dark:hover:bg-indigo-100 hover:text-indigo-600 !dark:hover:text-indigo-900',
-            },
-            {
-              label: IconApproval,
-              tooltip: 'Approve Request',
-              handler: approveRequest,
-              iconClass: '!text-teal-500 dark:!text-teal-400',
-              buttonClass: 'hover:bg-teal-100 dark:hover:bg-teal-100 hover:text-teal-600 dark:hover:text-teal-900',
-              visible: (row) => row.canApprove && row.status !== 'C', // This will only be visible to the approver not he requester and for non-completed requests
-            },
-            {
-              label: IconEdit,
-              tooltip: (row) =>
-                row.status == 'D' ? 'Edit Draft' : 'Edit Request',
-              handler: editProduct,
-              iconClass: '!text-blue-500 dark:text-blue-400',
-              buttonClass: 'hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900',
-              visible: (row) =>
-                row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
-              disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
-            },
-            {
-              label: IconDelete,
-              tooltip: 'Delete Request',
-              handler: confirmDelete,
-              iconClass: 'text-red-500 dark:text-red-400',
-              buttonClass: 'hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900',
-              visible: (row) =>
-                row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
-              disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
-            },
-          ]"
+          :actions="actions"
         />
       </div>
     </main>
@@ -308,7 +342,9 @@ const handleCreate = () => {
                 />
               </svg>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-200 text-center mb-2">
+            <h3
+              class="text-lg font-medium text-gray-900 dark:text-gray-200 text-center mb-2"
+            >
               Delete Request
             </h3>
             <p class="text-gray-500 dark:text-gray-400 text-center mb-6">

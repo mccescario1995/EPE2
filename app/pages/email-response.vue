@@ -195,11 +195,11 @@ async function executeAction() {
 // ─── Navigation helpers ───────────────────────────────────────────────────────
 function viewRequest() {
   if (!resultTxId.value) return;
-  router.push({ path: "/exemptions/view", query: { id: resultTxId.value } });
+  router.push({ path: "/main/exemptions/view", query: { id: resultTxId.value } });
 }
 
 function goDashboard() {
-  router.push("/exemptions/all");
+  router.push("/main/exemptions/all");
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────

@@ -42,7 +42,7 @@ const fetchExemptionDetails = async () => {
       message: "Invalid exemption ID",
       duration: 5000,
     });
-    router.push("/exemptions/all");
+    router.push("/main/exemptions/all");
     return;
   }
 
@@ -75,7 +75,7 @@ const fetchExemptionDetails = async () => {
           message: "You are not authorized to approve this request",
           duration: 5000,
         });
-        router.push("/exemptions/all");
+        router.push("/main/exemptions/all");
         return;
       }
 
@@ -477,7 +477,7 @@ const handleApprove = async () => {
       });
 
       // Redirect to exemptions list
-      router.push("/exemptions/all");
+      router.push("/main/exemptions/all");
     } else {
       showToast({
         type: "error",
@@ -527,7 +527,7 @@ const groupedApprovers = computed(() => {
 
 // Handle back navigation
 // const handleBack = () => {
-//   router.push("/exemptions/all");
+//   router.push("/main/exemptions/all");
 // };
 
 // Handle back navigation with fallback
@@ -535,7 +535,7 @@ const handleBack = () => {
   if (window.history.length > 1) {
     router.back();
   } else {
-    router.push('/exemptions/all'); // Change to your desired fallback route
+    router.push('/main/exemptions/all'); // Change to your desired fallback route
   }
 };
 

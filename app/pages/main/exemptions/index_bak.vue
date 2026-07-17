@@ -14,13 +14,13 @@ const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
 
 const viewProduct = (row: any) => {
-  router.push(`/exemptions/view?id=${row.transactionId}`);
+  router.push(`/main/exemptions/view?id=${row.transactionId}`);
 };
 const editProduct = (row: any) => {
-  router.push(`/exemptions/edit?id=${row.transactionId}`);
+  router.push(`/main/exemptions/edit?id=${row.transactionId}`);
 };
 const approveRequest = (row: any) => {
-  router.push(`/exemptions/approve?id=${row.transactionId}`);
+  router.push(`/main/exemptions/approve?id=${row.transactionId}`);
 };
 
 const confirmDelete = (row: any) => {
@@ -98,7 +98,7 @@ const fetchExemptionRequests = async () => {
 
 // Handle create navigation
 const handleCreate = () => {
-  router.push(`/exemptions/create`);
+  router.push(`/main/exemptions/create`);
 };
 
 watchEffect(() => {

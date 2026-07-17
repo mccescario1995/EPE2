@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useMenuService } from "~/services/menuService";
+const { fetchMenuList, canEdit: checkCanEdit, canDelete: checkCanDelete } = useMenuService();
 const router = useRouter();
 const route = useRoute();
 const { showToast } = useToast();
@@ -12,6 +14,9 @@ const isLoadingApprovers = ref(false);
 
 const userStore = useUserStore();
 const userId = userStore.profile;
+
+const canEdit = ref(false);
+const canDelete = ref(false);
 
 const exemptionId = computed(() => {
   return Number(route.query.id) || null;
@@ -60,7 +65,7 @@ const fetchExemptionDetails = async () => {
         message: response?.message || "Failed to load exemption details",
         duration: 5000,
       });
-      router.push("/exemptions/all");
+      router.push("/main/exemptions/all");
     }
   } catch (error) {
     console.error("Error fetching exemption details:", error);
@@ -70,7 +75,7 @@ const fetchExemptionDetails = async () => {
       message: "Failed to load exemption details",
       duration: 5000,
     });
-    router.push("/exemptions/all");
+    router.push("/main/exemptions/all");
   } finally {
     loading.value = false;
   }
@@ -186,6 +191,34 @@ const formatDate = (date: string | Date | null) => {
   });
 };
 
+
+const formatDateTime = (date: string | Date | null) => {
+  if (!date) return { date: "N/A", time: "" };
+  const d = new Date(date);
+  return {
+    date: d.toLocaleDateString("en-PH", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }),
+    time: d.toLocaleTimeString("en-PH", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }),
+  };
+};
+
+const getApproverStatusTextColor = (respond: number) => {
+  const colorMap: Record<number, string> = {
+    0: "text-yellow-800 dark:text-yellow-400",
+    1: "text-green-800 dark:text-green-400",
+    2: "text-red-800 dark:text-red-300",
+    3: "text-gray-800 dark:text-gray-400",
+  };
+  return colorMap[respond] || "text-gray-800";
+};
+
 const getStatusDisplay = (status: string) => {
   const statusMap: Record<string, string> = {
     O: "Open",
@@ -272,14 +305,17 @@ const handleBack = () => {
 };
 
 const handleEdit = () => {
-  router.push(`/exemptions/edit?id=${exemptionId.value}`);
+  router.push(`/main/exemptions/edit?id=${exemptionId.value}`);
 };
 const handleApprove = () => {
-  router.push(`/exemptions/approve?id=${exemptionId.value}`);
+  router.push(`/main/exemptions/approve?id=${exemptionId.value}`);
 };
-onMounted(() => {
+onMounted(async () => {
+  await fetchMenuList();
+  canEdit.value = checkCanEdit("/main/exemptions/");
+  canDelete.value = checkCanDelete("/main/exemptions/");
+
   fetchExemptionDetails();
-  isApprover.value; // Log the computed property to check if it's working correctly
 });
 
 // Helper to check if current user is an approver
@@ -333,9 +369,10 @@ const currentUserPendingAction = computed((): boolean => {
           </Button> -->
           <Button
             v-if="
-              exemptionDetails?.status === 'D' ||
-              (exemptionDetails?.status === 'O' &&
-                exemptionDetails?.requesterId === userId?.emplId)
+              canEdit &&
+              (exemptionDetails?.status === 'D' ||
+                (exemptionDetails?.status === 'O' &&
+                  exemptionDetails?.requesterId === userId?.emplId))
             "
             variant="primary"
             size="md"
@@ -619,6 +656,29 @@ const currentUserPendingAction = computed((): boolean => {
                             {{ approver.approverRole }}
                           </span>
                         </div>
+                        <div
+                          v-if="approver.remarks"
+                          class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3"
+                        >
+                          Remark:
+                        </div>
+                        <div v-if="approver.remarks" class="px-6 pb-2">
+                          <span
+                            class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
+                          >
+                            {{ approver.remarks }}
+                          </span>
+                        </div>
+                        <div
+                          class="text-xs mt-1"
+                          :class="getApproverStatusTextColor(approver.respond)"
+                        >
+                          <span v-if="approver.respondDate">
+                            Responded on
+                            {{ formatDateTime(approver.respondDate).date }} •
+                            {{ formatDateTime(approver.respondDate).time }}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <div class="flex flex-col items-end gap-1">
@@ -662,6 +722,29 @@ const currentUserPendingAction = computed((): boolean => {
                           >
                             {{ proxy.approverRole }}
                           </span>
+                          <div
+                          v-if="proxy.remarks"
+                          class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3"
+                        >
+                          Remark:
+                        </div>
+                        <div v-if="proxy.remarks" class="px-6 pb-2">
+                          <span
+                            class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
+                          >
+                            {{ proxy.remarks }}
+                          </span>
+                        </div>
+                        <div
+                          class="text-xs"
+                          :class="getApproverStatusTextColor(proxy.respond)"
+                        >
+                          <span v-if="proxy.respondDate">
+                            Responded on
+                            {{ formatDateTime(proxy.respondDate).date }} •
+                            {{ formatDateTime(proxy.respondDate).time }}
+                          </span>
+                        </div>
                         </div>
                       </div>
                       <div class="flex flex-col items-end gap-1">

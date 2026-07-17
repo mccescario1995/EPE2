@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useMenuService } from "~/services/menuService";
+const { fetchMenuList, canAdd: checkCanAdd } = useMenuService();
 const router = useRouter();
 const { showToast } = useToast();
 const userStore = useUserStore();
@@ -500,7 +502,7 @@ const handleSaveDraft = async () => {
           : "Draft saved successfully!",
         duration: 5000,
       });
-      router.push("/exemptions/view?id=" + draftId.value);
+      router.push("/main/exemptions/view?id=" + draftId.value);
     } else {
       showToast({
         type: "error",
@@ -591,7 +593,7 @@ const handleSubmit = async () => {
         duration: 5000,
       });
 
-      router.push("/exemptions/all");
+      router.push("/main/exemptions/all");
     } else {
       throw new Error(response.message || "Failed to create request");
     }
@@ -611,7 +613,7 @@ const handleSubmit = async () => {
 
 // Handle cancel
 const handleCancel = () => {
-  router.push("/exemptions/all");
+  router.push("/main/exemptions/all");
 };
 
 // Multi-file selection with immediate 10MB + 50MB total validation
@@ -745,7 +747,23 @@ const openFilePicker = () => {
 };
 
 // Fetch policies on mount and check for draft
+const canAdd = ref(false);
+
 onMounted(async () => {
+  await fetchMenuList();
+  canAdd.value = checkCanAdd("/main/exemptions/");
+
+  if (!canAdd.value) {
+    showToast({
+      type: "error",
+      title: "Access Denied",
+      message: "You do not have permission to create exemption requests.",
+      duration: 5000,
+    });
+    router.push("/main/exemptions/all");
+    return;
+  }
+
   fetchPolicies();
   const query = new URLSearchParams(window.location.search);
   const draftParam = query.get("draftId");
@@ -1072,7 +1090,13 @@ onMounted(async () => {
               size="lg"
               @onclick="handleSaveDraft"
               :loading="isSavingDraft"
-              :disabled="!isDraftValid || isSubmitting || isSavingDraft || approvers.length === 0"
+              :disabled="
+                !isDraftValid ||
+                isSubmitting ||
+                isSavingDraft ||
+                approvers.length === 0 ||
+                !canAdd
+              "
             >
               {{ draftId ? "Update Draft" : "Save as Draft" }}
             </Button>
@@ -1081,7 +1105,13 @@ onMounted(async () => {
               size="lg"
               type="submit"
               :loading="isSubmitting"
-              :disabled="!isFormValid || isSavingDraft || isSubmitting || approvers.length === 0"
+              :disabled="
+                !isFormValid ||
+                isSavingDraft ||
+                isSubmitting ||
+                approvers.length === 0 ||
+                !canAdd
+              "
             >
               Submit Request
             </Button>

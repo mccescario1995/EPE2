@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import { useMenuService } from "~/services/menuService";
+const { fetchMenuList, canEdit: checkCanEdit } = useMenuService();
 const router = useRouter();
 const route = useRoute();
 const { showToast } = useToast();
 const userStore = useUserStore();
 
 const userId = userStore.profile;
+
+const canEdit = ref(false);
 
 const config = useRuntimeConfig();
 
@@ -163,7 +167,7 @@ const fetchExemptionDetails = async () => {
       message: "Invalid exemption ID",
       duration: 5000,
     });
-    router.push("/exemptions/all");
+    router.push("/main/exemptions/all");
     return;
   }
 
@@ -233,7 +237,7 @@ const fetchExemptionDetails = async () => {
         message: response.message || "Failed to load exemption details",
         duration: 5000,
       });
-      router.push("/exemptions/all");
+      router.push("/main/exemptions/all");
     }
   } catch (error) {
     console.error("Error fetching exemption details:", error);
@@ -243,7 +247,7 @@ const fetchExemptionDetails = async () => {
       message: "Failed to load exemption details",
       duration: 5000,
     });
-    router.push("/exemptions/all");
+    router.push("/main/exemptions/all");
   } finally {
     isLoading.value = false;
   }
@@ -330,10 +334,10 @@ const hasUnsavedChanges = computed(() => {
 const handleCancel = () => {
   if (hasUnsavedChanges.value) {
     if (confirm("You have unsaved changes. Are you sure you want to leave?")) {
-      router.push("/exemptions/all");
+      router.push("/main/exemptions/all");
     }
   } else {
-    router.push("/exemptions/all");
+    router.push("/main/exemptions/all");
   }
 };
 
@@ -375,7 +379,7 @@ const handleSubmit = async () => {
         duration: 5000,
       });
       // Redirect to exemptions view page after success
-      // router.push(`/exemptions/view?id=${exemptionId.value}`);
+      // router.push(`/main/exemptions/view?id=${exemptionId.value}`);
       router.back();
     } else {
       showToast({
@@ -419,7 +423,7 @@ const handleSubmitDraft = async () => {
         duration: 5000,
       });
       // Redirect to exemptions list after success
-      router.push("/exemptions/all");
+      router.push("/main/exemptions/all");
     } else {
       showToast({
         type: "error",
@@ -474,7 +478,7 @@ const handleUpdateDraft = async () => {
         duration: 5000,
       });
       // Redirect to exemptions view page after success
-      router.push(`/exemptions/view?id=${exemptionId.value}`);
+      router.push(`/main/exemptions/view?id=${exemptionId.value}`);
     } else {
       showToast({
         type: "error",
@@ -999,10 +1003,52 @@ const activeGroupSort = computed(() => {
 });
 
 // Fetch policies on mount
-onMounted(() => {
+onMounted(async () => {
+  await fetchMenuList();
+  canEdit.value = checkCanEdit("/main/exemptions/");
+
+  if (!canEdit.value) {
+    showToast({
+      type: "error",
+      title: "Access Denied",
+      message: "You do not have permission to edit exemption requests.",
+      duration: 5000,
+    });
+    router.push("/main/exemptions/all");
+    return;
+  }
+
   fetchPolicies();
   fetchExemptionDetails();
 });
+
+
+const formatDateTime = (date: string | Date | null) => {
+  if (!date) return { date: "N/A", time: "" };
+  const d = new Date(date);
+  return {
+    date: d.toLocaleDateString("en-PH", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }),
+    time: d.toLocaleTimeString("en-PH", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }),
+  };
+};
+
+const getApproverStatusTextColor = (respond: number) => {
+  const colorMap: Record<number, string> = {
+    0: "text-yellow-800 dark:text-yellow-400",
+    1: "text-green-800 dark:text-green-400",
+    2: "text-red-800 dark:text-red-300",
+    3: "text-gray-800 dark:text-gray-400",
+  };
+  return colorMap[respond] || "text-gray-800";
+};
 </script>
 
 <template>
@@ -1038,6 +1084,7 @@ onMounted(() => {
           </Button>
           <template v-if="exemptionDetails?.status === 'D'">
             <Button
+              v-if="canEdit"
               variant="outline-info"
               size="md"
               @onclick="handleUpdateDraft"
@@ -1046,6 +1093,7 @@ onMounted(() => {
               Update Draft
             </Button>
             <Button
+              v-if="canEdit"
               variant="primary"
               size="md"
               @onclick="handleSubmitDraft"
@@ -1056,6 +1104,7 @@ onMounted(() => {
           </template>
           <template v-else>
             <Button
+              v-if="canEdit"
               variant="primary"
               size="md"
               icon="save"
@@ -1462,6 +1511,29 @@ onMounted(() => {
                               {{ approver.approverRole }}
                             </span>
                           </div>
+                          <div
+                          v-if="approver.remarks"
+                          class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3"
+                        >
+                          Remark:
+                        </div>
+                        <div v-if="approver.remarks" class="px-6 pb-2">
+                          <span
+                            class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
+                          >
+                            {{ approver.remarks }}
+                          </span>
+                        </div>
+                        <div
+                          class="text-xs"
+                          :class="getApproverStatusTextColor(approver.respond)"
+                        >
+                          <span v-if="approver.respondDate">
+                            Responded on
+                            {{ formatDateTime(approver.respondDate).date }} •
+                            {{ formatDateTime(approver.respondDate).time }}
+                          </span>
+                        </div>
                         </div>
                       </div>
                       <div class="flex flex-col items-end gap-1">
@@ -1563,6 +1635,29 @@ onMounted(() => {
                             >
                               {{ proxy.approverRole }}
                             </span>
+                            <div
+                          v-if="approver.remarks"
+                          class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3"
+                        >
+                          Remark:
+                        </div>
+                        <div v-if="approver.remarks" class="px-6 pb-2">
+                          <span
+                            class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
+                          >
+                            {{ approver.remarks }}
+                          </span>
+                        </div>
+                        <div
+                          class="text-xs"
+                          :class="getApproverStatusTextColor(approver.respond)"
+                        >
+                          <span v-if="approver.respondDate">
+                            Responded on
+                            {{ formatDateTime(approver.respondDate).date }} •
+                            {{ formatDateTime(approver.respondDate).time }}
+                          </span>
+                        </div>
                           </div>
                         </div>
                         <div class="flex flex-col items-end gap-1">

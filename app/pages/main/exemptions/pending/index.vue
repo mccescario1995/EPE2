@@ -1,4 +1,16 @@
 <script setup lang="ts">
+import { useMenuService } from "~/services/menuService";
+const {
+  fetchMenuList,
+  canAdd: checkCanAdd,
+  canEdit: checkCanEdit,
+  canDelete: checkCanDelete,
+} = useMenuService();
+
+const canAdd = ref(false);
+const canEdit = ref(false);
+const canDelete = ref(false);
+
 const router = useRouter();
 
 import { IconView, IconEdit, IconDelete, IconApproval } from "#components";
@@ -8,7 +20,7 @@ const userStore = useUserStore();
 const userId = userStore.profile;
 
 const loading = ref(false);
-const exemptionData :any = ref(null);
+const exemptionData: any = ref(null);
 const showDeleteConfirm = ref(false);
 const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
@@ -17,13 +29,13 @@ const deleteLoading = ref(false);
 const exemptionDataLength = computed(() => exemptionData.value?.length ?? 0);
 
 const viewProduct = (row: any) => {
-  router.push(`/exemptions/view?id=${row.transactionId}`);
+  router.push(`/main/exemptions/view?id=${row.transactionId}`);
 };
 const editProduct = (row: any) => {
-  router.push(`/exemptions/edit?id=${row.transactionId}`);
+  router.push(`/main/exemptions/edit?id=${row.transactionId}`);
 };
 const approveRequest = (row: any) => {
-  router.push(`/exemptions/approve?id=${row.transactionId}`);
+  router.push(`/main/exemptions/approve?id=${row.transactionId}`);
 };
 
 const confirmDelete = (row: any) => {
@@ -108,7 +120,7 @@ const fetchExemptionRequests = async () => {
 
 // Handle create navigation
 const handleCreate = () => {
-  router.push(`/exemptions/create`);
+  router.push(`/main/exemptions/create`);
 };
 
 const fetchExemptionData = async (params: {
@@ -117,12 +129,11 @@ const fetchExemptionData = async (params: {
   search: string;
   filters: Record<string, string>;
   sortField?: string;
-  sortDirection?: 'asc' | 'desc';
+  sortDirection?: "asc" | "desc";
 }) => {
-
   loading.value = true;
-  const response = await apiFetch('/api/exemption/pending', {
-    method: 'POST',
+  const response = await apiFetch("/api/exemption/pending", {
+    method: "POST",
     body: JSON.stringify({
       UserId: parseInt(userId.emplId),
       page: params.page,
@@ -131,7 +142,7 @@ const fetchExemptionData = async (params: {
       sortField: params.sortField,
       sortDirection: params.sortDirection,
     }),
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
     parseJson: true,
   });
   loading.value = false;
@@ -142,10 +153,67 @@ const fetchExemptionData = async (params: {
   };
 };
 
+const actions = computed(() => {
+  const list = [];
+
+  list.push(
+    {
+      label: IconView,
+      tooltip: "View Details",
+      handler: viewProduct,
+      iconClass: "text-indigo-500 dark:text-indigo-400",
+      buttonClass:
+        "hover:bg-indigo-100 dark:hover:bg-indigo-100 hover:text-indigo-600 !dark:hover:text-indigo-900",
+    },
+    {
+      label: IconApproval,
+      tooltip: "Approve Request",
+      handler: approveRequest,
+      iconClass: "!text-teal-500 dark:!text-teal-400",
+      buttonClass:
+        "hover:bg-teal-100 dark:hover:bg-teal-100 hover:text-teal-600 dark:hover:text-teal-900",
+      visible: (row) => row.canApprove && row.status !== "C", // This will only be visible to the approver not he requester and for non-completed requests
+    },
+  );
+
+  if (canEdit.value) {
+    list.push({
+      label: IconEdit,
+      tooltip: "Edit Request",
+      handler: editProduct,
+      iconClass: "!text-blue-500 dark:text-blue-400",
+      buttonClass:
+        "hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900",
+      disabled: (row) => row.status === "P" || row.status === "C", // Disable for Pending or Completed
+    });
+  }
+  if (canDelete.value) {
+    list.push({
+      label: IconDelete,
+      tooltip: "Delete Request",
+      handler: confirmDelete,
+      iconClass: "text-red-500 dark:text-red-400",
+      buttonClass:
+        "hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900",
+      disabled: (row) => row.status === "P" || row.status === "C", // Disable for Pending or Completed
+    });
+  }
+
+  return list;
+});
+
+onMounted(async () => {
+  await fetchMenuList();
+  canAdd.value = checkCanAdd("/main/exemptions/pending");
+  canEdit.value = checkCanEdit("/main/exemptions/pending");
+  canDelete.value = checkCanDelete("/main/exemptions/pending");
+});
 </script>
 
 <template>
-  <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900 dark:text-gray-200 dark:border-gray-3000">
+  <div
+    class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900 dark:text-gray-200 dark:border-gray-3000"
+  >
     <header class="bg-white dark:bg-gray-800 shadow">
       <div
         class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
@@ -160,18 +228,10 @@ const fetchExemptionData = async (params: {
             class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             @onclick="$router.back()"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">Pending Requests</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
+            Pending Requests
+          </h1>
         </div>
-<!-- 
-        <Button
-          variant="primary"
-          size="md"
-          icon="add"
-          iconPosition="left"
-          @onclick="handleCreate"
-        >
-          Create Request
-        </Button> -->
       </div>
     </header>
     <main class="max-w-full mx-auto py-6 sm:px-6">
@@ -226,41 +286,7 @@ const fetchExemptionData = async (params: {
             },
           }"
           :date-fields="['createdDate']"
-          :actions="[
-            {
-              label: IconView,
-              tooltip: 'View Details',
-              handler: viewProduct,
-              iconClass: 'text-indigo-500 dark:text-indigo-400',
-              buttonClass: 'hover:bg-indigo-100 dark:hover:bg-indigo-100 hover:text-indigo-600 !dark:hover:text-indigo-900',
-            },
-            {
-              label: IconApproval,
-              tooltip: 'Approve Request',
-              handler: approveRequest,
-              iconClass: '!text-teal-500 dark:!text-teal-400',
-              buttonClass: 'hover:bg-teal-100 dark:hover:bg-teal-100 hover:text-teal-600 dark:hover:text-teal-900',
-              visible: (row) => row.canApprove && row.status !== 'C', // This will only be visible to the approver not he requester and for non-completed requests
-            },
-            {
-              label: IconEdit,
-              tooltip: 'Edit Request',
-              handler: editProduct,
-              iconClass: '!text-blue-500 dark:text-blue-400',
-              buttonClass: 'hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900',
-              visible: (row) =>  row.status !== 'C', // Show if user is requester or request is not Completed
-              disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
-            },
-            {
-              label: IconDelete,
-              tooltip: 'Delete Request',
-              handler: confirmDelete,
-              iconClass: 'text-red-500 dark:text-red-400',
-              buttonClass: 'hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900',
-              visible: (row) => row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
-              disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
-            },
-          ]"
+          :actions="actions"
         />
       </div>
     </main>
@@ -296,7 +322,9 @@ const fetchExemptionData = async (params: {
                 />
               </svg>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-200 text-center mb-2">
+            <h3
+              class="text-lg font-medium text-gray-900 dark:text-gray-200 text-center mb-2"
+            >
               Delete Request
             </h3>
             <p class="text-gray-500 dark:text-gray-400 text-center mb-6">

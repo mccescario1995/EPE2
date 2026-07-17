@@ -31,6 +31,8 @@ function resolveGroupRoute(stage) {
 
 // menuService.js
 export const useMenuService = () => {
+  const menuData = ref([]);
+
   const fetchMenuList = async () => {
     try {
       const userStore = useUserStore();
@@ -56,43 +58,28 @@ export const useMenuService = () => {
       });
 
       const data = response;
-      // const routeMap = {};
-      // data.forEach((menuGroup) => {
-      //   (menuGroup.pages || []).forEach((page) => {
-      //     if (page.stage) {
-      //       routeMap[page.stage] = `/main/${menuGroup.name}/${page.stage}`;
-      //     }
-      //   });
-      // });
-      // Map API response to our menu structure
-      // return data.map((menuGroup) => ({
-      //   title: menuGroup.name,
-      //   isopen: false,
-      //   icon: menuGroup.icon, // Optional icon mapping
-      //   route: routeMap[menuGroup.stage] || `/main/${menuGroup.stage}`,
-      //   isActive: false,
-      //   isClick: menuGroup.isclick,
-      //   submenu: menuGroup.pages.map((page) => ({
-      //     title: page.name,
-      //     isclick: page.isclick,
-      //     route: routeMap[page.stage] || `/main/${page.stage}`,
-      //     icon: page.icon,
-      //   })),
-      // }));
-      return data.map((menuGroup) => ({
+      menuData.value = data.map((menuGroup) => ({
         title: menuGroup.name,
         isopen: false,
         icon: menuGroup.icon,
         route: resolveGroupRoute(menuGroup.stage),
         isActive: false,
         isClick: menuGroup.isclick,
+        canAdd: menuGroup.canadd,
+        canEdit: menuGroup.canedit,
+        canDelete: menuGroup.candelete,
         submenu: menuGroup.pages.map((page) => ({
           title: page.name,
           isclick: page.isclick,
           route: resolvePageRoute(page.stage, menuGroup.name),
           icon: page.icon,
+          canAdd: page.canadd,
+          canEdit: page.canedit,
+          canDelete: page.candelete,
         })),
       }));
+
+      return menuData.value;
     } catch (error) {
       console.error("Error fetching menu:", error);
       alert("Unauthorized!");
@@ -103,5 +90,70 @@ export const useMenuService = () => {
     }
   };
 
-  return { fetchMenuList };
+  const getMenuGroupByRoute = (routePattern) => {
+    const lowerPattern = routePattern.toLowerCase();
+    return menuData.value.find((group) => {
+      const groupRoute = (group.route || "").toLowerCase();
+      const pageRoutes = (group.submenu || []).map((page) =>
+        (page.route || "").toLowerCase(),
+      );
+      return (
+        groupRoute.includes(lowerPattern) ||
+        pageRoutes.some((route) => route.includes(lowerPattern))
+      );
+    });
+  };
+
+  const getMatchingMenuItem = (routePattern) => {
+    const lowerPattern = routePattern.toLowerCase();
+    for (const group of menuData.value) {
+      const groupRoute = (group.route || "").toLowerCase();
+      if (groupRoute.includes(lowerPattern)) {
+        return { type: "group", item: group };
+      }
+      const page = (group.submenu || []).find((p) =>
+        (p.route || "").toLowerCase().includes(lowerPattern),
+      );
+      if (page) {
+        return { type: "page", item: page, group };
+      }
+    }
+    return null;
+  };
+
+  const canAdd = (routePattern) => {
+    const match = getMatchingMenuItem(routePattern);
+    if (!match) return false;
+    if (match.type === "page") {
+      return !!match.item.canAdd ?? !!match.group.canAdd;
+    }
+    return !!match.item.canAdd;
+  };
+
+  const canEdit = (routePattern) => {
+    const match = getMatchingMenuItem(routePattern);
+    if (!match) return false;
+    if (match.type === "page") {
+      return !!match.item.canEdit ?? !!match.group.canEdit;
+    }
+    return !!match.item.canEdit;
+  };
+
+  const canDelete = (routePattern) => {
+    const match = getMatchingMenuItem(routePattern);
+    if (!match) return false;
+    if (match.type === "page") {
+      return !!match.item.canDelete ?? !!match.group.canDelete;
+    }
+    return !!match.item.canDelete;
+  };
+
+  return {
+    fetchMenuList,
+    menuData,
+    getMenuGroupByRoute,
+    canAdd,
+    canEdit,
+    canDelete,
+  };
 };
