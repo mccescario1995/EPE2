@@ -61,8 +61,8 @@ public class EmailNotificationService
 
             var apiBase = _urlBaseSettings.Api;
             var viewBase = _urlBaseSettings.View;
-            var viewUrl = $"{viewBase}/#/exemptions/view?id={requestId}";
-            var trackUrl = $"{viewBase}/#/exemptions/approve?id={requestId}";
+            var viewUrl = $"{viewBase}/#/main/exemptions/view?id={requestId}";
+            var trackUrl = $"{viewBase}/#/main/exemptions/approve?id={requestId}";
 
             
             var emailBody = $@"
@@ -168,7 +168,7 @@ public class EmailNotificationService
                     "New Approval Request",
                     $"A new exemption request ({requestNumber}) requires your approval",
                     "info",
-                    $"/exemptions/approve?id={requestId}"
+                    $"/main/exemptions/approve?id={requestId}"
                 );
             }
             else
@@ -201,8 +201,8 @@ public class EmailNotificationService
     {
         try
         {
-            var trackUrl = $"https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/view?id={requestId}";
-            //  var trackUrl = $"http://localhost:3000/epe2dev/exemptions/view?id={requestId}";
+            var trackUrl = $"https://apps.fastlogistics.com.ph/epe2dev/#/main/exemptions/view?id={requestId}";
+            //  var trackUrl = $"http://localhost:3000/epe2dev/main/exemptions/view?id={requestId}";
 
             // toEmail = "mccescario@fastgroup.biz"; // for testing
 
@@ -331,7 +331,7 @@ public class EmailNotificationService
                     "Request Status Updated",
                     $"Your exemption request ({requestNumber}) status changed from {oldStatus} to {newStatus}",
                     "info",
-                    $"/exemptions/view?id={requestId}"
+                    $"/main/exemptions/view?id={requestId}"
                 );
             }
             else
@@ -353,8 +353,8 @@ public class EmailNotificationService
     {
         try
         {
-            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/view?id=" + requestId;
-            // var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestId;
+            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/#/main/exemptions/view?id=" + requestId;
+            // var trackUrl = "http://localhost:3000/epe2dev/main/exemptions/view?id=" + requestId;
         
 
             // toEmail = "mcccescario@fastgroup.biz"; // for testing
@@ -486,7 +486,7 @@ public class EmailNotificationService
                     "Request Submitted",
                     $"Your exemption request ({requestNumber}) has been successfully submitted",
                     "success",
-                    $"/exemptions/view?id={requestId}"
+                    $"/main/exemptions/view?id={requestId}"
                 );
             }
             else
@@ -509,8 +509,8 @@ public class EmailNotificationService
     {
         try
         {
-            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/#/exemptions/view?id=" + requestNumber;
-            //  var trackUrl = "http://localhost:3000/epe2dev/exemptions/view?id=" + requestNumber;
+            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/#/main/exemptions/view?id=" + requestNumber;
+            //  var trackUrl = "http://localhost:3000/epe2dev/main/exemptions/view?id=" + requestNumber;
 
             // toEmail = "mccescario@fastgroup.biz"; // for testing
 
@@ -609,8 +609,8 @@ public class EmailNotificationService
         {
             var apiBase = _urlBaseSettings.Api;
             var viewBase = _urlBaseSettings.View;
-            var viewUrl = $"{viewBase}/#/exemptions/view?id={requestId}";
-            var trackUrl = $"{viewBase}/#/exemptions/approve?id={requestId}";
+            var viewUrl = $"{viewBase}/#/main/exemptions/view?id={requestId}";
+            var trackUrl = $"{viewBase}/#/main/exemptions/approve?id={requestId}";
 
             var emailBody = $@"
             <html>
@@ -688,7 +688,7 @@ public class EmailNotificationService
                 "Approval Reminder",
                 $"Reminder: Exemption request ({requestNumber}) is awaiting your approval",
                 "warning",
-                $"/exemptions/approve?id={requestId}"
+                $"/main/exemptions/approve?id={requestId}"
             );
         }
         catch (Exception ex)
@@ -712,8 +712,8 @@ public class EmailNotificationService
         try
         {
             var viewBase = _urlBaseSettings.View;
-            var viewUrl = $"{viewBase}/#/exemptions/view?id={requestId}";
-            var trackUrl = $"{viewBase}/#/exemptions/approve?id={requestId}";
+            var viewUrl = $"{viewBase}/#/main/exemptions/view?id={requestId}";
+            var trackUrl = $"{viewBase}/#/main/exemptions/approve?id={requestId}";
 
             var emailBody = $@"
             <html>
@@ -795,7 +795,7 @@ public class EmailNotificationService
                 "Proxy Approval Reminder",
                 $"Reminder: You are a proxy approver for request ({requestNumber})",
                 "warning",
-                $"/exemptions/approve?id={requestId}"
+                $"/main/exemptions/approve?id={requestId}"
             );
         }
         catch (Exception ex)

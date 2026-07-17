@@ -1,4 +1,3 @@
-using System.Data.Entity;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Net.NetworkInformation;
@@ -11,6 +10,7 @@ using LinqKit;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+//using LinqKit.Core
 
 namespace EPEAPI.Controllers
 {
@@ -50,7 +50,7 @@ namespace EPEAPI.Controllers
             public string? EndDate { get; set; }
         }
 
-        [HttpPost]
+        [HttpPost("all")]
         public async Task<IActionResult> GetExcemptionList(
             [FromBody] ExemptionListRequest request,
             [FromQuery] string? search = null
@@ -58,37 +58,29 @@ namespace EPEAPI.Controllers
         {
             try
             {
-                //var currentUserEmplId = request.UserId; // this is int
-                //var User = _context.CoreVUsers.Where(u => u.EmplId == currentUserEmplId.ToString()).FirstOrDefault();
-                //var query = _context.EpeVTransactionHeaders.Where(u => u.IsDelete == 0 && u.CreatedBy == User.UserId.ToString());
-
                 var currentUserEmplId = request.UserId;
-                var query = _context.EpeVTransactionHeaders
-                .Where(u =>
-                    u.FinalDecision == "Pending" &&
-                    u.IsDelete == 0 &&
-                    u.RequesterId == currentUserEmplId.ToString()
-                );
+                var query = _context.EpeVTransactionHeaders.Where(u => u.FinalDecision == "Draft" && u.IsDelete == 0 && u.RequesterId == currentUserEmplId.ToString());
 
-                // Use body search over query param
                 var searchTerm = request.Search ?? search;
 
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    var words = searchTerm
+                    var searchWords = searchTerm
                         .ToLower()
                         .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
                     var predicate = PredicateBuilder.New<EpeVTransactionHeader>(true);
-                    foreach (var word in words)
+                    foreach (var word in searchWords)
                     {
-                        var w = word;
                         predicate = predicate.And(u =>
-                            u.TransactionNumber.ToLower().Contains(w)
-                            || u.RequesterName.ToLower().Contains(w)
-                            || u.FinalDecision.ToLower().Contains(w)
-                            || u.PolicyName.ToLower().Contains(w)
+                            u.TransactionId.ToString().Contains(word)
+                            || u.TransactionNumber.ToString().ToLower().Contains(word)
+                            || u.RequesterName.ToString().Contains(word)
+                            || u.FinalDecision.ToString().Contains(word)
+                            || u.PolicyName.ToString().Contains(word)
                         );
                     }
+
                     query = query.Where(predicate);
                 }
 
@@ -109,7 +101,7 @@ namespace EPEAPI.Controllers
 
                 var totalCount = await query.CountAsync();
 
-                var approvableIds = await _context
+                var approvableTransactionIds = await _context
                     .EpeVTransactionApprovers.Where(a =>
                         a.EmployeeId == currentUserEmplId.ToString()
                         && a.Respond == 0
@@ -122,6 +114,7 @@ namespace EPEAPI.Controllers
                 var pageSize = request.PageSize > 0 ? request.PageSize : 10;
 
                 var items = await query
+                    .OrderByDescending(u => u.CreatedDate)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .Select(h => new
@@ -134,7 +127,8 @@ namespace EPEAPI.Controllers
                         CreatedDate = h.CreatedDate,
                         RequesterId = h.RequesterId,
                         FinalDecision = h.FinalDecision,
-                        CanApprove = approvableIds.Contains(h.TransactionId),
+
+                        CanApprove = approvableTransactionIds.Contains(h.TransactionId),
                     })
                     .ToListAsync();
 
@@ -142,7 +136,7 @@ namespace EPEAPI.Controllers
                     new
                     {
                         success = true,
-                        items,
+                        items = items,
                         totalCount,
                         page,
                         pageSize,
@@ -1576,16 +1570,6 @@ namespace EPEAPI.Controllers
                     .CoreVEmployeeDetails.Where(e => e.EmplId == transactionHeader.Requestorid)
                     .FirstOrDefaultAsync();
 
-                // Update the responding approver
-                // await _context
-                //     .EpeTransactionapprovers.Where(a =>
-                //         a.Transapproverid == request.TransApproverId
-                //     )
-                //     .ExecuteUpdateAsync(b =>
-                //         b.SetProperty(a => a.Respond, request.Respond)
-                //             .SetProperty(a => a.Responddate, DateTime.UtcNow.AddHours(8))
-                //             .SetProperty(a => a.Remarks, request.Remarks)
-                //     );
 
                 approver.Respond = request.Respond;
                 approver.Responddate = DateTime.UtcNow.AddHours(8);
