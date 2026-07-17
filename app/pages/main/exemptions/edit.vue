@@ -1022,7 +1022,6 @@ onMounted(async () => {
   fetchExemptionDetails();
 });
 
-
 const formatDateTime = (date: string | Date | null) => {
   if (!date) return { date: "N/A", time: "" };
   const d = new Date(date);
@@ -1048,6 +1047,10 @@ const getApproverStatusTextColor = (respond: number) => {
     3: "text-gray-800 dark:text-gray-400",
   };
   return colorMap[respond] || "text-gray-800";
+};
+
+const isCurrentUser = (requesterId: number): boolean => {
+  return userId?.emplId === requesterId;
 };
 </script>
 
@@ -1334,10 +1337,10 @@ const getApproverStatusTextColor = (respond: number) => {
                         :class="
                           isViewableInBrowser(attachment.filetype)
                             ? 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700'
-                            : 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white' 
+                            : 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white'
                         "
                         target="_blank"
-                      > 
+                      >
                         {{ getAttachmentButtonLabel(attachment.filetype) }}
                       </a>
                       <button
@@ -1449,12 +1452,14 @@ const getApproverStatusTextColor = (respond: number) => {
 
           <!-- Right Column -->
           <div
-            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow px-6 py-6 dark:bg-gray-800 "
+            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow px-6 py-6 dark:bg-gray-800"
           >
             <!-- Approvers Status -->
             <div class="mb-8">
               <div class="border-b flex justify-between mb-3">
-                <h2 class="text-xl font-semibold text-gray-800 mb-2 dark:text-gray-100">
+                <h2
+                  class="text-xl font-semibold text-gray-800 mb-2 dark:text-gray-100"
+                >
                   Approvers Status
                 </h2>
                 <div>
@@ -1487,7 +1492,9 @@ const getApproverStatusTextColor = (respond: number) => {
                   v-for="(approver, index) in groupedApprovers.mainApprovers"
                   :key="approver.transApproverId"
                 >
-                  <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+                  <div
+                    class="bg-gray-50 rounded-lg p-3 border border-gray-200 dark:bg-gray-700 dark:border-gray-600"
+                  >
                     <div class="flex justify-between items-start mb-2">
                       <div class="flex items-start">
                         <span
@@ -1497,10 +1504,19 @@ const getApproverStatusTextColor = (respond: number) => {
                         </span>
 
                         <div>
-                          <p class="text-sm font-medium text-gray-900 dark:text-gray-100 ">
+                          <p
+                            class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                          >
                             {{ approver.approverName }}
+                            <span
+                              v-if="isCurrentUser(approver.employeeId)"
+                              class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded border border-green-800"
+                              >You</span
+                            >
                           </p>
-                          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                          <p
+                            class="text-xs text-gray-500 dark:text-gray-400 mb-1"
+                          >
                             {{ approver.approverEmail || "" }}
                           </p>
                           <div class="flex items-center gap-2 mt-1">
@@ -1512,28 +1528,30 @@ const getApproverStatusTextColor = (respond: number) => {
                             </span>
                           </div>
                           <div
-                          v-if="approver.remarks"
-                          class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3"
-                        >
-                          Remark:
-                        </div>
-                        <div v-if="approver.remarks" class="px-6 pb-2">
-                          <span
-                            class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
+                            v-if="approver.remarks"
+                            class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3"
                           >
-                            {{ approver.remarks }}
-                          </span>
-                        </div>
-                        <div
-                          class="text-xs"
-                          :class="getApproverStatusTextColor(approver.respond)"
-                        >
-                          <span v-if="approver.respondDate">
-                            Responded on
-                            {{ formatDateTime(approver.respondDate).date }} •
-                            {{ formatDateTime(approver.respondDate).time }}
-                          </span>
-                        </div>
+                            Remark:
+                          </div>
+                          <div v-if="approver.remarks" class="px-6 pb-2">
+                            <span
+                              class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
+                            >
+                              {{ approver.remarks }}
+                            </span>
+                          </div>
+                          <div
+                            class="text-xs"
+                            :class="
+                              getApproverStatusTextColor(approver.respond)
+                            "
+                          >
+                            <span v-if="approver.respondDate">
+                              Responded on
+                              {{ formatDateTime(approver.respondDate).date }} •
+                              {{ formatDateTime(approver.respondDate).time }}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div class="flex flex-col items-end gap-1">
@@ -1624,8 +1642,15 @@ const getApproverStatusTextColor = (respond: number) => {
                             class="w-2 h-2 rounded-full bg-orange-400 mt-1.5"
                           ></span>
                           <div class="ps-3">
-                            <p class="text-sm text-gray-700 dark:text-gray-300 mb-1">
+                            <p
+                              class="text-sm text-gray-700 dark:text-gray-300 mb-1"
+                            >
                               {{ proxy.approverName }}
+                              <proxy
+                                v-if="isCurrentUser(approver.employeeId)"
+                                class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded border-2 border-green-11121w11                                                                                                                                               00"
+                                >You</proxy
+                              >
                             </p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">
                               {{ proxy.approverEmail || "" }}
@@ -1636,28 +1661,33 @@ const getApproverStatusTextColor = (respond: number) => {
                               {{ proxy.approverRole }}
                             </span>
                             <div
-                          v-if="approver.remarks"
-                          class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3"
-                        >
-                          Remark:
-                        </div>
-                        <div v-if="approver.remarks" class="px-6 pb-2">
-                          <span
-                            class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
-                          >
-                            {{ approver.remarks }}
-                          </span>
-                        </div>
-                        <div
-                          class="text-xs"
-                          :class="getApproverStatusTextColor(approver.respond)"
-                        >
-                          <span v-if="approver.respondDate">
-                            Responded on
-                            {{ formatDateTime(approver.respondDate).date }} •
-                            {{ formatDateTime(approver.respondDate).time }}
-                          </span>
-                        </div>
+                              v-if="approver.remarks"
+                              class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3"
+                            >
+                              Remark:
+                            </div>
+                            <div v-if="approver.remarks" class="px-6 pb-2">
+                              <span
+                                class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
+                              >
+                                {{ approver.remarks }}
+                              </span>
+                            </div>
+                            <div
+                              class="text-xs"
+                              :class="
+                                getApproverStatusTextColor(approver.respond)
+                              "
+                            >
+                              <span v-if="approver.respondDate">
+                                Responded on
+                                {{
+                                  formatDateTime(approver.respondDate).date
+                                }}
+                                •
+                                {{ formatDateTime(approver.respondDate).time }}
+                              </span>
+                            </div>
                           </div>
                         </div>
                         <div class="flex flex-col items-end gap-1">

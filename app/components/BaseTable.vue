@@ -148,8 +148,8 @@
           v-if="props.showSearch"
           v-model="globalSearch"
           placeholder="Search across all data..."
-          @input="handleGlobalSearch"
         />
+        <!-- @input="handleGlobalSearch" -->
       </div>
       <Button
         variant="primary"

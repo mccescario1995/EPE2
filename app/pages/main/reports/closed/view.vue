@@ -594,9 +594,9 @@ const currentUserPendingAction = computed((): boolean => {
                 <h2
                   class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2"
                 >
-                  Approvers Status
+                  Approvers
                 </h2>
-                <div>
+                <!-- <div>
                   <span
                     v-if="exemptionDetails.finalDecision"
                     class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
@@ -615,7 +615,7 @@ const currentUserPendingAction = computed((): boolean => {
                       getFinalDecisionDisplay(exemptionDetails.finalDecision)
                     }}
                   </span>
-                </div>
+                </div> -->
               </div>
             </div>
 
