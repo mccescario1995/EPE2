@@ -172,7 +172,10 @@ const actions = computed(() => {
       iconClass: "!text-teal-500 dark:!text-teal-400",
       buttonClass:
         "hover:bg-teal-100 dark:hover:bg-teal-100 hover:text-teal-600 dark:hover:text-teal-900",
-      visible: (row) => row.canApprove && row.status !== "C", // This will only be visible to the approver not he requester and for non-completed requests
+      visible: (row) => {
+        console.log(row.canApprove, typeof row.canApprove);
+        return row.canApprove === true;
+      },
     },
   );
 

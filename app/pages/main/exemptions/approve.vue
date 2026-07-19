@@ -75,7 +75,7 @@ const fetchExemptionDetails = async () => {
           message: "You are not authorized to approve this request",
           duration: 5000,
         });
-        router.push("/main/exemptions/all");
+        router.back();
         return;
       }
 

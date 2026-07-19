@@ -5,6 +5,7 @@ definePageMeta({
 });
 
 import { IconView, IconEdit, IconDelete } from "#components";
+const router = useRouter();
 
 type PolicyApiItem = {
   policyid: string;
@@ -60,15 +61,15 @@ const tableRef = ref();
 
 // ── Navigation to separate pages ───────────────────────────────────
 const handleCreatePolicy = () => {
-  navigateTo("/main/maintenance/policies/create");
+  navigateTo("/maintenance/policies/create");
 };
 
 const viewPolicy = (row: any) => {
-  navigateTo(`/main/maintenance/policies/${row.policyid}`);
+  router.push(`/maintenance/policies/${row.policyid}`);
 };
 
 const editPolicy = (row: any) => {
-  navigateTo(`/main/maintenance/policies/${row.policyid}/edit`);
+  router.push(`/maintenance/policies/${row.policyid}/edit`);
 };
 
 // ── Delete ─────────────────────────────────────────────────────────
