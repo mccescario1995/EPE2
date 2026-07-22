@@ -143,7 +143,7 @@ const deleteRequestPolicy = async () => {
             iconPosition="center"
             customClass="rounded-full"
             class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-            @onclick="$router.back()"
+            @click="router.back()"
           />
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
             Policies
@@ -197,11 +197,11 @@ const deleteRequestPolicy = async () => {
           }"
           :field-colors="{
             status: {
-              A: 'bg-green-100 text-green-800 border border-green-900  w-full',
-              I: 'bg-red-50 text-red-800 border border-red-900 w-full',
+              A: 'bg-green-100 text-green-800 border border-green-900',
+              I: 'bg-red-50 text-red-800 border-red-900',
             },
           }"
-          :date-fields="['createdDate']"
+          :date-time-fields="['createddate']"
           :actions="[
             {
               label: IconView,

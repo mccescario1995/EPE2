@@ -296,7 +296,7 @@ onMounted(async () => {
               O: 'bg-blue-100 text-blue-800 border border-blue-900',
               P: 'bg-blue-100 text-blue-800 border border-blue-900',
               C: 'bg-gray-200 text-gray-800 border border-gray-900',
-              D: 'bg-gray-100 text-gray-800 border border-gray-900',
+              D: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
             },
             finalDecision: {
               Pending: 'bg-yellow-100 text-yellow-800',
@@ -305,7 +305,8 @@ onMounted(async () => {
               Draft: 'bg-gray-100 text-gray-800 border border-gray-900',
             },
           }"
-          :date-fields="['createdDate']"
+          :date-time-fields="['createdDate']"
+          date-time-format="'MMM d, yyyy h:mm a'"
           :actions="actions"
         />
       </div>

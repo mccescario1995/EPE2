@@ -4,6 +4,7 @@ definePageMeta({
 });
 
 const route = useRoute();
+const router = useRouter();
 const policyid = route.params.id as string;
 
 const userStore = useUserStore();
@@ -104,7 +105,7 @@ const fetchPolicy = async () => {
 };
 
 const goBack = () => {
-  navigateTo("/main/maintenance/policies");
+  router.back();
 };
 
 onMounted(async () => {

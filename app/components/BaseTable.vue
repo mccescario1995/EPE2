@@ -293,7 +293,7 @@
                 :title="formatValue(key, row[key])"
               >
                 <span>{{ getDateTimeParts(key, row[key])?.date }}</span>
-                <span class="text-gray-500 dark:text-gray-400">{{
+                <span class="text-gray-500  dark:text-gray-400">{{
                   getDateTimeParts(key, row[key])?.time
                 }}</span>
               </div>
@@ -894,7 +894,7 @@ function formatValue(key: string, value: any): string {
       const parsed =
         typeof value === "string" ? parseISO(value) : new Date(value);
       return isValid(parsed)
-        ? format(parsed, props.dateTimeFormat || "MMM d, yyyy h:mm:ss a")
+        ? format(parsed, props.dateTimeFormat || "MMM d, yyyy h:mm a")
         : value.toString();
     } catch (e) {
       return value.toString();
@@ -943,7 +943,7 @@ function getDateTimeParts(
 
     return {
       date: format(parsed, "MMMM d, yyyy"),
-      time: format(parsed, "h:mm:ss a"),
+      time: format(parsed, "h:mm a"),
     };
   } catch (e) {
     return { date: value.toString(), time: "" };

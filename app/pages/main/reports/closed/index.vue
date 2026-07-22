@@ -250,7 +250,7 @@ const handleCreate = () => {
             status: {
               O: 'bg-blue-100 text-blue-800 border border-blue-900',
               P: 'bg-blue-100 text-blue-800 border border-blue-900',
-              C: 'bg-gray-200 text-gray-800 border border-gray-900',
+              C: 'bg-red-200 text-red-800 border border-red-900',
             },
             finalDecision: {
               Pending: 'bg-yellow-100 text-yellow-800',
