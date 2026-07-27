@@ -26,10 +26,14 @@
     <Folder Include="wwwroot\uploads\attachments\" />
   </ItemGroup>
 
-	<ItemGroup>
-		<Reference Include="FastNetCoreLibrary">
-			<HintPath>FastNetCoreLibrary\FastNetCoreLibrary.dll</HintPath>
-		</Reference>
-	</ItemGroup>
+  <ItemGroup>
+    <Reference Include="FastNetCoreLibrary">
+      <HintPath>FastNetCoreLibrary\FastNetCoreLibrary.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="PostPublish" AfterTargets="Publish">
+    <Exec Command="powershell.exe -ExecutionPolicy Bypass -File &quot;$(ProjectDir)Scripts\PostPublish.ps1&quot; -PublishDir &quot;$(PublishDir)&quot;" />
+  </Target>
 
 </Project>

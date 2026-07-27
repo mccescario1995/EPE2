@@ -27,7 +27,6 @@ public class EmailApprovalController : ControllerBase
     {
         var baseUrl = _urlBaseSettings.View;
 
-        return Ok(baseUrl);
         try
         {
             if (string.IsNullOrWhiteSpace(token))
@@ -123,52 +122,54 @@ public class EmailApprovalController : ControllerBase
 
         try
         {
+            if (string.IsNullOrWhiteSpace(token))
+                return BadRequest(new { ok = false, error = "missing_token" });
+
             var record = await _context.EpeEmailApprovalTokens
                 .FirstOrDefaultAsync(t => t.Token == token);
 
-            //if (record == null)
-            //{
-            //    if (IsAjaxRequest())
-            //        return NotFound(new { ok = false, error = "invalid" });
-            //    return Redirect($"{baseUrl}/#/email-response?status=invalid&token={Uri.EscapeDataString(token)}");
-            //}
+            if (record == null)
+            {
+                if (IsAjaxRequest())
+                    return NotFound(new { ok = false, error = "invalid" });
+                return Redirect($"{baseUrl}/#/email-response?status=invalid&token={Uri.EscapeDataString(token)}");
+            }
 
-            //if (!IsAjaxRequest() && string.IsNullOrEmpty(Request.Query["confirm"]))
-            //{
-            //    return Redirect($"{baseUrl}/#/email-response?token={Uri.EscapeDataString(token)}&action={Uri.EscapeDataString(record.Action)}");
-            //}
+            if (!IsAjaxRequest() && string.IsNullOrEmpty(Request.Query["confirm"]))
+            {
+                return Redirect($"{baseUrl}/#/email-response?token={Uri.EscapeDataString(token)}&action={Uri.EscapeDataString(record.Action)}");
+            }
 
-            //if (record.IsUsed)
-            //{
-            //    if (IsAjaxRequest())
-            //        return BadRequest(new { ok = false, error = "already_used", transactionId = record.TransactionId });
-            //    return Redirect($"{baseUrl}/#/email-response?status=already_used&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
-            //}
+            if (record.IsUsed)
+            {
+                if (IsAjaxRequest())
+                    return BadRequest(new { ok = false, error = "already_used", transactionId = record.TransactionId });
+                return Redirect($"{baseUrl}/#/email-response?status=already_used&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
+            }
 
-            //if (record.ExpiresAt < DateTime.Now)
-            //{
-            //    if (IsAjaxRequest())
-            //        return BadRequest(new { ok = false, error = "expired", transactionId = record.TransactionId });
-            //    return Redirect($"{baseUrl}/#/email-response?status=expired&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
-            //}
+            if (record.ExpiresAt < DateTime.Now)
+            {
+                if (IsAjaxRequest())
+                    return BadRequest(new { ok = false, error = "expired", transactionId = record.TransactionId });
+                return Redirect($"{baseUrl}/#/email-response?status=expired&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
+            }
 
-            // Get transaction
             var transaction = await _context.EpeTransactionheaders
                 .FirstOrDefaultAsync(t => t.Transactionid == record.TransactionId);
 
-            //if (transaction == null)
-            //{
-            //    if (IsAjaxRequest())
-            //        return NotFound(new { ok = false, error = "not_found" });
-            //    return Redirect($"{baseUrl}/#/email-response?status=not_found&token={Uri.EscapeDataString(token)}");
-            //}
+            if (transaction == null)
+            {
+                if (IsAjaxRequest())
+                    return NotFound(new { ok = false, error = "not_found" });
+                return Redirect($"{baseUrl}/#/email-response?status=not_found&token={Uri.EscapeDataString(token)}");
+            }
 
-            //if (transaction.Status == "C")
-            //{
-            //    if (IsAjaxRequest())
-            //        return BadRequest(new { ok = false, error = "already_closed", transactionId = record.TransactionId });
-            //    return Redirect($"{baseUrl}/#/email-response?status=already_closed&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
-            //}
+            if (transaction.Status == "C")
+            {
+                if (IsAjaxRequest())
+                    return BadRequest(new { ok = false, error = "already_closed", transactionId = record.TransactionId });
+                return Redirect($"{baseUrl}/#/email-response?status=already_closed&transactionId={record.TransactionId}&token={Uri.EscapeDataString(token)}");
+            }
 
             // Get the specific approver record
             var approver = await _context.EpeTransactionapprovers
@@ -306,43 +307,24 @@ public class EmailApprovalController : ControllerBase
                 current.Sort,
                 transactionId);
 
-            var groupIds = allApprovers
-                .Where(a => a.Sort == current.Sort && a.Respond == 0)
-                .Select(a => a.Transapproverid)
-                .ToList();
-
-            _logger.LogInformation(
-                "Found {Count} other approvers in the same group to auto-approve for transaction {TransactionId}",
-                groupIds.Count,
-                transactionId);
-
-            if (groupIds.Any())
-            {
-                var approversToUpdate = await _context.EpeTransactionapprovers
-                    .Where(a => groupIds.Contains(a.Transapproverid))
-                    .ToListAsync();
-
-                foreach (var approver in approversToUpdate)
-                {
-                    approver.Respond = 1;
-                    approver.Responddate = DateTime.Now;
-                    approver.Remarks = "Approved via group approval";
-                }
-            }
-
             var updated = await GetApprovers(transactionId);
 
-            var hasNext = updated.Any(a =>
-                a.Linesequence > current.Linesequence &&
-                a.Respond == 0);
+            var currentSort = current.Sort;
+
+            var nextSortGroup = updated
+                .Where(a => a.Respond == 0)
+                .GroupBy(a => a.Sort ?? 0)
+                .Where(g => g.Key > (currentSort ?? 0))
+                .OrderBy(g => g.Key)
+                .FirstOrDefault();
 
             var transHeader = await _context.EpeTransactionheaders
                 .FirstOrDefaultAsync(h => h.Transactionid == transactionId);
 
             if (transHeader != null)
             {
-                transHeader.Status = hasNext ? "P" : "C";
-                transHeader.Finaldecision = hasNext ? null : "Approved";
+                transHeader.Status = nextSortGroup != null ? "P" : "C";
+                transHeader.Finaldecision = nextSortGroup != null ? null : "Approved";
                 transHeader.Modifieddate = DateTime.Now;
             }
 

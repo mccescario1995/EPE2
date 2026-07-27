@@ -54,15 +54,12 @@ public class EmailNotificationService
         
         try
         {
-            // Generate one-time tokens
-            //var (approveToken, disapproveToken) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
-
-       
+            var (approveToken, disapproveToken) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
 
             var apiBase = _urlBaseSettings.Api;
             var viewBase = _urlBaseSettings.View;
-            var viewUrl = $"{viewBase}/#/main/exemptions/view?id={requestId}";
-            var trackUrl = $"{viewBase}/#/main/exemptions/approve?id={requestId}";
+            var respondUrl = $"{viewBase}/#/main/exemptions/approve?id={requestId}&token={approveToken}";
+            var viewUrl = $"{viewBase}/#/main/exemptions/view?id={requestId}&token={approveToken}";
 
             
             var emailBody = $@"
@@ -79,12 +76,12 @@ public class EmailNotificationService
                             </td></tr>
 
                             <!-- Details box -->
-                            <tr><td style='padding:15px;background:#f4f6f6;border-left:5px solid #2f75b5;margin-bottom:20px;'>
-                              <p><strong>Transaction #:</strong> <span style='color:#2f75b5;'>{requestNumber}</span></p>
-                              <p><strong>Requested By:</strong> {requestorName}</p>
-                              <p><strong>Details:</strong> {requestDetails}</p>
-                              <!-- <p><strong>Expires:</strong> 72 hours from receipt</p> -->
-                            </td></tr>
+                              <tr><td style='padding:15px;background:#f4f6f6;border-left:5px solid #2f75b5;margin-bottom:20px;'>
+                                <p><strong>Transaction #:</strong> <span style='color:#2f75b5;'>{requestNumber}</span></p>
+                                <p><strong>Requested By:</strong> {requestorName}</p>
+                                <p><strong>Details:</strong> {requestDetails}</p>
+                                <p><strong>Expires:</strong> 72 hours from receipt</p>
+                              </td></tr>
 
                             <tr><td height='25'></td></tr>
 
@@ -95,13 +92,13 @@ public class EmailNotificationService
                                 <tr>
                                   <td style='padding-right:10px;'>
                                     <!--[if mso]>
-                                    <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' href='{trackUrl}'
+                                    <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' href='{respondUrl}'
                                       style='height:44px;v-text-anchor:middle;width:140px;' arcsize='10%' fillcolor='#16a34a' stroke='f'>
                                       <center style='color:#fff;font-size:14px;font-weight:bold;'>Respond</center>
                                     </v:roundrect>
                                     <![endif]-->
                                     <!--[if !mso]><!-->
-                                    <a href='{trackUrl}'
+                                    <a href='{respondUrl}'
                                       style='display:inline-block;background:#16a34a;color:#fff;padding:12px 28px;
                                              text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;'>
                                       Respond
@@ -121,8 +118,7 @@ public class EmailNotificationService
 
                             <tr><td height='15'></td></tr>
                             <tr><td style='font-size:12px;color:#6b7280;'>
-                              <!-- These buttons will expire in 72 hours. After expiration, y -->
-                              You may use the Respond button to respond, which will allow you to submit remarks.
+                              These links will expire in 72 hours. After expiration,
                             </td></tr>
 
                             <tr><td height='30'></td></tr>
@@ -137,7 +133,7 @@ public class EmailNotificationService
 
             var requestBody = new
             {
-                senderDisplayName = "epe.noreply@fast.com.ph",
+                senderDisplayName = "epe.noreply@fastgroup.biz",
                 recipient = toEmail,
                 bccrecipient = "mcccescario@fast.com.ph",
                 mailSubject = $"Exemption Request for Approval - {requestNumber}",
@@ -455,7 +451,7 @@ public class EmailNotificationService
 
             var requestBody = new
             {
-                senderDisplayName = "epe.noreply@fastlogistic.ph",
+                senderDisplayName = "epe.noreply@fastgroup.biz",
                 recipient = toEmail,
                 bccrecipient = "mcccescario@fast.com.ph",
                 mailSubject = $"Exemption Request Submitted - {requestNumber}",
@@ -554,7 +550,7 @@ public class EmailNotificationService
 
             var requestBody = new
             {
-                senderDisplayName = "epe.noreply@fastlogistic.ph",
+                senderDisplayName = "epe.noreply@fastgroup.biz",
                 recipient = toEmail,
                 bccrecipient = "mcccescario@fast.com.ph",
                 mailSubject = $"New Message on Exemption Request - {requestNumber}",
@@ -607,10 +603,11 @@ public class EmailNotificationService
     {
         try
         {
-            var apiBase = _urlBaseSettings.Api;
+            var (approveToken, _) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
+
             var viewBase = _urlBaseSettings.View;
-            var viewUrl = $"{viewBase}/#/main/exemptions/view?id={requestId}";
-            var trackUrl = $"{viewBase}/#/main/exemptions/approve?id={requestId}";
+            var viewUrl = $"{viewBase}/#/main/exemptions/view?id={requestId}&token={approveToken}";
+            var respondUrl = $"{viewBase}/#/main/exemptions/approve?id={requestId}&token={approveToken}";
 
             var emailBody = $@"
             <html>
@@ -639,7 +636,7 @@ public class EmailNotificationService
                       <table cellpadding='0' cellspacing='0'>
                         <tr>
                           <td style='padding-right:10px;'>
-                            <a href='{trackUrl}'
+                            <a href='{respondUrl}'
                               style='display:inline-block;background:#16a34a;color:#fff;padding:12px 28px;
                                      text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;'>
                               Respond Now
@@ -673,7 +670,7 @@ public class EmailNotificationService
 
             var requestBody = new
             {
-                senderDisplayName = "epe.noreply@fast.com.ph",
+                senderDisplayName = "epe.noreply@fastgroup.biz",
                 recipient = toEmail,
                 bccrecipient = "mcccescario@fast.com.ph",
                 mailSubject = $"[Reminder] Approval Required - {requestNumber}",
@@ -711,9 +708,11 @@ public class EmailNotificationService
     {
         try
         {
+            var (approveToken, _) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
+
             var viewBase = _urlBaseSettings.View;
-            var viewUrl = $"{viewBase}/#/main/exemptions/view?id={requestId}";
-            var trackUrl = $"{viewBase}/#/main/exemptions/approve?id={requestId}";
+            var viewUrl = $"{viewBase}/#/main/exemptions/view?id={requestId}&token={approveToken}";
+            var respondUrl = $"{viewBase}/#/main/exemptions/approve?id={requestId}&token={approveToken}";
 
             var emailBody = $@"
             <html>
@@ -745,7 +744,7 @@ public class EmailNotificationService
                       <table cellpadding='0' cellspacing='0'>
                         <tr>
                           <td style='padding-right:10px;'>
-                            <a href='{trackUrl}'
+                            <a href='{respondUrl}'
                               style='display:inline-block;background:#f59e0b;color:#fff;padding:12px 28px;
                                      text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;'>
                               Respond as Proxy
