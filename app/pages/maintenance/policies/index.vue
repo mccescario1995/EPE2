@@ -5,6 +5,10 @@ definePageMeta({
 });
 
 import { IconView, IconEdit, IconDelete } from "#components";
+const { breadcrumbs, currentMenuLabel } = useBreadcrumbs();
+
+// Get the current page's menu name (should be "Policy")
+const currentPageName = breadcrumbs.value[breadcrumbs.value.length - 1]?.label;
 const router = useRouter();
 
 type PolicyApiItem = {
@@ -146,7 +150,7 @@ const deleteRequestPolicy = async () => {
             @click="router.back()"
           />
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
-            Policies
+            {{ currentMenuLabel || currentPageName || "Policies" }}
           </h1>
         </div>
 

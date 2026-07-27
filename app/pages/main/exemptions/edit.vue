@@ -381,7 +381,7 @@ const handleSubmit = async () => {
       // Redirect to exemptions view page after success
       // router.push(`/main/exemptions/view?id=${exemptionId.value}`);
       // router.back();
-      router.push("/main/exemptions/pending");
+      router.push("/main/exemptions/pending-for-approval");
     } else {
       showToast({
         type: "error",

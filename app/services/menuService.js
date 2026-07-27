@@ -11,10 +11,10 @@
 //  * as the key.
 //  */
 const STAGE_ROUTE_MAP = {
-  "637120010759985872": "/main/exemptions/all", // Create Exemption Approval
-  "637951116932400418": "/main/exemptions/pending", // Pending for Approval
+  "637120010759985872": "/main/exemptions/create-exemption", // Create Exemption Approval
+  "637951116932400418": "/main/exemptions/pending-for-approval", // Pending for Approval
   "637262075600163869": "/maintenance/policies", // Maintenance Policy
-  "637951226932433418": "/main/reports/closed", // All Request (Reports)
+  "637951226932433418": "/main/reports/closed", // Closed Request (Reports)
 };
 
 function resolvePageRoute(stage, menuGroupName) {

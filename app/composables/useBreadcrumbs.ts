@@ -1,6 +1,6 @@
 // useBreadcrumbs.ts
 import { useRoute } from "vue-router";
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { useMenuService } from "~/services/menuService";
 
 type Crumb = {
@@ -31,6 +31,9 @@ const labelMap = ref<Record<string, string>>({
   profile: "My Profile",
   edit: "Edit",
   create: "Create",
+  exemptions: "Excemption",
+  policies: "Policies",
+  maintenance: "Maintenance",
 });
 
 /**
@@ -39,6 +42,39 @@ const labelMap = ref<Record<string, string>>({
  * (e.g. alphanumeric, GUIDs, etc).
  */
 const MENU_CODE_REGEX = /^\d{6,}$/;
+
+/**
+ * Converts route segments into readable breadcrumb labels.
+ *
+ * Examples:
+ * userProfile           -> User Profile
+ * user-profile          -> User Profile
+ * user_profile          -> User Profile
+ * user-profile_settings -> User Profile Settings
+ * UserProfile           -> User Profile
+ * USER_PROFILE          -> User Profile
+ */
+function formatBreadcrumbLabel(value: string): string {
+  if (!value) return "";
+
+  return value
+    // Convert kebab-case and snake_case to spaces
+    .replace(/[-_]+/g, " ")
+
+    // Add a space before uppercase letters in camelCase / PascalCase
+    // userProfile -> user Profile
+    // UserProfile -> User Profile
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+
+    // Normalize multiple spaces
+    .replace(/\s+/g, " ")
+
+    // Remove leading/trailing spaces
+    .trim()
+
+    // Capitalize every word
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
 /* ------------------------------------------------------------------ *
  * Module-level caches — shared across every component using this
@@ -52,6 +88,7 @@ type ResolvedMenu = {
 
 const menuNameCache = ref<Record<string, ResolvedMenu>>({});
 const pendingCodes = new Set<string>();
+const resolvingCodes = ref<Set<string>>(new Set());
 let menuTreePromise: Promise<MenuNode[]> | null = null;
 
 async function ensureMenuTree(): Promise<MenuNode[]> {
@@ -59,20 +96,12 @@ async function ensureMenuTree(): Promise<MenuNode[]> {
     const { fetchMenuList } = useMenuService();
 
     menuTreePromise = fetchMenuList()
-      .then((data) => {
-        return data;
-      })
+      .then((data) => data)
       .catch((e) => {
-        console.error(e);
+        console.error("Failed to load menu tree for breadcrumbs:", e);
         menuTreePromise = null;
         return [];
       });
-
-    menuTreePromise = fetchMenuList().catch((e) => {
-      console.error("Failed to load menu tree for breadcrumbs:", e);
-      menuTreePromise = null; // allow retry on next call
-      return [];
-    });
   }
   return menuTreePromise;
 }
@@ -85,6 +114,7 @@ async function ensureMenuTree(): Promise<MenuNode[]> {
 async function resolveMenuCode(code: string) {
   if (menuNameCache.value[code] || pendingCodes.has(code)) return;
   pendingCodes.add(code);
+  resolvingCodes.value.add(code);
   try {
     const res: any = await apiFetch("/api/Account/get-menu-name", {
       method: "POST",
@@ -94,7 +124,6 @@ async function resolveMenuCode(code: string) {
     });
 
     if (res?.success && res?.menuName) {
-      // Reassign (not mutate) so the watcher below fires.
       menuNameCache.value = {
         ...menuNameCache.value,
         [code]: {
@@ -108,8 +137,10 @@ async function resolveMenuCode(code: string) {
     console.error(`Failed to resolve menucode ${code}:`, e);
   } finally {
     pendingCodes.delete(code);
+    resolvingCodes.value.delete(code);
   }
 }
+
 /**
  * Finds an exact route match in the dynamic menu tree so we can pull
  * both the item's title AND its parent menu's title.
@@ -140,7 +171,7 @@ function findMenuTitleForPath(
             parentTitle: menu.title,
             parentRoute: menu.route,
             parentClickable: menu.isClick ?? false,
-          };
+          }
         }
       }
     }
@@ -157,54 +188,103 @@ function findMenuTitleForPath(
   return null;
 }
 
+function buildKnownRoutesMap(tree: MenuNode[]): Map<string, { title: string; clickable: boolean }> {
+  const knownRoutes = new Map<string, { title: string; clickable: boolean }>();
+  for (const menu of tree) {
+    if (menu.route) {
+      knownRoutes.set(menu.route.toLowerCase(), {
+        title: menu.title,
+        clickable: menu.isClick ?? false,
+      });
+      if (menu.submenu) {
+        for (const sub of menu.submenu) {
+          if (sub.route) {
+            knownRoutes.set(sub.route.toLowerCase(), {
+              title: sub.title,
+              clickable: sub.isclick ?? false,
+            });
+          }
+        }
+      }
+    }
+  }
+  return knownRoutes;
+}
+
 export const useBreadcrumbs = () => {
   const route = useRoute();
   const breadcrumbs = ref<Crumb[]>([]);
 
   const build = async () => {
-    const segments = route.path.split("/").filter(Boolean);
-    if (segments.length === 0) {
+    const allSegments = route.path.split("/").filter(Boolean);
+    if (allSegments.length === 0) {
       breadcrumbs.value = [];
       return;
     }
 
+    const hasMainPrefix =
+      allSegments.length > 1 && allSegments[0].toLowerCase() === "main";
+    const mainSkipped = hasMainPrefix ? 1 : 0;
+    const segments = hasMainPrefix ? allSegments.slice(1) : allSegments;
+
     const tree = await ensureMenuTree();
-    // Exact full-path match against the dynamic menu (gives us the real
-    // title + parent title without touching the menucode API at all).
     const matched = findMenuTitleForPath(tree, route.path);
+    const knownRoutes = buildKnownRoutesMap(tree);
 
-const crumbs: Crumb[] = [];
+    const crumbs: Crumb[] = [];
 
-    // Determine which segment index corresponds to the parent menu (if matched)
-    // so we can skip adding it as a fallback duplicate.
     let parentSegmentIndex = -1;
     if (matched?.parentRoute) {
       const parentSegments = matched.parentRoute.split("/").filter(Boolean);
       parentSegmentIndex = parentSegments.length - 1;
     }
 
-    segments.forEach((segment, index) => {
-      const isLast = index === segments.length - 1;
+    allSegments.forEach((segment, index) => {
+      if (hasMainPrefix && index === 0) return;
+      const segIndex = index - mainSkipped;
+      const isLast = segIndex === segments.length - 1;
       const lower = segment.toLowerCase();
+      const pathUpToHere = "/" + allSegments.slice(0, index + 1).join("/");
 
-      // Static labels
-      if (labelMap.value[lower]) {
-        crumbs.push({
-          label: labelMap.value[lower],
-          to: isLast ? undefined : route.path,
-          clickable: false,
-        });
+      const routeMatch = knownRoutes.get(pathUpToHere.toLowerCase());
 
+      // if (segIndex === parentSegmentIndex) {
+      //   return;
+      // }
+
+      if (segIndex === parentSegmentIndex) {
+        if (isLast && matched) {
+          if (matched.parentTitle) {
+            crumbs.push({
+              label: matched.parentTitle,
+              to: matched.parentClickable ? matched.parentRoute : undefined,
+              clickable: matched.parentClickable ?? false,
+            });
+          }
+          crumbs.push({
+            label: matched.title,
+            to: undefined,
+            clickable: false,
+          });
+        }
         return;
       }
 
-      // Dynamic menu match (only on last segment)
+      if (labelMap.value[lower]) {
+        crumbs.push({
+          label: formatBreadcrumbLabel(segment),
+          to: !isLast && routeMatch ? pathUpToHere : undefined,
+          clickable: !isLast && routeMatch,
+        });
+        return;
+      }
+
       if (isLast && matched) {
         if (matched.parentTitle) {
           crumbs.push({
             label: matched.parentTitle,
-            to: undefined,
-            clickable: false,
+            to: matched.parentClickable ? matched.parentRoute : undefined,
+            clickable: matched.parentClickable ?? false,
           });
         }
 
@@ -217,13 +297,6 @@ const crumbs: Crumb[] = [];
         return;
       }
 
-      // Skip the segment that corresponds to the parent menu to avoid duplicate
-      // (the parent title is already added via matched.parentTitle above)
-      if (index === parentSegmentIndex) {
-        return;
-      }
-
-      // Menu code
       if (MENU_CODE_REGEX.test(segment)) {
         const cached = menuNameCache.value[segment];
 
@@ -240,17 +313,17 @@ const crumbs: Crumb[] = [];
         return;
       }
 
-      // fallback
       crumbs.push({
-        label: segment.charAt(0).toUpperCase() + segment.slice(1),
-        to: undefined,
-        clickable: false,
+        label: formatBreadcrumbLabel(segment),
+        to: !isLast && routeMatch ? pathUpToHere : undefined,
+        clickable: !isLast && routeMatch,
       });
     });
+
     breadcrumbs.value = crumbs;
   };
+
   watch(() => route.path, build, { immediate: true });
-  // Rebuild once any pending menucode resolves so the label updates in place.
   watch(menuNameCache, build, { deep: true });
 
   const currentMenuLabel = computed(() => {
@@ -262,5 +335,6 @@ const crumbs: Crumb[] = [];
     breadcrumbs,
     labelMap,
     currentMenuLabel,
+    resolvingCodes,
   };
 };

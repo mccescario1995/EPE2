@@ -92,7 +92,7 @@ const submitCreateForm = async () => {
 };
 
 const cancelCreate = () => {
-  navigateTo("/main/maintenance/policies");
+  navigateTo("/maintenance/policies");
 };
 </script>
 

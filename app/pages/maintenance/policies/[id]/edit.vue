@@ -118,7 +118,7 @@ const submitEditForm = async () => {
         duration: 5000,
       });
 
-      navigateTo("/main/maintenance/policies");
+      navigateTo("/maintenance/policies");
     } else {
       editError.value = response.message || "Failed to update policy";
     }
@@ -131,7 +131,7 @@ const submitEditForm = async () => {
 };
 
 const cancelEdit = () => {
-  navigateTo("/main/maintenance/policies");
+  navigateTo("/maintenance/policies");
 };
 
 onMounted(async () => {
