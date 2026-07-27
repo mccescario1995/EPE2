@@ -1,5 +1,22 @@
-// stores/useUserStore.ts
+﻿// stores/useUserStore.ts
 import { defineStore } from "pinia";
+import { encryptString, decryptString } from "../utils/storageCrypto";
+
+const encryptedSerializer = {
+  serialize: (data: unknown): string => {
+    const json = JSON.stringify(data);
+    return encryptString(json);
+  },
+  deserialize: (data: string) => {
+    const decrypted = decryptString(data);
+    if (!decrypted) return {};
+    try {
+      return JSON.parse(decrypted);
+    } catch {
+      return {};
+    }
+  }
+};
 
 export const useUserStore = defineStore("user", {
   state: () => ({
@@ -25,12 +42,10 @@ export const useUserStore = defineStore("user", {
       this.token = token;
       this.profile = profile;
       this.role = profile?.role || profile?.userRole || null;
-      localStorage.setItem("auth_token", token);
     },
 
     setToken(token: string) {
       this.token = token;
-      localStorage.setItem("auth_token", token);
     },
 
     getToken() {
@@ -46,8 +61,7 @@ export const useUserStore = defineStore("user", {
     },
 
     loadUserFromStorage() {
-      const savedToken = localStorage.getItem("auth_token");
-      if (savedToken) this.token = savedToken;
+      // Handled automatically by encrypted persistence
     },
 
     logout() {
@@ -55,7 +69,9 @@ export const useUserStore = defineStore("user", {
       this.profile = null;
       this.role = null;
       this.menu = null;
+      localStorage.removeItem("user");
       localStorage.removeItem("auth_token");
+      localStorage.removeItem("user_profile");
       navigateTo("/");
     },
     
@@ -75,5 +91,8 @@ export const useUserStore = defineStore("user", {
       }
     },
   },
-  persist: true,
+  persist: {
+    serializer: encryptedSerializer,
+    paths: ['token', 'profile', 'menu', 'menuAccess', 'menuVersion', 'role'],
+  },
 });

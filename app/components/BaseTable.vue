@@ -148,6 +148,7 @@
           v-if="props.showSearch"
           v-model="globalSearch"
           placeholder="Search across all data..."
+          @keyup.enter="handleGlobalSearch"
         />
         <!-- @input="handleGlobalSearch" -->
       </div>
@@ -376,7 +377,7 @@
           </tr>
 
           <!-- Empty state -->
-          <tr v-if="tableData && !tableData.length">
+          <tr v-if="!paginatedData.length">
             <td
               :colspan="computedHeaderKeys.length + (hasActions ? 1 : 0)"
               class="px-6 py-16 text-center"
@@ -511,7 +512,7 @@
 
     <!-- Empty state -->
     <div
-      v-if="tableData && !tableData.length"
+      v-if="!paginatedData.length">
       class="text-center py-12 text-gray-400 dark:text-gray-500"
     >
       No data available
@@ -536,7 +537,7 @@ import * as XLSX from "xlsx";
 
 type TableAction = {
   label: string | Component;
-  tooltip?: string | ((row: Record<string, any>) => string); //added
+  tooltip?: string | ((row: Record<string, any>) => string);
   handler: (row: Record<string, any>) => void;
   class?: string;
   buttonClass?: string;
@@ -547,7 +548,6 @@ type TableAction = {
   disabled?: (row: Record<string, any>) => boolean;
 };
 
-// Component props
 const props = defineProps<{
   header?: string[];
   hiddenFields?: string[];
@@ -602,7 +602,9 @@ const emit = defineEmits<{
   ): void;
 }>();
 
-// Component state
+const route = useRoute();
+const router = useRouter();
+
 const openDropdownIndex = ref<number | null>(null);
 const globalSearch = ref("");
 const hoveredTooltip = ref<string | null>(null);
@@ -621,6 +623,117 @@ const sortDirection = ref<"asc" | "desc">("asc");
 const exportStartDate = ref<string>("");
 const exportEndDate = ref<string>("");
 const showExportModal = ref(false);
+
+// function buildTableQuery() {
+//   const q: Record<string, any> = {};
+
+//   if (globalSearch.value) q.search = globalSearch.value;
+//   if (currentPage.value > 1) q.page = currentPage.value;
+//   if (limit.value !== props.perPage) q.limit = limit.value;
+//   if (sortField.value) {
+//     q.sortField = sortField.value;
+//     q.sortDirection = sortDirection.value;
+//   }
+
+//   const activeColumnFilters: string[] = [];
+//   Object.entries(columnFilters).forEach(([key, val]) => {
+//     if (val) activeColumnFilters.push(`${key}:${val}`);
+//   });
+//   if (activeColumnFilters.length) q.filters = activeColumnFilters.join(",");
+
+//   const activeDynamicFilters: string[] = [];
+//   Object.entries(dynamicFilters.value).forEach(([key, val]) => {
+//     if (val) activeDynamicFilters.push(`${key}:${val}`);
+//   });
+//   if (activeDynamicFilters.length) q.dynamicFilters = activeDynamicFilters.join(",");
+
+//   return q;
+// }
+
+function buildTableQuery() {
+  const q: Record<string, any> = {};
+
+  // Explicitly allow clearing these values from the URL
+  q.search = globalSearch.value || undefined;
+  q.page = currentPage.value > 1 ? currentPage.value : undefined;
+  q.limit = limit.value !== props.perPage ? limit.value : undefined;
+
+  if (sortField.value) {
+    q.sortField = sortField.value;
+    q.sortDirection = sortDirection.value;
+  } else {
+    q.sortField = undefined;
+    q.sortDirection = undefined;
+  }
+
+  const activeColumnFilters: string[] = [];
+  Object.entries(columnFilters).forEach(([key, val]) => {
+    if (val) activeColumnFilters.push(`${key}:${val}`);
+  });
+  q.filters = activeColumnFilters.length ? activeColumnFilters.join(",") : undefined;
+
+  const activeDynamicFilters: string[] = [];
+  Object.entries(dynamicFilters.value).forEach(([key, val]) => {
+    if (val) activeDynamicFilters.push(`${key}:${val}`);
+  });
+  q.dynamicFilters = activeDynamicFilters.length ? activeDynamicFilters.join(",") : undefined;
+
+  return q;
+}
+
+function applyQueryToState() {
+  const q = route.query;
+  if (q.search != null) globalSearch.value = String(q.search);
+  if (q.page != null) currentPage.value = Number(q.page);
+  if (q.limit != null) limit.value = Number(q.limit);
+  if (q.sortField) sortField.value = String(q.sortField);
+  if (q.sortDirection) sortDirection.value = String(q.sortDirection) as "asc" | "desc";
+
+  if (q.filters) {
+    Object.keys(columnFilters).forEach((key) => delete columnFilters[key]);
+    String(q.filters).split(",").forEach((pair) => {
+      const idx = pair.indexOf(":");
+      if (idx > -1) {
+        const key = pair.slice(0, idx);
+        const value = pair.slice(idx + 1);
+        if (key && value != null) columnFilters[key] = value;
+      }
+    });
+  }
+
+  if (q.dynamicFilters) {
+    dynamicFilters.value = {};
+    String(q.dynamicFilters).split(",").forEach((pair) => {
+      const idx = pair.indexOf(":");
+      if (idx > -1) {
+        const key = pair.slice(0, idx);
+        const value = pair.slice(idx + 1);
+        if (key && value != null) dynamicFilters.value[key] = value;
+      }
+    });
+  }
+}
+
+async function persistTableState() {
+  const tableQuery = buildTableQuery();
+  const merged = { ...route.query, ...tableQuery };
+  const current = JSON.stringify(route.query);
+  const next = JSON.stringify(merged);
+  if (current !== next) {
+    await router.replace({ query: merged });
+  }
+}
+
+watch(
+  () => route.query,
+  () => {
+    applyQueryToState();
+    if (props.serverPagination && props.fetchData) {
+      fetchTable();
+    }
+  },
+  { deep: true },
+);
 
 // Default props
 const defaultProps = {
@@ -841,11 +954,16 @@ watch(
 //});
 
 // Replace the existing watch
-watch([currentPage, sortField, sortDirection], () => {
-  if (props.serverPagination && props.fetchData) {
-    fetchTable();
+// Removed: watch on page/search changes is now handled through route query sync
+
+watch(
+  globalSearch,
+  (val) => {
+    if (!val) {
+      handleGlobalSearch();
+    }
   }
-});
+);
 
 watch(
   () => props.totalItems,
@@ -1025,34 +1143,27 @@ function onDragLeave() {
 function handlePageChange(page: number) {
   closeDropdown();
   currentPage.value = page;
+  persistTableState();
 }
 
 function applyDynamicFilters() {
   currentPage.value = 1;
-  if (props.serverPagination) {
-    fetchTable();
-  }
+  persistTableState();
 }
 
 function handleGlobalSearch() {
   currentPage.value = 1;
-  if (props.serverPagination) {
-    fetchTable();
-  }
+  persistTableState();
 }
 
 function handleLimitChange() {
   currentPage.value = 1;
-  if (props.serverPagination) {
-    fetchTable();
-  }
+  persistTableState();
 }
 
 function handleColumnFilter(key: string) {
   currentPage.value = 1;
-  if (props.serverPagination) {
-    fetchTable();
-  }
+  persistTableState();
 }
 
 function isColumnSortable(key: string) {
@@ -1075,10 +1186,7 @@ function toggleSort(key: string) {
   }
 
   currentPage.value = 1;
-
-  if (props.serverPagination && props.fetchData) {
-    fetchTable();
-  }
+  persistTableState();
 }
 
 //async function fetchTable() {
@@ -1146,11 +1254,13 @@ const fetchTable = async () => {
 
 // Lifecycle hooks
 onMounted(() => {
+  applyQueryToState();
   if (props.serverPagination && props.fetchData) {
     fetchTable();
   }
 });
-</script>
+
+</script> 
 
 <style scoped>
 /* Scoped styles if needed */

@@ -477,7 +477,7 @@ const handleApprove = async () => {
       });
 
       // Redirect to exemptions list
-      router.push("/main/exemptions/all");
+      router.back();
     } else {
       showToast({
         type: "error",

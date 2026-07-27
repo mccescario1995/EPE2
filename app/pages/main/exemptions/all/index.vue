@@ -145,8 +145,6 @@ const fetchExemptionData = async (params: {
     parseJson: true,
   });
   loading.value = false;
-  // 250725606
-  console.log("User Id: ", parseInt(userId.emplId));
   return {
     data: response.items ?? [],
     total: response.totalCount ?? 0,

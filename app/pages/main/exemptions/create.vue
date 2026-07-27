@@ -502,7 +502,7 @@ const handleSaveDraft = async () => {
           : "Draft saved successfully!",
         duration: 5000,
       });
-      router.push("/main/exemptions/view?id=" + draftId.value);
+      router.back();
     } else {
       showToast({
         type: "error",
@@ -838,7 +838,7 @@ onMounted(async () => {
               :rowCount="5"
               placeholder="Explain the reason for your exemption request..."
               :error="errors.details"
-              :maxCharCount="1000"
+              :maxCharCount="5000"
               :minCharCount="10"
               class="mt-1 block w-full focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
             />

@@ -79,7 +79,7 @@ const submitCreateForm = async () => {
         duration: 5000,
       });
 
-      navigateTo("/main/maintenance/policies");
+      navigateTo("/maintenance/policies");
     } else {
       createError.value = response.message || "Failed to create policy";
     }

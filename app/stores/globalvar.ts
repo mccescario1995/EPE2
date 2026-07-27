@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { decryptStorage } from "../utils/storageCrypto";
 
 const basicRequirements = reactive({});
 const showMessageDialog = ref(false);
@@ -23,9 +24,10 @@ const toast = reactive({
 const { showToast } = useToast();
 const { startLoading, stopLoading } = useLoading();
 const confirmModal = useConfirmModal();
+
 const userDetails = ref(
   localStorage.getItem("user-details")
-    ? JSON.parse(decrypt(localStorage.getItem("user-details"))).objParam1
+    ? decryptStorage<any>(localStorage.getItem("user-details"))?.objParam1 ?? {}
     : {}
 );
 

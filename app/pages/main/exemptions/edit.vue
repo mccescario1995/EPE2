@@ -380,7 +380,8 @@ const handleSubmit = async () => {
       });
       // Redirect to exemptions view page after success
       // router.push(`/main/exemptions/view?id=${exemptionId.value}`);
-      router.back();
+      // router.back();
+      router.push("/main/exemptions/pending");
     } else {
       showToast({
         type: "error",
@@ -1273,7 +1274,8 @@ const isCurrentUser = (requesterId: number): boolean => {
                       :rowCount="5"
                       placeholder="Explain the reason for your exemption request..."
                       :errorMessage="errors.details"
-                      :maxCharCount="1000"
+                      :maxCharCount="5000"
+                      :minCharCount="10"
                       class="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                     />
                   </div>
