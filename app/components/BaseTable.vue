@@ -873,6 +873,7 @@ function closePolicyFilterModal() {
 function applyPolicyFilter() {
   selectedPolicyObjects.value = [...tempPolicyObjects.value];
   showPolicyFilterModal.value = false;
+  currentPage.value = 1;       
   if (props.serverPagination && props.fetchData) {
     persistTableState();
   }
@@ -891,6 +892,7 @@ function clearPolicySelection() {
   tempPolicyObjects.value = [];
   selectedPolicyObjects.value = [];
   showPolicyFilterModal.value = false;
+  currentPage.value = 1;       
   if (props.serverPagination && props.fetchData) {
     persistTableState();
   }
