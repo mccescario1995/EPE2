@@ -2674,8 +2674,24 @@ namespace EPEAPI.Controllers
         {
             try
             {
+                var currentUserEmplId = request.UserId.ToString();
+
+                var approverTransactionIds = await _context
+                    .EpeVTransactionApprovers.Where(a =>
+                        a.EmployeeId == currentUserEmplId
+                        && a.IsDelete == 0
+                    )
+                    .Select(a => a.TransactionId)
+                    .Distinct()
+                    .ToListAsync();
+
                 var policies = await _context.EpeVTransactionHeaders
-                    .Where(u => u.IsDelete == 0 && !string.IsNullOrEmpty(u.PolicyName) && u.PolicyName != "-")
+                    .Where(u => u.FinalDecision != "Draft"
+                        && u.IsDelete == 0
+                        && !string.IsNullOrEmpty(u.PolicyName)
+                        && u.PolicyName != "-"
+                        && (u.RequesterId == currentUserEmplId
+                            || approverTransactionIds.Contains(u.TransactionId)))
                     .GroupBy(u => new { u.PolicyId, u.PolicyName })
                     .Select(g => new
                     {
