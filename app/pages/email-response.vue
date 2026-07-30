@@ -199,7 +199,7 @@ function viewRequest() {
 }
 
 function goDashboard() {
-  router.push("/main/exemptions/all");
+  router.push("/main/dashboard");
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────

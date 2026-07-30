@@ -149,7 +149,7 @@ const fetchExemptionData = async (params: {
 
 // Handle create navigation
 const handleCreate = () => {
-  router.push(`/main/exemptions/create`);
+  router.push(`/main/exemptions/create-exemption/create`);
 };
 
 const actions = computed(() => {
@@ -203,9 +203,9 @@ const actions = computed(() => {
 
 onMounted(async () => {
   await fetchMenuList();
-  canAdd.value = checkCanAdd("/main/exemptions/");
-  canEdit.value = checkCanEdit("/main/exemptions/");
-  canDelete.value = checkCanDelete("/main/exemptions/");
+  canAdd.value = checkCanAdd("/main/exemptions/create-exemption");
+  canEdit.value = checkCanEdit("/main/exemptions/create-exemption");
+  canDelete.value = checkCanDelete("/main/exemptions/create-exemption");
 });
 </script>
 

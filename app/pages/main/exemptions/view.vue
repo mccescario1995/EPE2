@@ -364,9 +364,9 @@ const currentUserPendingAction = computed((): boolean => {
           </h1>
         </div>
         <div class="flex items-center gap-3">
-          <Button variant="outline-info" size="md" @onclick="handleBack">
+          <!-- <Button variant="outline-info" size="md" @onclick="handleBack">
             Back to List
-          </Button>
+          </Button> -->
           <Button
             v-if="
               canEdit &&

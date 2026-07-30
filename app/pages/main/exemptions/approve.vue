@@ -42,7 +42,7 @@ const fetchExemptionDetails = async () => {
       message: "Invalid exemption ID",
       duration: 5000,
     });
-    router.push("/main/exemptions/all");
+    router.back();
     return;
   }
 
@@ -525,17 +525,12 @@ const groupedApprovers = computed(() => {
   return { mainApprovers, proxiesMap };
 });
 
-// Handle back navigation
-// const handleBack = () => {
-//   router.push("/main/exemptions/all");
-// };
-
 // Handle back navigation with fallback
 const handleBack = () => {
   if (window.history.length > 1) {
     router.back();
   } else {
-    router.push('/main/exemptions/all'); // Change to your desired fallback route
+    router.push('/main/exemptions/pending-for-approval'); // Change to your desired fallback route
   }
 };
 
@@ -942,14 +937,14 @@ onMounted(async () => {
                   You already approved this exemption request.
                 </p>
 
-                <Button
+                <!-- <Button
                   variant="primary"
                   size="lg"
                   @onclick="handleBack"
                   class="mt-4"
                 >
                   Back to List
-                </Button>
+                </Button> -->
               </div>
 
               <!-- Debug fallback - shows when none of the above conditions match -->
@@ -957,14 +952,14 @@ onMounted(async () => {
                 <p class="text-gray-600 dark:text-gray-400 mb-2">
                   You are not assigned as an approver for this request.
                 </p>
-                <Button
+                <!-- <Button
                   variant="primary"
                   size="lg"
                   @onclick="handleBack"
                   class="mt-4"
                 >
                   Back to List
-                </Button>
+                </Button> -->
               </div>
             </div>
           </div>

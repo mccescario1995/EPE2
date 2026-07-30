@@ -93,7 +93,7 @@
                 'text-sm font-semibold text-gray-800 px-3 py-1.5 rounded-lg max-w-[120px] truncate md:max-w-none',
                 crumb.clickable && index === breadcrumbs.length - 1
                   ? 'bg-linear-to-r from-blue-50 to-indigo-50 border-blue-100'
-                  : ' border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200',
+                  : ' border-gray-200  dark:text-gray-200',
               ]"
               :aria-current="index === breadcrumbs.length - 1 ? 'page' : undefined"
               :title="crumb.label"

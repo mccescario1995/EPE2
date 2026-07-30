@@ -1,93 +1,52 @@
 <template>
-  <Button
-    v-if="props.showExport"
-    variant="secondary"
-    size="sm"
-    icon="download"
-    @onclick="openExportModal"
-    class="border hover:bg-gray-300 mb-3 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-  >
+  <Button v-if="props.showExport" variant="secondary" size="sm" icon="download" @onclick="openExportModal"
+    class="border hover:bg-gray-300 mb-3 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
     Export Excel
   </Button>
 
-  <div
-    v-if="showExportModal"
-    class="fixed inset-0 z-50 flex items-center justify-center dark:border-gray-50"
-    style="background-color: rgba(0, 0, 0, 0.5)"
-    @click.self="closeExportModal"
-  >
-    <div
-      class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800 dark:*:text-gray-200"
-    >
+  <div v-if="showExportModal" class="fixed inset-0 z-50 flex items-center justify-center dark:border-gray-50"
+    style="background-color: rgba(0, 0, 0, 0.5)" @click.self="closeExportModal">
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800 dark:*:text-gray-200">
       <h3 class="text-lg font-semibold text-gray-800 mb-4">Export Data</h3>
       <div class="space-y-4">
         <div class="flex flex-col">
-          <label
-            class="text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
-            >From Date</label
-          >
-          <input
-            type="date"
-            v-model="exportStartDate"
-            class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-          />
+          <label class="text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">From Date</label>
+          <input type="date" v-model="exportStartDate"
+            class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" />
         </div>
         <div class="flex flex-col">
-          <label
-            class="text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
-            >To Date</label
-          >
-          <input
-            type="date"
-            v-model="exportEndDate"
-            class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-          />
+          <label class="text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">To Date</label>
+          <input type="date" v-model="exportEndDate"
+            class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" />
         </div>
       </div>
       <div class="flex justify-end gap-3 mt-6">
-        <button
-          @click="closeExportModal"
-          class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
-        >
+        <button @click="closeExportModal"
+          class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 rounded-lg transition-all duration-200">
           Cancel
         </button>
-        <Button
-          variant="primary"
-          size="sm"
-          @onclick="confirmExport"
-          class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:text-gray-200 transition-all duration-200"
-        >
+        <Button variant="primary" size="sm" @onclick="confirmExport"
+          class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:text-gray-200 transition-all duration-200">
           Export
         </Button>
       </div>
     </div>
   </div>
 
-  <div
-    v-if="showFilterControls || props.showlimitfilter || props.showSearch"
-    class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-2"
-  >
+  <div v-if="showFilterControls || props.showlimitfilter || props.showSearch"
+    class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-2">
     <!-- Dynamic Filter Controls -->
     <div v-if="showFilterControls" class="flex flex-wrap gap-3">
-      <div
-        v-for="key in filterableColumns"
-        :key="key"
-        class="flex items-center bg-white rounded-xl border border-gray-200 px-4 py-2 shadow-sm hover:shadow-md transition-shadow duration-200"
-      >
+      <div v-for="key in filterableColumns" :key="key"
+        class="flex items-center bg-white rounded-xl border border-gray-200 px-4 py-2 shadow-sm hover:shadow-md transition-shadow duration-200">
         <label class="mr-3 text-sm font-medium text-gray-700 whitespace-nowrap">
           {{ formatHeader(key) }}:
         </label>
-        <select
-          v-model="dynamicFilters[key]"
+        <select v-model="dynamicFilters[key]"
           class="bg-transparent border-0 text-sm font-medium text-gray-600 focus:outline-none focus:text-gray-900 cursor-pointer min-w-20"
-          @change="applyDynamicFilters"
-        >
+          @change="applyDynamicFilters">
           <option value="">All</option>
-          <option
-            v-for="option in getFilterOptions(key)"
-            :value="option"
-            class="py-2"
-          >
+          <option v-for="option in getFilterOptions(key)" :value="option" class="py-2">
             {{ option }}
           </option>
         </select>
@@ -97,23 +56,14 @@
     <!-- Items per page -->
     <div v-if="props.showlimitfilter" class="flex items-center">
       <div
-        class="flex items-center bg-white rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-800 px-4 py-2 shadow-sm hover:shadow-md transition-shadow duration-200"
-      >
-        <label
-          class="mr-3 text-sm font-medium text-gray-700 whitespace-nowrap dark:text-gray-200"
-        >
+        class="flex items-center bg-white rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-800 px-4 py-2 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <label class="mr-3 text-sm font-medium text-gray-700 whitespace-nowrap dark:text-gray-200">
           Items per page:
         </label>
-        <select
-          v-model="limit"
-          class="bg-transparent border-0 text-sm font-medium text-gray-600 focus:outline-none focus:text-gray-900 cursor-pointer min-w-[60px] dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600"
-          @change="handleLimitChange"
-        >
-          <option
-            v-for="option in props.limitfilter"
-            :value="option"
-            class="py-2 dark:text-gray-200 dark:bg-gray-700"
-          >
+        <select v-model="limit"
+          class="bg-transparent border-0 text-sm font-medium text-gray-600 focus:outline-none f                                                                                                                                                                                       ocus:text-gray-900 cursor-pointer min-w-[60px] dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600"
+          @change="handleLimitChange">
+          <option v-for="option in props.limitfilter" :value="option" class="py-2 dark:text-gray-200 dark:bg-gray-700">
             {{ option }}
           </option>
         </select>
@@ -121,8 +71,7 @@
     </div>
 
     <div v-if="props.policyFilterItems?.length" class="flex items-center">
-      <button
-        type="button"
+      <button type="button"
         class="flex items-center gap-2 bg-white rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-800 px-4 py-2 shadow-sm hover:shadow-md transition-shadow duration-200"
         @click="openPolicyFilterModal">
         <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -143,27 +92,22 @@
               {{ props.policyFilterLabel || 'Policy' }}
             </h3>
             <div class="max-h-64 overflow-y-auto space-y-2 mb-6">
-              <label
-                v-for="item in props.policyFilterItems"
-                :key="item.id"
+              <label v-for="item in props.policyFilterItems" :key="item.id"
                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  :value="item.id"
-                  :checked="tempPolicyObjects.some((p: any) => p.id === item.id)"
-                  @click="togglePolicySelection(item)"
+                <input type="checkbox" :value="item.id" :checked="tempPolicyObjects.some(
+                  (p: any) => String(p.id) === String(item.id)
+                )
+                  " @click="togglePolicySelection(item)"
                   class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 dark:text-gray-700" />
                 <span class="text-sm text-gray-700 dark:text-gray-200">{{ item.label }}</span>
               </label>
             </div>
             <div class="flex gap-3 justify-center">
-              <button
-                @click="clearPolicySelection"
+              <button @click="clearPolicySelection"
                 class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 rounded-lg transition-all duration-200">
                 Clear
               </button>
-              <button
-                @click="applyPolicyFilter"
+              <button @click="applyPolicyFilter"
                 class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:text-gray-200 transition-all duration-200">
                 Apply
               </button>
@@ -175,229 +119,125 @@
 
     <div v-if="props.showSearch" class="flex">
       <div
-        class="relative text-gray-400 focus-within:text-indigo-600 flex-1 bg-white dark:text-gray-200 dark:placeholder-gray-400 dark:border-gray-600 dark:focus-within:text-gray-100 dark:rounded-l-full"
-      >
-        <div
-          class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none"
-        >
-          <svg
-            class="w-5 h-5 transition-colors duration-200"
-            viewBox="0 0 20 20"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
+        class="relative text-gray-400 focus-within:text-indigo-600 flex-1 bg-white dark:text-gray-200 dark:placeholder-gray-400 dark:border-gray-600 dark:focus-within:text-gray-100 dark:rounded-l-full">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+          <svg class="w-5 h-5 transition-colors duration-200" viewBox="0 0 20 20" fill="none"
+            xmlns="http://www.w3.org/2000/svg">
             <path
               d="M17.5 17.5L15.4167 15.4167M15.8333 9.16667C15.8333 5.48477 12.8486 2.5 9.16667 2.5C5.48477 2.5 2.5 5.48477 2.5 9.16667C2.5 12.8486 5.48477 15.8333 9.16667 15.8333C11.0005 15.8333 12.6614 15.0929 13.8667 13.8947C15.0814 12.6872 15.8333 11.0147 15.8333 9.16667Z"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
-            />
+              stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
           </svg>
         </div>
-        <input
-          type="text"
-          id="default-search"
+        <input type="text" id="default-search"
           class="block bg-white w-full h-12 pr-5 pl-12 py-3 text-base font-medium shadow-sm text-gray-900 border border-gray-200 rounded-l-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-indigo-500 dark:focus:border-transparent"
-          v-if="props.showSearch"
-          v-model="globalSearch"
-          placeholder="Search across all data..."
-          @keyup.enter="handleGlobalSearch"
-        />
+          v-if="props.showSearch" v-model="globalSearch" placeholder="Search across all data..."
+          @keyup.enter="handleGlobalSearch" />
         <!-- @input="handleGlobalSearch" -->
       </div>
-      <Button
-        variant="primary"
-        size="sm"
+      <Button variant="primary" size="sm"
         custom-class="rounded-r-xl rounded-l-none h-12 px-6 bg-linear-to-r from-indigo-600 to-indigo-600  border-0 shadow-sm font-medium transition-all duration-200 dark:bg-indigo-500 dark:text-gray-200"
-        @onclick="handleGlobalSearch"
-      >
+        @onclick="handleGlobalSearch">
         <div class="flex items-center">
-          <svg
-            class="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           Search
         </div>
       </Button>
     </div>
-    </div>
+  </div>
+
+
 
   <!-- Table -->
-  <div
-    class="hidden md:block"
-    :class="[
-      'overflow-hidden rounded-2xl border border-gray-200 shadow-lg bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200',
-      tableClass,
-    ]"
-  >
+  <div class="hidden md:block" :class="[
+    'overflow-hidden rounded-2xl border border-gray-200 shadow-lg bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200',
+    tableClass,
+  ]">
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-100 dark:*:divide-gray-700">
         <!-- Table Headers -->
-        <thead
-          class="bg-linear-to-r from-gray-50 to-gray-100 dark:bg-gray-700 dark:text-gray-200"
-        >
+        <thead class="bg-linear-to-r from-gray-50 to-gray-100 dark:bg-gray-700 dark:text-gray-200">
           <tr>
-            <th
-              v-for="key in resolvedHeaders"
-              :key="key"
-              class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200 dark:bg-gray-700 dark:text-gray-200"
-            >
+            <th v-for="key in resolvedHeaders" :key="key"
+              class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200 dark:bg-gray-700 dark:text-gray-200">
               <div class="flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                   <span class="flex-1">{{ formatHeader(key) }}</span>
                   <!-- Sort button -->
-                  <button
-                    v-if="isColumnSortable(key)"
-                    @click="toggleSort(key)"
-                    class="ml-2 p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50/50 rounded-lg transition-all duration-200 dark:text-gray-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-600/50"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="transition-transform duration-200"
-                      :class="{ 'text-indigo-600': sortField === key }"
-                    >
-                      <path
-                        v-if="sortField === key && sortDirection === 'asc'"
-                        d="M12 19V5M5 12l7-7 7 7"
-                      />
-                      <path
-                        v-if="sortField === key && sortDirection === 'desc'"
-                        d="M12 5v14M19 12l-7 7-7-7"
-                      />
-                      <path
-                        v-if="sortField !== key"
-                        d="M8 9l4-4 4 4M16 15l-4 4-4-4"
-                      />
+                  <button v-if="isColumnSortable(key)" @click="toggleSort(key)"
+                    class="ml-2 p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50/50 rounded-lg transition-all duration-200 dark:text-gray-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-600/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      class="transition-transform duration-200" :class="{ 'text-indigo-600': sortField === key }">
+                      <path v-if="sortField === key && sortDirection === 'asc'" d="M12 19V5M5 12l7-7 7 7" />
+                      <path v-if="sortField === key && sortDirection === 'desc'" d="M12 5v14M19 12l-7 7-7-7" />
+                      <path v-if="sortField !== key" d="M8 9l4-4 4 4M16 15l-4 4-4-4" />
                     </svg>
                   </button>
                 </div>
                 <!-- Column filter input -->
-                <input
-                  v-model="columnFilters[key]"
-                  v-if="filter && isColumnFilterable(key)"
-                  type="text"
+                <input v-model="columnFilters[key]" v-if="filter && isColumnFilterable(key)" type="text"
                   class="px-3 py-2 text-xs bg-white border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Filter..."
-                  @input="handleColumnFilter(key)"
-                />
+                  placeholder="Filter..." @input="handleColumnFilter(key)" />
               </div>
             </th>
-            <th
-              v-if="actions?.length"
-              class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200 dark:bg-gray-700 dark:text-gray-200"
-            >
+            <th v-if="actions?.length"
+              class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200 dark:bg-gray-700 dark:text-gray-200">
               Actions
             </th>
           </tr>
         </thead>
 
         <!-- Table Body -->
-        <tbody
-          class="bg-white divide-y divide-gray-50 dark:*:divide-gray-700 dark:bg-gray-800"
-        >
-          <tr
-            v-for="(row, rowIndex) in paginatedData"
-            :key="'row-' + rowIndex"
-            :draggable="draggable"
-            @dragstart="onDragStart(rowIndex)"
-            @dragover="onDragOver(rowIndex, $event)"
-            @drop="onDrop"
-            @dragleave="onDragLeave"
-            :class="[
+        <tbody class="bg-white divide-y divide-gray-50 dark:*:divide-gray-700 dark:bg-gray-800">
+          <tr v-for="(row, rowIndex) in paginatedData" :key="'row-' + rowIndex" :draggable="draggable"
+            @dragstart="onDragStart(rowIndex)" @dragover="onDragOver(rowIndex, $event)" @drop="onDrop"
+            @dragleave="onDragLeave" :class="[
               'transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700',
               targetIndex === rowIndex
                 ? 'ring-2 ring-indigo-500 bg-indigo-100 '
                 : '',
               draggingIndex === rowIndex ? 'opacity-50 scale-[0.98]' : '',
-            ]"
-          >
-            <td
-              v-for="(key, colIndex) in resolvedHeaders"
-              :key="'col-' + colIndex"
-              class="px-6 py-4 text-sm text-gray-700 font-medium dark:text-gray-200 dark:border-gray-700"
-            >
+            ]">
+            <td v-for="(key, colIndex) in resolvedHeaders" :key="'col-' + colIndex"
+              class="px-6 py-4 text-sm text-gray-700 font-medium dark:text-gray-200 dark:border-gray-700">
               <!-- Badge display -->
-              <StatusBadge
-                v-if="props.badgeFields?.includes(key)"
-                :value="row[key]"
-                :field="key"
-                :field-mappings="props.fieldMappings"
-                :field-colors="props.fieldColors"
-              />
-              <div
-                v-else-if="props.dateTimeFields?.includes(key)"
-                class="flex flex-col"
-                :title="formatValue(key, row[key])"
-              >
+              <StatusBadge v-if="props.badgeFields?.includes(key)" :value="row[key]" :field="key"
+                :field-mappings="props.fieldMappings" :field-colors="props.fieldColors" />
+              <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col"
+                :title="formatValue(key, row[key])">
                 <span>{{ getDateTimeParts(key, row[key])?.date }}</span>
                 <span class="text-gray-500  dark:text-gray-400">{{
                   getDateTimeParts(key, row[key])?.time
                 }}</span>
               </div>
-              <span
-                v-else
-                class="block truncate max-w-xs"
-                :title="formatValue(key, row[key])"
-              >
+              <span v-else class="block truncate max-w-xs" :title="formatValue(key, row[key])">
                 {{ formatValue(key, row[key]) }}
               </span>
             </td>
 
             <!-- Action buttons column -->
-            <td
-              v-if="hasActions"
-              class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200"
-            >
+            <td v-if="hasActions" class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">
               <!-- Grouped actions (dropdown style) -->
               <div v-if="props.groupActions" class="relative">
                 <button
-                  class="inline-flex items-center justify-center w-8 h-8 text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:text-gray-700 hover:shadow-md transition-all duration-200 group"
-                >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 5v0m0 0v0m0 0v6m0 0H9m5-3V9m4 3v0m0 0v6m0 0H9m5 3V9m4 3v0"
-                    />
+                  class="inline-flex items-center justify-center w-8 h-8 text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:text-gray-700 hover:shadow-md transition-all duration-200 group">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 5v0m0 0v0m0 0v6m0 0H9m5-3V9m4 3v0m0 0v6m0 0H9m5 3V9m4 3v0" />
                   </svg>
                 </button>
 
                 <!-- Dropdown menu -->
-                <div
-                  v-if="openDropdownIndex === rowIndex"
-                  class="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 border border-gray-200 z-20 dark:bg-gray-800 dark:border-gray-700"
-                >
+                <div v-if="openDropdownIndex === rowIndex"
+                  class="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 border border-gray-200 z-20 dark:bg-gray-800 dark:border-gray-700">
                   <div class="px-2 py-2">
-                    <button
-                      v-for="(action, i) in props.actions.filter(a => !a.visible || a.visible(row))"
-                      :key="'action-' + i"
-                      @click="(action.handler(row), closeDropdown())"
+                    <button v-for="(action, i) in props.actions.filter(a => !a.visible || a.visible(row))"
+                      :key="'action-' + i" @click="(action.handler(row), closeDropdown())"
                       :disabled="action.disabled && action.disabled(row)"
-                      class="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200"
-                    >
+                      class="w-full text-left text-sm px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200">
                       <!-- added -->
                       {{
                         typeof action.tooltip === "function"
@@ -411,19 +251,12 @@
 
               <!-- Inline actions -->
               <div v-else class="flex space-x-2">
-                <button
-                  v-for="(action, i) in props.actions.filter(a => !a.visible || a.visible(row))"
-                  :key="'inline-action-' + i"
-                  @click="action.handler(row)"
+                <button v-for="(action, i) in props.actions.filter(a => !a.visible || a.visible(row))"
+                  :key="'inline-action-' + i" @click="action.handler(row)"
                   :disabled="action.disabled && action.disabled(row)"
                   class="flex items-center justify-center w-8 h-8 text-gray-500 bg-white border border-gray-200 rounded-full hover:bg-indigo-50 hover:text-gray-700 hover:shadow-md transition-all duration-200 group dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-white-600"
-                  :class="action.buttonClass"
-                >
-                  <component
-                    :is="action.label"
-                    class="w-4 h-4"
-                    :class="action.iconClass"
-                  />
+                  :class="action.buttonClass">
+                  <component :is="action.label" class="w-4 h-4" :class="action.iconClass" />
                 </button>
               </div>
             </td>
@@ -431,28 +264,15 @@
 
           <!-- Empty state -->
           <tr v-if="!paginatedData.length">
-            <td
-              :colspan="computedHeaderKeys.length + (hasActions ? 1 : 0)"
-              class="px-6 py-16 text-center"
-            >
+            <td :colspan="computedHeaderKeys.length + (hasActions ? 1 : 0)" class="px-6 py-16 text-center">
               <div class="flex flex-col items-center justify-center space-y-3">
-                <svg
-                  class="w-12 h-12 text-gray-400 dark:text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1"
-                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                  />
+                <svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
                 <div>
-                  <p
-                    class="text-sm font-medium text-gray-500 dark:text-gray-400"
-                  >
+                  <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
                     No data available
                   </p>
                   <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
@@ -469,33 +289,18 @@
 
   <!-- MOBILE CARD VIEW -->
   <div class="md:hidden space-y-4">
-    <div
-      v-for="(row, rowIndex) in paginatedData"
-      :key="'mobile-row-' + rowIndex"
-      class="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-3 dark:bg-gray-800 dark:border-gray-700"
-    >
+    <div v-for="(row, rowIndex) in paginatedData" :key="'mobile-row-' + rowIndex"
+      class="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-3 dark:bg-gray-800 dark:border-gray-700">
       <!-- Fields -->
-      <div
-        v-for="key in resolvedHeaders"
-        :key="'mobile-field-' + key"
-        class="flex justify-between gap-4 text-sm"
-      >
+      <div v-for="key in resolvedHeaders" :key="'mobile-field-' + key" class="flex justify-between gap-4 text-sm">
         <span class="text-gray-500 font-medium dark:text-gray-400">
           {{ formatHeader(key) }}
         </span>
 
         <span class="text-gray-800 text-right break-all dark:text-gray-200">
-          <StatusBadge
-            v-if="props.badgeFields?.includes(key)"
-            :value="row[key]"
-            :field="key"
-            :field-mappings="props.fieldMappings"
-            :field-colors="props.fieldColors"
-          />
-          <div
-            v-else-if="props.dateTimeFields?.includes(key)"
-            class="flex flex-col items-end"
-          >
+          <StatusBadge v-if="props.badgeFields?.includes(key)" :value="row[key]" :field="key"
+            :field-mappings="props.fieldMappings" :field-colors="props.fieldColors" />
+          <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col items-end">
             <span>{{ getDateTimeParts(key, row[key])?.date }}</span>
             <span class="text-gray-500 dark:text-gray-400">{{
               getDateTimeParts(key, row[key])?.time
@@ -508,31 +313,20 @@
       </div>
 
       <!-- Actions -->
-      <div
-        v-if="hasActions"
-        class="pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-2"
-      >
+      <div v-if="hasActions" class="pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-2">
         <!-- Grouped actions -->
         <div v-if="props.groupActions" class="relative">
-          <button
-            @click="toggleDropdown(rowIndex)"
-            class="px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-700 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
-          >
+          <button @click="toggleDropdown(rowIndex)"
+            class="px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-700 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600">
             Actions
           </button>
 
-          <div
-            v-if="openDropdownIndex === rowIndex"
-            class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700"
-          >
-            <button
-              v-for="(action, i) in props.actions.filter(a => !a.visible || a.visible(row))"
-              :key="'mobile-action-' + i"
-              @click="(action.handler(row), closeDropdown())"
+          <div v-if="openDropdownIndex === rowIndex"
+            class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-20 dark:bg-gray-800 dark:border-gray-700">
+            <button v-for="(action, i) in props.actions.filter(a => !a.visible || a.visible(row))"
+              :key="'mobile-action-' + i" @click="(action.handler(row), closeDropdown())"
               :disabled="action.disabled && action.disabled(row)"
-              class="w-full px-4 py-3 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
-              :class="action.class"
-            >
+              class="w-full px-4 py-3 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600" :class="action.class">
               <!-- added -->
               {{
                 typeof action.tooltip === "function"
@@ -544,15 +338,11 @@
         </div>
 
         <!-- Inline actions -->
-        <button
-          v-else
-          v-for="(action, i) in props.actions.filter(a => !a.visible || a.visible(row))"
-          :key="'mobile-action-inline-' + i"
-          @click="action.handler(row)"
+        <button v-else v-for="(action, i) in props.actions.filter(a => !a.visible || a.visible(row))"
+          :key="'mobile-action-inline-' + i" @click="action.handler(row)"
           :disabled="action.disabled && action.disabled(row)"
           class="px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
-          :class="action.buttonClass"
-        >
+          :class="action.buttonClass">
           <!-- added -->
           {{
             typeof action.tooltip === "function"
@@ -564,22 +354,17 @@
     </div>
 
     <!-- Empty state -->
-    <div
-      v-if="!paginatedData.length">
+    <div v-if="!paginatedData.length">
       class="text-center py-12 text-gray-400 dark:text-gray-500"
-    >
+      >
       No data available
     </div>
   </div>
 
   <!-- Pagination -->
   <div class="mt-6">
-    <Pagination
-      :current-page="currentPage"
-      :per-page="limit"
-      :total-items="totalItemsInternal ?? 0"
-      @page-change="handlePageChange"
-    />
+    <Pagination :current-page="currentPage" :per-page="limit" :total-items="totalItemsInternal ?? 0"
+      @page-change="handlePageChange" />
   </div>
 </template>
 
@@ -873,9 +658,10 @@ function closePolicyFilterModal() {
 function applyPolicyFilter() {
   selectedPolicyObjects.value = [...tempPolicyObjects.value];
   showPolicyFilterModal.value = false;
-  currentPage.value = 1;       
+  currentPage.value = 1;
   if (props.serverPagination && props.fetchData) {
     persistTableState();
+    fetchTable();
   }
 }
 
@@ -892,9 +678,10 @@ function clearPolicySelection() {
   tempPolicyObjects.value = [];
   selectedPolicyObjects.value = [];
   showPolicyFilterModal.value = false;
-  currentPage.value = 1;       
+  currentPage.value = 1;
   if (props.serverPagination && props.fetchData) {
     persistTableState();
+    fetchTable();
   }
 }
 
@@ -1392,7 +1179,7 @@ onMounted(() => {
   }
 });
 
-</script> 
+</script>
 
 <style scoped>
 /* Scoped styles if needed */

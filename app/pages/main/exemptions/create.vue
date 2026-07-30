@@ -593,7 +593,7 @@ const handleSubmit = async () => {
         duration: 5000,
       });
 
-      router.push("/main/exemptions/all");
+      router.push("/main/exemptions/create-exemption");
     } else {
       throw new Error(response.message || "Failed to create request");
     }
@@ -613,7 +613,7 @@ const handleSubmit = async () => {
 
 // Handle cancel
 const handleCancel = () => {
-  router.push("/main/exemptions/all");
+  router.back();
 };
 
 // Multi-file selection with immediate 10MB + 50MB total validation
@@ -760,7 +760,7 @@ onMounted(async () => {
       message: "You do not have permission to create exemption requests.",
       duration: 5000,
     });
-    router.push("/main/exemptions/all");
+    router.push("/main/exemptions/create-exemption");
     return;
   }
 

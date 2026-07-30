@@ -65,7 +65,7 @@ const fetchExemptionDetails = async () => {
         message: response?.message || "Failed to load exemption details",
         duration: 5000,
       });
-      router.push("/main/exemptions/all");
+      router.push("/main/reports/closed");
     }
   } catch (error) {
     console.error("Error fetching exemption details:", error);
@@ -75,7 +75,7 @@ const fetchExemptionDetails = async () => {
       message: "Failed to load exemption details",
       duration: 5000,
     });
-    router.push("/main/exemptions/all");
+    router.push("/main/reports/closed");
   } finally {
     loading.value = false;
   }
@@ -347,18 +347,10 @@ const currentUserPendingAction = computed((): boolean => {
 <template>
   <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900">
     <header class="bg-white dark:bg-gray-800 shadow">
-      <div
-        class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
-      >
+      <div class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <div class="flex items-center">
-          <Button
-            variant="ghost-primary"
-            size="lg"
-            icon="left_arrow"
-            iconPosition="center"
-            customClass="rounded-full"
-            @onclick="handleBack"
-          />
+          <Button variant="ghost-primary" size="lg" icon="left_arrow" iconPosition="center" customClass="rounded-full"
+            @onclick="handleBack" />
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-100">
             View Request
           </h1>
@@ -367,29 +359,16 @@ const currentUserPendingAction = computed((): boolean => {
           <!-- <Button variant="outline-info" size="md" @onclick="handleBack">
             Back to List
           </Button> -->
-          <Button
-            v-if="
-              canEdit &&
-              (exemptionDetails?.status === 'D' ||
-                (exemptionDetails?.status === 'O' &&
-                  exemptionDetails?.requesterId === userId?.emplId))
-            "
-            variant="primary"
-            size="md"
-            icon="edit"
-            iconPosition="left"
-            @onclick="handleEdit"
-          >
+          <Button v-if="
+            canEdit &&
+            (exemptionDetails?.status === 'D' ||
+              (exemptionDetails?.status === 'O' &&
+                exemptionDetails?.requesterId === userId?.emplId))
+          " variant="primary" size="md" icon="edit" iconPosition="left" @onclick="handleEdit">
             Edit
           </Button>
-          <Button
-            v-if="currentUserPendingAction"
-            variant="outline-success"
-            size="md"
-            icon="user_approver"
-            iconPosition="left"
-            @onclick="handleApprove"
-          >
+          <Button v-if="currentUserPendingAction" variant="outline-success" size="md" icon="user_approver"
+            iconPosition="left" @onclick="handleApprove">
             Respond
           </Button>
         </div>
@@ -398,54 +377,32 @@ const currentUserPendingAction = computed((): boolean => {
 
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div v-if="loading" class="flex items-center justify-center py-20">
-        <svg
-          class="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
+        <svg class="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg"
+          fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
         </svg>
-        <span class="ml-3 text-gray-600 dark:text-gray-400"
-          >Loading exemption details...</span
-        >
+        <span class="ml-3 text-gray-600 dark:text-gray-400">Loading exemption details...</span>
       </div>
       <div v-else-if="exemptionDetails" class="space-y-6">
         <div class="grid grid-cols-4 gap-6">
-          <div
-            class="sm:col-span-full md:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6"
-          >
+          <div class="sm:col-span-full md:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div class="mb-8">
-              <div
-                class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b"
-              >
+              <div class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b">
                 <div class="flex justify-between items-center">
                   <h2>Request Information</h2>
                   <div v-if="exemptionDetails">
-                    <span
-                      class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                      :class="{
-                        'bg-blue-100 text-blue-800 dark:bg-blue-800/20 dark:text-blue-300 border border-blue-900':
-                          exemptionDetails.status === 'O' ||
-                          exemptionDetails.status === 'P',
-                        'bg-gray-200 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300 border border-gray-900':
-                          exemptionDetails.status === 'C',
-                        'bg-gray-100 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300 border border-gray-900':
-                          exemptionDetails.status === 'D',
-                      }"
-                    >
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" :class="{
+                      'bg-blue-100 text-blue-800 dark:bg-blue-800/20 dark:text-blue-300 border border-blue-900':
+                        exemptionDetails.status === 'O' ||
+                        exemptionDetails.status === 'P',
+                      'bg-gray-200 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300 border border-gray-900':
+                        exemptionDetails.status === 'C',
+                      'bg-gray-100 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300 border border-gray-900':
+                        exemptionDetails.status === 'D',
+                    }">
                       {{ getStatusDisplay(exemptionDetails.status) }}
                     </span>
                   </div>
@@ -453,9 +410,7 @@ const currentUserPendingAction = computed((): boolean => {
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label
-                    class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
-                  >
+                  <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     Transaction Number
                   </label>
                   <p class="text-gray-900 dark:text-gray-100">
@@ -463,9 +418,7 @@ const currentUserPendingAction = computed((): boolean => {
                   </p>
                 </div>
                 <div>
-                  <label
-                    class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
-                  >
+                  <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     Requestor Name
                   </label>
                   <p class="text-gray-900 dark:text-gray-100">
@@ -475,9 +428,7 @@ const currentUserPendingAction = computed((): boolean => {
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                 <div>
-                  <label
-                    class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
-                  >
+                  <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     Created Date
                   </label>
                   <p class="text-gray-900 dark:text-gray-100">
@@ -491,9 +442,7 @@ const currentUserPendingAction = computed((): boolean => {
               <div class="space-y-6">
                 <div class="grid grid-cols-1 gap-6">
                   <div>
-                    <label
-                      class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
-                    >
+                    <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                       Policy To Override
                     </label>
                     <p class="text-gray-900 dark:text-gray-100">
@@ -507,17 +456,11 @@ const currentUserPendingAction = computed((): boolean => {
                 </div>
 
                 <div>
-                  <label
-                    class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
-                  >
+                  <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     Details
                   </label>
-                  <div
-                    class="bg-gray-50  rounded-lg p-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700"
-                  >
-                    <p
-                      class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
-                    >
+                  <div class="bg-gray-50  rounded-lg p-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700">
+                    <p class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                       {{ exemptionDetails.details || "No details provided" }}
                     </p>
                   </div>
@@ -526,36 +469,21 @@ const currentUserPendingAction = computed((): boolean => {
             </div>
 
             <div class="mb-8">
-              <h2
-                class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b"
-              >
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b">
                 Attachments
               </h2>
 
               <div v-if="attachments.length > 0" class="space-y-2">
-                <div
-                  v-for="attachment in attachments"
-                  :key="attachment.attachId"
-                  class="flex items-center justify-between p-3 bg-gray-50  rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600"
-                >
+                <div v-for="attachment in attachments" :key="attachment.attachId"
+                  class="flex items-center justify-between p-3 bg-gray-50  rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
                   <div class="flex items-center">
-                    <svg
-                      class="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                      />
+                    <svg class="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                     </svg>
                     <div>
-                      <p
-                        class="text-sm font-medium text-gray-900 dark:text-gray-100"
-                      >
+                      <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {{ attachment.uploadFilename }}
                       </p>
                       <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -566,16 +494,11 @@ const currentUserPendingAction = computed((): boolean => {
                       </p>
                     </div>
                   </div>
-                  <a
-                    :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
-                    :download="!isViewableInBrowser(attachment.filetype)"
-                    :class="
-                      isViewableInBrowser(attachment.filetype)
-                        ? 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200  dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700 dark:hover:text-white'
-                        : 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white'
-                    "
-                    target="_blank"
-                  >
+                  <a :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
+                    :download="!isViewableInBrowser(attachment.filetype)" :class="isViewableInBrowser(attachment.filetype)
+                      ? 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200  dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700 dark:hover:text-white'
+                      : 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white'
+                      " target="_blank">
                     {{ getAttachmentButtonLabel(attachment.filetype) }}
                   </a>
                 </div>
@@ -586,14 +509,10 @@ const currentUserPendingAction = computed((): boolean => {
             </div>
           </div>
 
-          <div
-            class="col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-6"
-          >
+          <div class="col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-6">
             <div class="mb-8">
               <div class="border-b flex justify-between">
-                <h2
-                  class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2"
-                >
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
                   Approvers
                 </h2>
                 <!-- <div>
@@ -619,60 +538,40 @@ const currentUserPendingAction = computed((): boolean => {
               </div>
             </div>
 
-            <div
-              v-if="approversData && approversData.length > 0"
-              class="space-y-4"
-            >
-              <template
-                v-for="(approver, index) in groupedApprovers.mainApprovers"
-                :key="approver.transApproverId"
-              >
+            <div v-if="approversData && approversData.length > 0" class="space-y-4">
+              <template v-for="(approver, index) in groupedApprovers.mainApprovers" :key="approver.transApproverId">
                 <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
                   <div class="flex justify-between items-start mb-2">
                     <div class="flex items-start">
                       <span
-                        class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium mr-3 mt-1dark:bg-gray-700 dark:border-gray-600"
-                      >
+                        class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium mr-3 mt-1dark:bg-gray-700 dark:border-gray-600">
                         {{ index + 1 }}
                       </span>
 
                       <div>
                         <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {{ approver.approverName }}
-                          <span
-                            v-if="isCurrentUser(approver.employeeId)"
-                            class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded"
-                            >You</span
-                          >
+                          <span v-if="isCurrentUser(approver.employeeId)"
+                            class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded">You</span>
                         </p>
                         <p class="text-xs text-gray-500 dark:text-gray-400">
                           {{ approver.approverEmail || "" }}
                         </p>
                         <div class="flex items-center gap-2 mt-1">
-                          <span
-                            v-if="approver.approverRole"
-                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-600 mt-1"
-                          >
+                          <span v-if="approver.approverRole"
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-600 mt-1">
                             {{ approver.approverRole }}
                           </span>
                         </div>
-                        <div
-                          v-if="approver.remarks"
-                          class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3"
-                        >
+                        <div v-if="approver.remarks" class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3">
                           Remark:
                         </div>
                         <div v-if="approver.remarks" class="px-6 pb-2">
-                          <span
-                            class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
-                          >
+                          <span class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                             {{ approver.remarks }}
                           </span>
                         </div>
-                        <div
-                          class="text-xs mt-1"
-                          :class="getApproverStatusTextColor(approver.respond)"
-                        >
+                        <div class="text-xs mt-1" :class="getApproverStatusTextColor(approver.respond)">
                           <span v-if="approver.respondDate">
                             Responded on
                             {{ formatDateTime(approver.respondDate).date }} •
@@ -682,77 +581,55 @@ const currentUserPendingAction = computed((): boolean => {
                       </div>
                     </div>
                     <div class="flex flex-col items-end gap-1">
-                      <span
-                        v-if="approver.respond != 3"
+                      <span v-if="approver.respond != 3"
                         class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                        :class="getApproverStatusColor(approver.respond)"
-                      >
+                        :class="getApproverStatusColor(approver.respond)">
                         {{ getApproverStatusDisplay(approver.respond) }}
                       </span>
                     </div>
                   </div>
 
-                  <div
-                    v-if="getProxies(approver.transApproverId).length > 0"
-                    class="ml-8"
-                  >
-                    <div
-                      v-for="proxy in getProxies(approver.transApproverId)"
-                      :key="proxy.transApproverId"
-                      class="flex items-start justify-between py-2 border-b border-gray-200 last:border-0"
-                    >
+                  <div v-if="getProxies(approver.transApproverId).length > 0" class="ml-8">
+                    <div v-for="proxy in getProxies(approver.transApproverId)" :key="proxy.transApproverId"
+                      class="flex items-start justify-between py-2 border-b border-gray-200 last:border-0">
                       <div class="flex items-start">
-                        <span
-                          class="w-2 h-2 rounded-full bg-blue-400 mt-1.5"
-                        ></span>
+                        <span class="w-2 h-2 rounded-full bg-orange-400 mt-1.5"></span>
                         <div class="ps-3">
                           <p class="text-sm text-gray-700 dark:text-gray-200">
                             {{ proxy.approverName }}
-                            <span
-                              v-if="isCurrentUser(proxy.employeeId)"
-                              class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded"
-                              >You</span
-                            >
+                            <span v-if="isCurrentUser(proxy.employeeId)"
+                              class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded">You</span>
                           </p>
                           <p class="text-xs text-gray-500 dark:text-gray-400">
                             {{ proxy.approverEmail || "" }}
                           </p>
                           <span
-                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700 my-1"
-                          >
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700 my-1">
                             {{ proxy.approverRole }}
                           </span>
-                          <div
-                          v-if="proxy.remarks"
-                          class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3"
-                        >
-                          Remark:
-                        </div>
-                        <div v-if="proxy.remarks" class="px-6 pb-2">
-                          <span
-                            class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
-                          >
-                            {{ proxy.remarks }}
-                          </span>
-                        </div>
-                        <div
-                          class="text-xs"
-                          :class="getApproverStatusTextColor(proxy.respond)"
-                        >
-                          <span v-if="proxy.respondDate">
-                            Responded on
-                            {{ formatDateTime(proxy.respondDate).date }} •
-                            {{ formatDateTime(proxy.respondDate).time }}
-                          </span>
-                        </div>
+                          <div v-if="approver.respond != 1">
+                            <div v-if="proxy.remarks" class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3">
+                              Remark:
+                            </div>
+                            <div v-if="proxy.remarks" class="px-6 pb-2">
+                              <span class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
+                                {{ proxy.remarks }}
+                              </span>
+                            </div>
+                            <div class="text-xs" :class="getApproverStatusTextColor(proxy.respond)">
+                              <span v-if="proxy.respondDate">
+                                Responded on
+                                {{ formatDateTime(proxy.respondDate).date }} •
+                                {{ formatDateTime(proxy.respondDate).time }}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <div class="flex flex-col items-end gap-1">
-                        <span
-                          v-if="proxy.respond != 3"
+                        <span v-if="approver.respond != 1"
                           class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                          :class="getApproverStatusColor(proxy.respond)"
-                        >
+                          :class="getApproverStatusColor(proxy.respond)">
                           {{ getApproverStatusDisplay(proxy.respond) }}
                         </span>
                       </div>
@@ -761,29 +638,18 @@ const currentUserPendingAction = computed((): boolean => {
                 </div>
               </template>
             </div>
-            <div
-              v-else
-              class="text-sm flex items-center justify-center h-24 text-gray-400 dark:text-gray-500"
-            >
+            <div v-else class="text-sm flex items-center justify-center h-24 text-gray-400 dark:text-gray-500">
               <span>No approvers assigned yet.</span>
             </div>
           </div>
 
           <div v-if="exemptionDetails?.remarks" class="mb-8">
-            <h2
-              class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b"
-            >
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b">
               Remarks
             </h2>
-            <div
-              class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600"
-            >
-              <p
-                class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap wrap-break-words sm:break-all"
-              >
-                <span
-                  class="inline-block max-w-full bg-gray-100 dark:bg-gray-700 rounded-md px-2 py-1"
-                >
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+              <p class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap wrap-break-words sm:break-all">
+                <span class="inline-block max-w-full bg-gray-100 dark:bg-gray-700 rounded-md px-2 py-1">
                   {{ exemptionDetails.remarks }}
                 </span>
               </p>
@@ -792,10 +658,7 @@ const currentUserPendingAction = computed((): boolean => {
         </div>
       </div>
 
-      <div
-        v-else
-        class="bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-12 text-center"
-      >
+      <div v-else class="bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-12 text-center">
         <p class="text-gray-500 dark:text-gray-400 text-lg mb-4">
           No exemption details found.
         </p>

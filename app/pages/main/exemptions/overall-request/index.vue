@@ -326,7 +326,7 @@ onMounted(async () => {
             },
           ]"
           :policy-filter-items="policyDropdownItems"
-          policy-filter-label="Policy"
+          policy-filter-label="Policy Filter"
           policy-filter-placeholder="Select policies..."
         />
       </div>

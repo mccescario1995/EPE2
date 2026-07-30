@@ -65,7 +65,7 @@ const fetchExemptionDetails = async () => {
         message: response?.message || "Failed to load exemption details",
         duration: 5000,
       });
-      router.push("/main/exemptions/all");
+      router.push("/main/exemptions/pending-for-approval");
     }
   } catch (error) {
     console.error("Error fetching exemption details:", error);
@@ -75,7 +75,7 @@ const fetchExemptionDetails = async () => {
       message: "Failed to load exemption details",
       duration: 5000,
     });
-    router.push("/main/exemptions/all");
+    router.push("/main/exemptions/pending-for-approval");
   } finally {
     loading.value = false;
   }
@@ -364,9 +364,9 @@ const currentUserPendingAction = computed((): boolean => {
           </h1>
         </div>
         <div class="flex items-center gap-3">
-          <Button variant="outline-info" size="md" @onclick="handleBack">
+          <!-- <Button variant="outline-info" size="md" @onclick="handleBack">
             Back to List
-          </Button>
+          </Button> -->
           <Button
             v-if="
               canEdit &&

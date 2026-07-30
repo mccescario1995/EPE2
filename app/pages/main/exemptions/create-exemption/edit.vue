@@ -167,7 +167,7 @@ const fetchExemptionDetails = async () => {
       message: "Invalid exemption ID",
       duration: 5000,
     });
-    router.push("/main/exemptions/all");
+    router.push("/main/exemptions/create-exemption");
     return;
   }
 
@@ -237,7 +237,7 @@ const fetchExemptionDetails = async () => {
         message: response.message || "Failed to load exemption details",
         duration: 5000,
       });
-      router.push("/main/exemptions/all");
+      router.push("/main/exemptions/create-exemption");
     }
   } catch (error) {
     console.error("Error fetching exemption details:", error);
@@ -247,7 +247,7 @@ const fetchExemptionDetails = async () => {
       message: "Failed to load exemption details",
       duration: 5000,
     });
-    router.push("/main/exemptions/all");
+    router.push("/main/exemptions/create-exemption");
   } finally {
     isLoading.value = false;
   }
@@ -329,17 +329,6 @@ const hasUnsavedChanges = computed(() => {
     formData.value.details?.trim() !== (originalData.value.details || "").trim()
   );
 });
-
-// Handle cancel
-const handleCancel = () => {
-  if (hasUnsavedChanges.value) {
-    if (confirm("You have unsaved changes. Are you sure you want to leave?")) {
-      router.push("/main/exemptions/all");
-    }
-  } else {
-    router.push("/main/exemptions/all");
-  }
-};
 
 // Handle back (go to view page)
 const handleBack = () => {
@@ -424,7 +413,7 @@ const handleSubmitDraft = async () => {
         duration: 5000,
       });
       // Redirect to exemptions list after success
-      router.push("/main/exemptions/all");
+      router.push("/main/exemptions/create-exemption");
     } else {
       showToast({
         type: "error",
@@ -1015,7 +1004,7 @@ onMounted(async () => {
       message: "You do not have permission to edit exemption requests.",
       duration: 5000,
     });
-    router.push("/main/exemptions/all");
+    router.push("/main/exemptions/create-exemption");
     return;
   }
 
