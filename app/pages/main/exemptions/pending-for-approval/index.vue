@@ -144,6 +144,7 @@ const fetchExemptionData = async (params: {
     headers: { "Content-Type": "application/json" },
     parseJson: true,
   });
+  
   loading.value = false;
 
   return {

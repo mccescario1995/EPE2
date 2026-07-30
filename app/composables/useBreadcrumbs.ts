@@ -233,10 +233,10 @@ export const useBreadcrumbs = () => {
 
     const crumbs: Crumb[] = [];
 
-    let parentSegmentIndex = -1;
+    let parentRouteLastSegment: string | null = null;
     if (matched?.parentRoute) {
       const parentSegments = matched.parentRoute.split("/").filter(Boolean);
-      parentSegmentIndex = parentSegments.length - 1;
+      parentRouteLastSegment = parentSegments[parentSegments.length - 1]?.toLowerCase();
     }
 
     allSegments.forEach((segment, index) => {
@@ -248,25 +248,7 @@ export const useBreadcrumbs = () => {
 
       const routeMatch = knownRoutes.get(pathUpToHere.toLowerCase());
 
-      // if (segIndex === parentSegmentIndex) {
-      //   return;
-      // }
-
-      if (segIndex === parentSegmentIndex) {
-        if (isLast && matched) {
-          if (matched.parentTitle) {
-            crumbs.push({
-              label: matched.parentTitle,
-              to: matched.parentClickable ? matched.parentRoute : undefined,
-              clickable: matched.parentClickable ?? false,
-            });
-          }
-          crumbs.push({
-            label: matched.title,
-            to: undefined,
-            clickable: false,
-          });
-        }
+      if (parentRouteLastSegment && lower === parentRouteLastSegment && !isLast) {
         return;
       }
 

@@ -34,7 +34,7 @@ const cancelDelete = () => {
 
 const tableRef = ref();
 
-const reloadTable = () => {
+const reloadTable = () => {                                                                                                                                                                                                                                                                                                               
   tableRef.value?.refresh();
 };
 

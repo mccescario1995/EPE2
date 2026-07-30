@@ -65,7 +65,7 @@
 
   <div
     v-if="showFilterControls || props.showlimitfilter || props.showSearch"
-    class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6"
+    class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-2"
   >
     <!-- Dynamic Filter Controls -->
     <div v-if="showFilterControls" class="flex flex-wrap gap-3">
@@ -119,6 +119,59 @@
         </select>
       </div>
     </div>
+
+    <div v-if="props.policyFilterItems?.length" class="flex items-center">
+      <button
+        type="button"
+        class="flex items-center gap-2 bg-white rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-800 px-4 py-2 shadow-sm hover:shadow-md transition-shadow duration-200"
+        @click="openPolicyFilterModal">
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
+          {{ props.policyFilterLabel || 'Policy' }}:
+        </span>
+        <span class="text-sm text-gray-500 dark:text-gray-400">
+          {{ selectedPolicyObjects.length ? `${selectedPolicyObjects.length} selected` : 'All' }}
+        </span>
+      </button>
+    </div>
+
+    <Teleport to="body">
+      <div v-if="showPolicyFilterModal" class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+          <div class="fixed inset-0 bg-black opacity-50 transition-opacity" @click="closePolicyFilterModal"></div>
+          <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-200 text-center mb-4">
+              {{ props.policyFilterLabel || 'Policy' }}
+            </h3>
+            <div class="max-h-64 overflow-y-auto space-y-2 mb-6">
+              <label
+                v-for="item in props.policyFilterItems"
+                :key="item.id"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  :value="item.id"
+                  :checked="tempPolicyObjects.some((p: any) => p.id === item.id)"
+                  @click="togglePolicySelection(item)"
+                  class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 dark:text-gray-700" />
+                <span class="text-sm text-gray-700 dark:text-gray-200">{{ item.label }}</span>
+              </label>
+            </div>
+            <div class="flex gap-3 justify-center">
+              <button
+                @click="clearPolicySelection"
+                class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 rounded-lg transition-all duration-200">
+                Clear
+              </button>
+              <button
+                @click="applyPolicyFilter"
+                class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:text-gray-200 transition-all duration-200">
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <div v-if="props.showSearch" class="flex">
       <div
@@ -176,7 +229,7 @@
         </div>
       </Button>
     </div>
-  </div>
+    </div>
 
   <!-- Table -->
   <div
@@ -577,6 +630,7 @@ const props = defineProps<{
     sortDirection?: "asc" | "desc";
     startDate?: string;
     endDate?: string;
+    policyNames?: string;
   }) => Promise<{ data: Array<Record<string, any>>; total: number }>;
   exportFetchData?: (params: {
     startDate?: string;
@@ -588,6 +642,9 @@ const props = defineProps<{
   sortableColumns?: string[] | "all";
   limitfilter?: Number[];
   showlimitfilter?: boolean;
+  policyFilterItems?: any[];
+  policyFilterLabel?: string;
+  policyFilterPlaceholder?: string;
 }>();
 
 const emit = defineEmits<{
@@ -623,6 +680,9 @@ const sortDirection = ref<"asc" | "desc">("asc");
 const exportStartDate = ref<string>("");
 const exportEndDate = ref<string>("");
 const showExportModal = ref(false);
+const selectedPolicyObjects = ref<any[]>([]);
+const showPolicyFilterModal = ref(false);
+const tempPolicyObjects = ref<any[]>([]);
 
 // function buildTableQuery() {
 //   const q: Record<string, any> = {};
@@ -678,6 +738,12 @@ function buildTableQuery() {
   });
   q.dynamicFilters = activeDynamicFilters.length ? activeDynamicFilters.join(",") : undefined;
 
+  if (selectedPolicyObjects.value.length > 0) {
+    q.policyFilter = selectedPolicyObjects.value.map((p: any) => p.id).join(",");
+  } else {
+    q.policyFilter = undefined;
+  }
+
   return q;
 }
 
@@ -712,6 +778,16 @@ function applyQueryToState() {
       }
     });
   }
+
+  if (q.policyFilter) {
+    const ids = String(q.policyFilter).split(",").map((id) => id.trim()).filter(Boolean);
+    const items = props.policyFilterItems || [];
+    selectedPolicyObjects.value = ids
+      .map((id) => items.find((it: any) => String(it.id) === String(id)))
+      .filter(Boolean);
+  } else {
+    selectedPolicyObjects.value = [];
+  }
 }
 
 async function persistTableState() {
@@ -729,10 +805,25 @@ watch(
   () => {
     applyQueryToState();
     if (props.serverPagination && props.fetchData) {
+      if (route.query.policyFilter && !props.policyFilterItems?.length) {
+        return;
+      }
       fetchTable();
     }
   },
   { deep: true },
+);
+
+watch(
+  () => props.policyFilterItems,
+  (items) => {
+    if (items?.length && route.query.policyFilter && !selectedPolicyObjects.value.length) {
+      applyQueryToState();
+      if (props.serverPagination && props.fetchData) {
+        fetchTable();
+      }
+    }
+  },
 );
 
 // Default props
@@ -768,6 +859,41 @@ function closeExportModal() {
 async function confirmExport() {
   await exportToExcel();
   closeExportModal();
+}
+
+function openPolicyFilterModal() {
+  showPolicyFilterModal.value = true;
+  tempPolicyObjects.value = [...selectedPolicyObjects.value];
+}
+
+function closePolicyFilterModal() {
+  showPolicyFilterModal.value = false;
+}
+
+function applyPolicyFilter() {
+  selectedPolicyObjects.value = [...tempPolicyObjects.value];
+  showPolicyFilterModal.value = false;
+  if (props.serverPagination && props.fetchData) {
+    persistTableState();
+  }
+}
+
+function togglePolicySelection(item: any) {
+  const idx = tempPolicyObjects.value.findIndex((p: any) => String(p.id) === String(item.id));
+  if (idx > -1) {
+    tempPolicyObjects.value.splice(idx, 1);
+  } else {
+    tempPolicyObjects.value.push(item);
+  }
+}
+
+function clearPolicySelection() {
+  tempPolicyObjects.value = [];
+  selectedPolicyObjects.value = [];
+  showPolicyFilterModal.value = false;
+  if (props.serverPagination && props.fetchData) {
+    persistTableState();
+  }
 }
 
 async function exportToExcel() {
@@ -1240,6 +1366,10 @@ const fetchTable = async () => {
       sortDirection: sortField.value ? sortDirection.value : undefined,
       startDate: exportStartDate.value || undefined,
       endDate: exportEndDate.value || undefined,
+      policyNames:
+        selectedPolicyObjects.value.length > 0
+          ? selectedPolicyObjects.value.map((p: any) => p.id).join(",")
+          : undefined,
     });
 
     internalData.value = res.data;

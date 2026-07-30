@@ -15,6 +15,7 @@ const STAGE_ROUTE_MAP = {
   "637951116932400418": "/main/exemptions/pending-for-approval", // Pending for Approval
   "637262075600163869": "/maintenance/policies", // Maintenance Policy
   "637951226932433418": "/main/reports/closed", // Closed Request (Reports)
+  "639209381302370850": "/main/exemptions/overall-request", // Closed Request (Reports)
 };
 
 function resolvePageRoute(stage, menuGroupName) {
