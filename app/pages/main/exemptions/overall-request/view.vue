@@ -685,7 +685,8 @@ const currentUserPendingAction = computed((): boolean => {
                         </div>
                       </div>
                     </div>
-                    <div class="flex flex-col items-end gap-1">
+                    <div v-if="!getProxies(approver.transApproverId).some(p => p.respond == 1)"
+                     class="flex flex-col items-end gap-1">
                       <span
                         v-if="approver.respond != 3"
                         class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
@@ -746,13 +747,14 @@ const currentUserPendingAction = computed((): boolean => {
                           >
                             <span v-if="proxy.respondDate">
                               Responded on
-                              {{ formatDate(proxy.respondDate).date }} •
-                              {{ formatDate(proxy.respondDate).time }}
+                              {{ formatDateTime(proxy.respondDate).date }} •
+                              {{ formatDateTime(proxy.respondDate).time }}
                             </span>
                           </div>
                         </div>
                       </div>
-                      <div class="flex flex-col items-end gap-1">
+                      <div v-if="approver.respond != 1"
+                       class="flex flex-col items-end gap-1">
                         <span
                           v-if="proxy.respond != 3"
                           class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"

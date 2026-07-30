@@ -1556,7 +1556,8 @@ const isCurrentUser = (requesterId: number): boolean => {
                           </div>
                         </div>
                       </div>
-                      <div class="flex flex-col items-end gap-1">
+                      <div v-if="!getProxies(approver.transApproverId).some(p => p.respond == 1)"
+                       class="flex flex-col items-end gap-1">
                         <span
                           v-if="approver.respond != 3"
                           class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
