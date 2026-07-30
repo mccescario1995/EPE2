@@ -50,6 +50,7 @@ namespace EPEAPI.Controllers
             public string? SortDirection { get; set; }
             public string? StartDate { get; set; }
             public string? EndDate { get; set; }
+            public string? PolicyNames { get; set; }
         }
 
         [HttpPost("all")]
@@ -2545,6 +2546,145 @@ namespace EPEAPI.Controllers
                 await _context.SaveChangesAsync();
 
                 return Ok(new { success = true, message = "Reminder sent to proxy approver" });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+        [HttpPost("overall")]
+        public async Task<IActionResult> GetExcemptionOverallList(
+            [FromBody] ExemptionListRequest request,
+            [FromQuery] string? search = null
+        )
+        {
+            try
+            {
+                var currentUserEmplId = request.UserId.ToString();
+
+                var approverTransactionIds = await _context
+                    .EpeVTransactionApprovers.Where(a =>
+                        a.EmployeeId == currentUserEmplId
+                        && a.IsDelete == 0
+                    )
+                    .Select(a => a.TransactionId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var query = _context.EpeVTransactionHeaders.Where(u => u.FinalDecision != "Draft" &&
+                    u.IsDelete == 0
+                    && (u.RequesterId == currentUserEmplId
+                        || approverTransactionIds.Contains(u.TransactionId))
+                );
+
+                var searchTerm = request.Search ?? search;
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    var searchWords = searchTerm
+                        .ToLower()
+                        .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                    var predicate = PredicateBuilder.New<EpeVTransactionHeader>(true);
+                    foreach (var word in searchWords)
+                    {
+                        predicate = predicate.And(u =>
+                            u.TransactionId.ToString().Contains(word)
+                            || u.TransactionNumber.ToString().ToLower().Contains(word)
+                            || u.RequesterName.ToString().Contains(word)
+                            || u.FinalDecision.ToString().Contains(word)
+                            || u.PolicyName.ToString().Contains(word)
+                        );
+                    }
+
+                    query = query.Where(predicate);
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.PolicyNames))
+                {
+                    var selected = request.PolicyNames
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(p => p.Trim())
+                        .ToList();
+
+                    query = query.Where(u => selected.Contains(u.PolicyName));
+                }
+
+                query = request.SortField switch
+                {
+                    "transactionNumber" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.TransactionNumber)
+                        : query.OrderBy(u => u.TransactionNumber),
+                    "policyName" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.PolicyName)
+                        : query.OrderBy(u => u.PolicyName),
+                    "createdDate" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.CreatedDate)
+                        : query.OrderBy(u => u.CreatedDate),
+                    _ => query.OrderByDescending(u => u.CreatedDate),
+                };
+
+                var totalCount = await query.CountAsync();
+
+                var page = request.Page > 0 ? request.Page : 1;
+                var pageSize = request.PageSize > 0 ? request.PageSize : 10;
+
+                var items = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(h => new
+                    {
+                        TransactionId = h.TransactionId,
+                        TransactionNumber = h.TransactionNumber,
+                        PolicyName = h.PolicyName,
+                        Status = h.Status,
+                        RequesterName = h.RequesterName,
+                        CreatedDate = h.CreatedDate,
+                        RequesterId = h.RequesterId,
+                        FinalDecision = h.FinalDecision,
+
+                        CanApprove = approverTransactionIds.Contains(h.TransactionId),
+                    })
+                    .ToListAsync();
+
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        items = items,
+                        totalCount,
+                        page,
+                        pageSize,
+                    }
+                );
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
+        [HttpPost("policies")]
+        public async Task<IActionResult> GetPoliciesWithRequests([FromBody] ExemptionListRequest request)
+        {
+            try
+            {
+                var policies = await _context.EpeVTransactionHeaders
+                    .Where(u => u.IsDelete == 0 && !string.IsNullOrEmpty(u.PolicyName) && u.PolicyName != "-")
+                    .GroupBy(u => new { u.PolicyId, u.PolicyName })
+                    .Select(g => new
+                    {
+                        id = g.Key.PolicyId,
+                        label = g.Key.PolicyName,
+                    })
+                    .OrderBy(p => p.label)
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    items = policies,
+                });
             }
             catch (Exception e)
             {
