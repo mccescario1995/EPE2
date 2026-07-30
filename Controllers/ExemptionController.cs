@@ -2602,12 +2602,17 @@ namespace EPEAPI.Controllers
 
                 if (!string.IsNullOrWhiteSpace(request.PolicyNames))
                 {
-                    var selected = request.PolicyNames
+                    var selectedIds = request.PolicyNames
                         .Split(',', StringSplitOptions.RemoveEmptyEntries)
                         .Select(p => p.Trim())
+                        .Where(p => int.TryParse(p, out _))
+                        .Select(int.Parse)
                         .ToList();
 
-                    query = query.Where(u => selected.Contains(u.PolicyName));
+                    if (selectedIds.Any())
+                    {
+                        query = query.Where(u => selectedIds.Contains(u.PolicyId));
+                    }
                 }
 
                 query = request.SortField switch
