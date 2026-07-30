@@ -2571,7 +2571,7 @@ namespace EPEAPI.Controllers
                     .Distinct()
                     .ToListAsync();
 
-                var query = _context.EpeVTransactionHeaders.Where(u => u.FinalDecision != "Draft" &&
+                var query = _context.EpeVTransactionHeaders.Where(u => u.FinalDecision != "Draft" && u.Status != "C" &&
                     u.IsDelete == 0
                     && (u.RequesterId == currentUserEmplId
                         || approverTransactionIds.Contains(u.TransactionId))
