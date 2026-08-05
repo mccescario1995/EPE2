@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -46,6 +46,8 @@ public partial class EpeDbContext : DbContext
     public virtual DbSet<EpeVTransactionApprover> EpeVTransactionApprovers { get; set; }
 
     public virtual DbSet<EpeVTransactionHeader> EpeVTransactionHeaders { get; set; }
+
+    public virtual DbSet<EpeTransactionlog> EpeTransactionlogs { get; set; }
 
     public virtual DbSet<Token> Tokens { get; set; }
     public virtual DbSet<EpeNotification> EpeNotifications { get; set; }
@@ -1040,8 +1042,59 @@ public partial class EpeDbContext : DbContext
                 .HasDefaultValueSql("(getdate())");
         });
 
+        modelBuilder.Entity<EpeTransactionlog>(entity =>
+        {
+            entity.ToTable("epe_transactionlog");
+
+            entity.Property(e => e.TransactionType)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("transactiontype");
+            entity.Property(e => e.PreviousStatus)
+                .HasColumnName("previousstatus");
+            entity.Property(e => e.NewStatus)
+                .HasColumnName("newstatus");
+            entity.Property(e => e.PerformedBy)
+                .HasColumnName("performedby");
+            entity.Property(e => e.PerformedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("performedat");
+            entity.Property(e => e.Remarks)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasColumnName("remarks");
+            entity.Property(e => e.Reason)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasColumnName("reason");
+            entity.Property(e => e.Metadata)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasColumnName("metadata");
+            entity.Property(e => e.TransactionId).HasColumnName("transactionid");
+            entity.Property(e => e.PolicyId).HasColumnName("policyid");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Workstation)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("workstation");
+            entity.Property(e => e.IpAddress)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("ipaddress");
+            entity.Property(e => e.MacAddress)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("macaddress");
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
+
+
+
+
+

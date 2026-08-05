@@ -156,8 +156,8 @@ namespace EPEAPI.Controllers
             }
         }
 
-        [HttpPost("pending")]
-        public async Task<IActionResult> GetExcemptionPendingList(
+        [HttpPost("request-list")]
+        public async Task<IActionResult> GetExcemptionRequestList(
             [FromBody] ExemptionListRequest request,
             [FromQuery] string? search = null
         )
@@ -183,7 +183,246 @@ namespace EPEAPI.Controllers
                         u.RequesterId == currentUserEmplId
                         || approvableTransactionIds.Contains(u.TransactionId)
                     )
+
                 );
+
+                var searchTerm = request.Search ?? search;
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    var searchWords = searchTerm
+                        .ToLower()
+                        .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                    var predicate = PredicateBuilder.New<EpeVTransactionHeader>(true);
+                    foreach (var word in searchWords)
+                    {
+                        predicate = predicate.And(u =>
+                            u.TransactionId.ToString().Contains(word)
+                            || u.TransactionNumber.ToString().ToLower().Contains(word)
+                            || u.RequesterName.ToString().Contains(word)
+                            || u.FinalDecision.ToString().Contains(word)
+                            || u.PolicyName.ToString().Contains(word)
+                        );
+                    }
+
+                    query = query.Where(predicate);
+                }
+
+                // Sorting
+                query = request.SortField switch
+                {
+                    "transactionNumber" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.TransactionNumber)
+                        : query.OrderBy(u => u.TransactionNumber),
+                    "policyName" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.PolicyName)
+                        : query.OrderBy(u => u.PolicyName),
+                    "createdDate" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.CreatedDate)
+                        : query.OrderBy(u => u.CreatedDate),
+                    _ => query.OrderByDescending(u => u.CreatedDate),
+                };
+
+                if (!string.IsNullOrWhiteSpace(request.PolicyNames))
+                {
+                    var selectedIds = request.PolicyNames
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(p => p.Trim())
+                        .Where(p => int.TryParse(p, out _))
+                        .Select(int.Parse)
+                        .ToList();
+
+                    if (selectedIds.Any())
+                    {
+                        query = query.Where(u => selectedIds.Contains(u.PolicyId));
+                    }
+                }
+
+                var totalCount = await query.CountAsync();
+
+                approvableTransactionIds = await _context
+                    .EpeVTransactionApprovers.Where(a =>
+                        a.EmployeeId == currentUserEmplId.ToString()
+                        && a.Respond == 0
+                        && a.IsDelete == 0
+                    )
+                    .Select(a => a.TransactionId)
+                    .ToListAsync();
+
+                var page = request.Page > 0 ? request.Page : 1;
+                var pageSize = request.PageSize > 0 ? request.PageSize : 10;
+
+                var items = await query
+                    .OrderByDescending(u => u.CreatedDate)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(h => new
+                    {
+                        TransactionId = h.TransactionId,
+                        TransactionNumber = h.TransactionNumber,
+                        PolicyName = h.PolicyName,
+                        Status = h.Status,
+                        RequesterName = h.RequesterName,
+                        CreatedDate = h.CreatedDate,
+                        RequesterId = h.RequesterId,
+                        FinalDecision = h.FinalDecision,
+
+                        CanApprove = approvableTransactionIds.Contains(h.TransactionId),
+                        HasApproverResponded = _context.EpeVTransactionApprovers.Any(a => a.TransactionId == h.TransactionId && a.Respond > 0),
+                    })
+                    .ToListAsync();
+
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        items = items,
+                        totalCount,
+                        page,
+                        pageSize,
+                    }
+                );
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error" + e.Message);
+            }
+        }
+
+        [HttpPost("draft")]
+        public async Task<IActionResult> GetExcemptionDraftList(
+            [FromBody] ExemptionListRequest request,
+            [FromQuery] string? search = null
+        )
+        {
+            try
+            {
+                var currentUserEmplId = request.UserId;
+                var query = _context.EpeVTransactionHeaders.Where(u =>
+                    u.FinalDecision == "Draft"
+                    && u.IsDelete == 0
+                    && u.RequesterId == currentUserEmplId.ToString()
+                );
+
+                var searchTerm = request.Search ?? search;
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    var searchWords = searchTerm
+                        .ToLower()
+                        .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                    var predicate = PredicateBuilder.New<EpeVTransactionHeader>(true);
+                    foreach (var word in searchWords)
+                    {
+                        predicate = predicate.And(u =>
+                            u.TransactionId.ToString().Contains(word)
+                            || u.TransactionNumber.ToString().ToLower().Contains(word)
+                            || u.RequesterName.ToString().Contains(word)
+                            || u.FinalDecision.ToString().Contains(word)
+                            || u.PolicyName.ToString().Contains(word)
+                        );
+                    }
+
+                    query = query.Where(predicate);
+                }
+
+                // Sorting
+                query = request.SortField switch
+                {
+                    "transactionNumber" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.TransactionNumber)
+                        : query.OrderBy(u => u.TransactionNumber),
+                    "policyName" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.PolicyName)
+                        : query.OrderBy(u => u.PolicyName),
+                    "createdDate" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.CreatedDate)
+                        : query.OrderBy(u => u.CreatedDate),
+                    _ => query.OrderByDescending(u => u.CreatedDate),
+                };
+
+                var totalCount = await query.CountAsync();
+
+                var approvableTransactionIds = await _context
+                    .EpeVTransactionApprovers.Where(a =>
+                        a.EmployeeId == currentUserEmplId.ToString()
+                        && a.Respond == 0
+                        && a.IsDelete == 0
+                    )
+                    .Select(a => a.TransactionId)
+                    .ToListAsync();
+
+                var page = request.Page > 0 ? request.Page : 1;
+                var pageSize = request.PageSize > 0 ? request.PageSize : 10;
+
+                var items = await query
+                    .OrderByDescending(u => u.CreatedDate)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(h => new
+                    {
+                        TransactionId = h.TransactionId,
+                        TransactionNumber = h.TransactionNumber,
+                        PolicyName = h.PolicyName,
+                        Status = h.Status,
+                        RequesterName = h.RequesterName,
+                        CreatedDate = h.CreatedDate,
+                        RequesterId = h.RequesterId,
+                        FinalDecision = h.FinalDecision,
+
+                        CanApprove = approvableTransactionIds.Contains(h.TransactionId),
+                    })
+                    .ToListAsync();
+
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        items = items,
+                        totalCount,
+                        page,
+                        pageSize,
+                    }
+                );
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
+        [HttpPost("pending")]
+        public async Task<IActionResult> GetExcemptionPendingList(
+            [FromBody] ExemptionListRequest request,
+            [FromQuery] string? search = null
+        )
+        {
+            try
+            {
+                var currentUserEmplId = request.UserId.ToString();
+                // 1) Transactions where the user is a pending approver 
+                var approvableTransactionIds = await _context
+                    .EpeVTransactionApprovers.Where(a =>
+                        a.EmployeeId == currentUserEmplId && a.Respond == 0 && a.IsDelete == 0
+                    )
+                    .Select(a => a.TransactionId)
+                    .Distinct()
+                    .ToListAsync();
+
+                // 2) Base query: pending, not deleted, AND
+                //    (user is the requester OR user is a pending approver)
+                var query = _context.EpeVTransactionHeaders.Where(u =>
+                    u.FinalDecision == "Pending"
+                    && u.IsDelete == 0
+                    && approvableTransactionIds.Contains(u.TransactionId)
+                    
+                );
+                //&& (
+                //        u.RequesterId == currentUserEmplId
+                //        || approvableTransactionIds.Contains(u.TransactionId)
+                //    )
 
                 var searchTerm = request.Search ?? search;
 
@@ -705,6 +944,7 @@ namespace EPEAPI.Controllers
                 _context.EpeTransactionheaders.Add(transactionHeader);
 
                 await _context.SaveChangesAsync();
+                await LogTransactionAsync(transactionHeader.Transactionid, transactionHeader.Policyid, "DRAFT", null, 3, createdBy ?? 0);
 
                 // Handle attachments (same as create)
                 if (request.Attachments != null && request.Attachments.Any())
@@ -781,6 +1021,7 @@ namespace EPEAPI.Controllers
 
                 _context.EpeTransactionheaders.Add(transactionHeader);
                 await _context.SaveChangesAsync();
+                await LogTransactionAsync(transactionHeader.Transactionid, transactionHeader.Policyid, "CREATE", null, 0, createdBy ?? 0);
 
                 // APPROVERS - Skip the requester's approval group
                 var policyApprovers = await _context
@@ -1079,6 +1320,8 @@ namespace EPEAPI.Controllers
                 draft.Finaldecision = "Pending";
                 draft.Modifieddate = DateTime.UtcNow.AddHours(8);
 
+                
+                await LogTransactionAsync(draft.Transactionid, draft.Policyid, "SUBMIT", 3, 0, draft.Modifiedby ?? 0);
                 await _context.SaveChangesAsync();
 
                 // Get policy approvers and create transaction approvers (same as create)
@@ -1370,6 +1613,7 @@ namespace EPEAPI.Controllers
                     .EpeTransactionapprovers.Where(a => a.Transactionid == id && a.Isdelete == 0)
                     .ExecuteUpdateAsync(b => b.SetProperty(a => a.Isdelete, 1));
 
+                await LogTransactionAsync(id, existingItem.Policyid, "DELETE", existingItem.Status == "C" ? 1 : (existingItem.Status == "D" ? 3 : 0), 4, request.UserId);
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
@@ -1718,6 +1962,7 @@ namespace EPEAPI.Controllers
                 approver.Respond = request.Respond;
                 approver.Responddate = DateTime.UtcNow.AddHours(8);
                 approver.Remarks = request.Remarks; // Individual remarks for this approver
+                await LogTransactionAsync(transactionHeader.Transactionid, transactionHeader.Policyid, "RESPOND", 0, request.Respond, request.TransApproverId, request.Remarks);
                 await _context.SaveChangesAsync();
 
                 if (request.Respond == 1) // Approved
@@ -2669,6 +2914,143 @@ namespace EPEAPI.Controllers
             }
         }
 
+        [HttpPost("policy-transaction")]
+        public async Task<IActionResult> GetPolicyTransactionLogs(
+            [FromBody] ExemptionListRequest request,
+            [FromQuery] string? search = null
+        )
+        {
+            try
+            {
+                var currentUserEmplId = request.UserId.ToString();
+
+                var approverTransactionIds = await _context
+                    .EpeVTransactionApprovers.Where(a =>
+                        a.EmployeeId == currentUserEmplId
+                        && a.IsDelete == 0
+                    )
+                    .Select(a => a.TransactionId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var query = _context.EpeVTransactionHeaders.Where(u =>
+                    u.IsDelete == 0
+                    && (u.RequesterId == currentUserEmplId
+                        || approverTransactionIds.Contains(u.TransactionId))
+                );
+
+                var searchTerm = request.Search ?? search;
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    var searchWords = searchTerm
+                        .ToLower()
+                        .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                    var predicate = PredicateBuilder.New<EpeVTransactionHeader>(true);
+                    foreach (var word in searchWords)
+                    {
+                        predicate = predicate.And(u =>
+                            u.TransactionId.ToString().Contains(word)
+                            || u.TransactionNumber.ToString().ToLower().Contains(word)
+                            || u.RequesterName.ToString().Contains(word)
+                            || u.FinalDecision.ToString().Contains(word)
+                            || u.PolicyName.ToString().Contains(word)
+                        );
+                    }
+
+                    query = query.Where(predicate);
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.PolicyNames))
+                {
+                    var selectedIds = request.PolicyNames
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(p => p.Trim())
+                        .Where(p => int.TryParse(p, out _))
+                        .Select(int.Parse)
+                        .ToList();
+
+                    if (selectedIds.Any())
+                    {
+                        query = query.Where(u => selectedIds.Contains(u.PolicyId));
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.StartDate)
+                    && DateTime.TryParse(request.StartDate, out var startDate))
+                {
+                    query = query.Where(u => u.CreatedDate >= startDate);
+                }
+                if (!string.IsNullOrWhiteSpace(request.EndDate)
+                    && DateTime.TryParse(request.EndDate, out var endDate))
+                {
+                    query = query.Where(u => u.CreatedDate <= endDate);
+                }
+
+                query = request.SortField switch
+                {
+                    "transactionNumber" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.TransactionNumber)
+                        : query.OrderBy(u => u.TransactionNumber),
+                    "policyName" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.PolicyName)
+                        : query.OrderBy(u => u.PolicyName),
+                    "createdDate" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.CreatedDate)
+                        : query.OrderBy(u => u.CreatedDate),
+                    "requesterName" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.RequesterName)
+                        : query.OrderBy(u => u.RequesterName),
+                    _ => query.OrderByDescending(u => u.CreatedDate),
+                };
+
+                var totalCount = await query.CountAsync();
+
+                var page = request.Page > 0 ? request.Page : 1;
+                var pageSize = request.PageSize > 0 ? request.PageSize : 10;
+
+                var items = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(h => new
+                    {
+                        TransactionId = h.TransactionId,
+                        TransactionNumber = h.TransactionNumber,
+                        PolicyName = h.PolicyName,
+                        Status = h.Status,
+                        RequesterName = h.RequesterName,
+                        CreatedDate = h.CreatedDate,
+                        RequesterId = h.RequesterId,
+                        FinalDecision = h.FinalDecision,
+                        CreatedBy = h.CreatedBy,
+                        ModifiedBy = h.ModifiedBy,
+                        ModifiedDate = h.ModifiedDate,
+                        Workstation = h.Workstation,
+                        IpAddress = h.IpAddress,
+                        MacAddress = h.MacAddress,
+
+                        CanApprove = approverTransactionIds.Contains(h.TransactionId),
+                    })
+                    .ToListAsync();
+
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        items = items,
+                        totalCount,
+                        page,
+                        pageSize,
+                    }
+                );
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
         [HttpPost("policies")]
         public async Task<IActionResult> GetPoliciesWithRequests([FromBody] ExemptionListRequest request)
         {
@@ -2712,5 +3094,296 @@ namespace EPEAPI.Controllers
                 return StatusCode(500, "Error: " + e.Message);
             }
         }
+
+        private async Task LogTransactionAsync(long transactionId, int policyId, string transactionType, int? previousStatus, int? newStatus, long performedBy, string? remarks = null, string? reason = null, string? metadata = null)
+        {
+            try
+            {
+                var ipAddress = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                    ?? HttpContext.Connection.RemoteIpAddress?.ToString()
+                    ?? "Unknown";
+
+                var macAddress = System.Net.NetworkInformation.NetworkInterface
+                    .GetAllNetworkInterfaces()
+                    .FirstOrDefault(n =>
+                        n.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up
+                        && n.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback
+                    )
+                    ?.GetPhysicalAddress()
+                    .ToString()
+                    ?? "Unknown";
+
+                var workstation = HttpContext.Request.Headers["X-Forwarded-Host"].FirstOrDefault()
+                    ?? HttpContext.Connection.RemoteIpAddress?.ToString()
+                    ?? "Unknown";
+
+                var log = new EpeTransactionlog
+                {
+                    TransactionId = transactionId,
+                    PolicyId = policyId,
+                    TransactionType = transactionType,
+                    PreviousStatus = previousStatus,
+                    NewStatus = newStatus,
+                    PerformedBy = int.Parse(performedBy.ToString()),
+                    PerformedAt = DateTime.UtcNow.AddHours(8),
+                    Remarks = remarks,
+                    Reason = reason,
+                    Metadata = metadata,
+                    Workstation = workstation,
+                    IpAddress = ipAddress,
+                    MacAddress = macAddress,
+                };
+
+                _context.EpeTransactionlogs.Add(log);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to log transaction {TransactionId} type {TransactionType}", transactionId, transactionType);
+            }
+        }
+
+        [HttpPost("transaction-logs")]
+        public async Task<IActionResult> GetTransactionLogsList(
+            [FromBody] ExemptionListRequest request,
+            [FromQuery] string? search = null
+        )
+        {
+            try
+            {
+                var currentUserEmplId = request.UserId.ToString();
+
+                var approverTransactionIds = await _context
+                    .EpeVTransactionApprovers.Where(a =>
+                        a.EmployeeId == currentUserEmplId && a.IsDelete == 0
+                    )
+                    .Select(a => a.TransactionId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var query = from log in _context.EpeTransactionlogs
+                            join header in _context.EpeVTransactionHeaders
+                                on log.TransactionId equals header.TransactionId
+                            where header.IsDelete == 0
+                                && (header.RequesterId == currentUserEmplId
+                                    || approverTransactionIds.Contains(header.TransactionId))
+                            select new
+                            {
+                                log.Id,
+                                log.TransactionId,
+                                TransactionNumber = header.TransactionNumber,
+                                PolicyName = header.PolicyName,
+                                log.TransactionType,
+                                log.PreviousStatus,
+                                log.NewStatus,
+                                log.PerformedBy,
+                                log.PerformedAt,
+                                log.Remarks,
+                                log.Reason,
+                                log.Metadata,
+                                log.Workstation,
+                                log.IpAddress,
+                                log.MacAddress,
+                                RequesterId = header.RequesterId,
+                                RequesterName = header.RequesterName,
+                                header.Status,
+                                header.FinalDecision,
+                            };
+
+                var searchTerm = request.Search ?? search;
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    var searchWords = searchTerm
+                        .ToLower()
+                        .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                    foreach (var word in searchWords)
+                    {
+                        query = query.Where(u =>
+                            u.TransactionNumber.ToLower().Contains(word)
+                            || u.PolicyName.ToLower().Contains(word)
+                            || u.TransactionType.ToLower().Contains(word)
+                            || u.RequesterName.ToLower().Contains(word)
+                            || (u.Remarks != null && u.Remarks.ToLower().Contains(word))
+                            || (u.Reason != null && u.Reason.ToLower().Contains(word))
+                        );
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.PolicyNames))
+                {
+                    var selectedIds = request.PolicyNames
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(p => p.Trim())
+                        .Where(p => int.TryParse(p, out _))
+                        .Select(int.Parse)
+                        .ToList();
+
+                    if (selectedIds.Any())
+                    {
+                        var selectedPolicyNames = _context.EpePolicymasters
+                            .Where(p => selectedIds.Contains(p.Policyid) && p.Isdelete == 0)
+                            .Select(p => p.Description)
+                            .ToList();
+
+                        query = query.Where(u => selectedPolicyNames.Contains(u.PolicyName));
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.StartDate)
+                    && DateTime.TryParse(request.StartDate, out var startDate))
+                {
+                    query = query.Where(u => u.PerformedAt >= startDate);
+                }
+                if (!string.IsNullOrWhiteSpace(request.EndDate)
+                    && DateTime.TryParse(request.EndDate, out var endDate))
+                {
+                    query = query.Where(u => u.PerformedAt <= endDate.Date.AddDays(1));
+                }
+
+                query = request.SortField switch
+                {
+                    "transactionNumber" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.TransactionNumber)
+                        : query.OrderBy(u => u.TransactionNumber),
+                    "policyName" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.PolicyName)
+                        : query.OrderBy(u => u.PolicyName),
+                    "transactionType" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.TransactionType)
+                        : query.OrderBy(u => u.TransactionType),
+                    "performedAt" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.PerformedAt)
+                        : query.OrderBy(u => u.PerformedAt),
+                    "performedBy" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(u => u.PerformedBy)
+                        : query.OrderBy(u => u.PerformedBy),
+                    _ => query.OrderByDescending(u => u.PerformedAt),
+                };
+
+                var totalCount = await query.CountAsync();
+
+                var page = request.Page > 0 ? request.Page : 1;
+                var pageSize = request.PageSize > 0 ? request.PageSize : 10;
+
+                var items = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return Ok(
+                    new
+                    {
+                        success = true,
+                        items = items,
+                        totalCount,
+                        page,
+                        pageSize,
+                    }
+                );
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
+        [HttpGet("transaction-logs/all")]
+        public async Task<IActionResult> GetAllTransactionLogs()
+        {
+            try
+            {
+                var logs = await _context.EpeTransactionlogs
+                    .OrderByDescending(l => l.PerformedAt)
+                    .ToListAsync();
+
+                return Ok(new { success = true, items = logs });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
+        [HttpGet("transaction-log/{id}")]
+        public async Task<IActionResult> GetTransactionLogById(long id)
+        {
+            try
+            {
+                var log = await _context.EpeTransactionlogs
+                    .FirstOrDefaultAsync(l => l.Id == id);
+
+                if (log == null)
+                {
+                    return NotFound(new { success = false, message = "Transaction log not found" });
+                }
+
+                return Ok(new { success = true, item = log });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
+        [HttpGet("transaction-logs/{transactionId}")]
+        public async Task<IActionResult> GetTransactionLogs(long transactionId)
+        {
+            try
+            {
+                var logs = await _context.EpeTransactionlogs
+                    .Where(l => l.TransactionId == transactionId)
+                    .OrderByDescending(l => l.PerformedAt)
+                    .ToListAsync();
+
+                return Ok(new { success = true, items = logs });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
+        [HttpPost("create-transaction-logs")]
+        public async Task<IActionResult> CreateTransactionLog([FromBody] TransactionLogRequest request)
+        {
+            try
+            {
+                await LogTransactionAsync(
+                    request.TransactionId,
+                    request.PolicyId,
+                    request.TransactionType,
+                    request.PreviousStatus,
+                    request.NewStatus,
+                    request.PerformedBy,
+                    request.Remarks,
+                    request.Reason,
+                    request.Metadata
+                );
+
+                return Ok(new { success = true });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Error: " + e.Message);
+            }
+        }
+
+        public class TransactionLogRequest
+        {
+            public long TransactionId { get; set; }
+            public int PolicyId { get; set; }
+            public string? TransactionType { get; set; }
+            public int? PreviousStatus { get; set; }
+            public int? NewStatus { get; set; }
+            public int PerformedBy { get; set; }
+            public string? Remarks { get; set; }
+            public string? Reason { get; set; }
+            public string? Metadata { get; set; }
+        }
     }
 }
+
+
+
