@@ -1,16 +1,4 @@
 <script setup lang="ts">
-import { useMenuService } from "~/services/menuService";
-const {
-  fetchMenuList,
-  canAdd: checkCanAdd,
-  canEdit: checkCanEdit,
-  canDelete: checkCanDelete,
-} = useMenuService();
-
-const canAdd = ref(false);
-const canEdit = ref(false);
-const canDelete = ref(false);
-
 const router = useRouter();
 
 import { IconView, IconEdit, IconDelete, IconApproval } from "#components";
@@ -18,6 +6,7 @@ const { breadcrumbs, currentMenuLabel } = useBreadcrumbs();
 
 // Get the current page's menu name (should be "Policy")
 const currentPageName = breadcrumbs.value[breadcrumbs.value.length - 1]?.label;
+console.log("Current page Name: ", currentPageName);
 
 const userStore = useUserStore();
 
@@ -29,17 +18,8 @@ const showDeleteConfirm = ref(false);
 const deletingItem = ref<any>(null);
 const deleteLoading = ref(false);
 
-// reactive length used to force BaseTable to remount when data arrives
-const exemptionDataLength = computed(() => exemptionData.value?.length ?? 0);
-
 const viewProduct = (row: any) => {
-  router.push(`/main/exemptions/overall-request/view?id=${row.transactionId}`);
-};
-const editProduct = (row: any) => {
-  router.push(`/main/exemptions/overall-request/edit?id=${row.transactionId}`);
-};
-const approveRequest = (row: any) => {
-  router.push(`/main/exemptions/approve?id=${row.transactionId}`);
+  router.push(`/main/closed/view?id=${row.transactionId}`);
 };
 
 const confirmDelete = (row: any) => {
@@ -54,7 +34,7 @@ const cancelDelete = () => {
 
 const tableRef = ref();
 
-const reloadTable = () => {
+const reloadTable = () => {                                                                                                                                                                                                                                                                                                               
   tableRef.value?.refresh();
 };
 
@@ -106,7 +86,7 @@ const deleteRequest = async () => {
 const fetchExemptionRequests = async () => {
   loading.value = true;
   try {
-    const responseExemptions = await apiFetch("/api/exemption/overall", {
+    const responseExemptions = await apiFetch("/api/exemption/closed", {
       method: "POST",
       body: JSON.stringify({ UserId: parseInt(userId.emplId) }),
       headers: {
@@ -129,10 +109,11 @@ const fetchExemptionData = async (params: {
   filters: Record<string, string>;
   sortField?: string;
   sortDirection?: "asc" | "desc";
-  policyNames?: string;
+  startDate?: string;
+  endDate?: string;
 }) => {
   loading.value = true
-  const response = await apiFetch("/api/exemption/overall", {
+  const response = await apiFetch("/api/exemption/closed", {
     method: "POST",
     body: JSON.stringify({
       UserId: parseInt(userId.emplId),
@@ -141,7 +122,8 @@ const fetchExemptionData = async (params: {
       search: params.search,
       sortField: params.sortField,
       sortDirection: params.sortDirection,
-      PolicyNames: params.policyNames,
+      startDate: params.startDate,
+      endDate: params.endDate,
     }),
     headers: { "Content-Type": "application/json" },
     parseJson: true,
@@ -155,45 +137,39 @@ const fetchExemptionData = async (params: {
   }
 }
 
-// --- Policy filter source data ---
-const allExemptionsForFilter = ref<any[]>([]);
-
-const  policyDropdownItems = computed(() => {
-  const items = allExemptionsForFilter.value ?? [];
-  return items
-    .filter((item) => item?.label && item.label !== '-')
-    .sort((a, b) => a.label.localeCompare(b.label));
-});
-
-const fetchAllForPolicyFilter = async () => {
+const fetchAllForExport = async (params: {
+  startDate?: string;
+  endDate?: string;
+}) => {
+  loading.value = true
   try {
-    const res = await apiFetch("/api/exemption/policies", {
+    const response = await apiFetch("/api/exemption/closed/export", {
       method: "POST",
-      body: JSON.stringify({ UserId: parseInt(userId.emplId) }),
+      body: JSON.stringify({
+        UserId: parseInt(userId.emplId),
+        startDate: params.startDate,
+        endDate: params.endDate,
+      }),
       headers: { "Content-Type": "application/json" },
       parseJson: true,
-    });
-    
-    allExemptionsForFilter.value = res.items ?? [];
-  } catch (e) {
-    console.error("Error fetching policies for filter:", e);
-  }
-};
+    })
+
+    return {
+      data: response.items ?? [],
+      total: response.items?.length ?? 0,
+    }
+  } catch (error) {
+    console.error('Export error:', error)
+    return { data: [], total: 0 }
+  } finally {
+    loading.value = false
+}
+}
 
 // Handle create navigation
 const handleCreate = () => {
   router.push(`/main/exemptions/create`);
 };
-
-onMounted(async () => {
-  await fetchMenuList();
-  canAdd.value = checkCanAdd("/main/exemptions/overall-request");
-  canEdit.value = checkCanEdit("/main/exemptions/overall-request");
-  canDelete.value = checkCanDelete("/main/exemptions/overall-request");
-
-  // Load policy options for the filter dropdown
-  await fetchAllForPolicyFilter();
-});
 
 </script>
 
@@ -204,7 +180,7 @@ onMounted(async () => {
         class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
       >
         <div class="flex items-center">
-          <!-- <Button
+          <Button
             variant="ghost-primary"
             size="lg"
             icon="left_arrow"
@@ -213,14 +189,14 @@ onMounted(async () => {
             class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
 
             @onclick="$router.back()"
-          /> -->
+          />
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
-          {{ currentMenuLabel || currentPageName ||  "Exemption Requests"}}
+           {{ currentMenuLabel || currentPageName  || "Closed Requests"}}
           </h1>
         </div>
 
-        <Button
-          v-if="canAdd"
+        <!-- <Button
+          v-if="exemptionData"
           variant="primary"
           size="md"
           icon="add"
@@ -228,7 +204,7 @@ onMounted(async () => {
           @onclick="handleCreate"
         >
           Create Request
-        </Button>
+        </Button> -->
       </div>
     </header>
     <main class="max-w-full mx-auto py-6 sm:px-6 ">
@@ -237,7 +213,7 @@ onMounted(async () => {
         <base-table
           ref="tableRef"
           :server-pagination="true"
-          :fetch-data="fetchExemptionData"
+          :fetch-data="(params) => fetchExemptionData(params)"
           :pagination="true"
           :per-page="5"
           :show-search="true"
@@ -263,31 +239,28 @@ onMounted(async () => {
               O: 'Open',
               P: 'Open',
               C: 'Closed',
-              D: 'Draft',
             },
             finalDecision: {
               Pending: 'Pending',
               Approved: 'Approved',
               Disapproved: 'Disapproved',
-              Draft: 'Draft',
             },
           }"
           :field-colors="{
             status: {
               O: 'bg-blue-100 text-blue-800 border border-blue-900',
               P: 'bg-blue-100 text-blue-800 border border-blue-900',
-              C: 'bg-gray-200 text-gray-800 border border-gray-900',
-              D: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
+              C: 'bg-red-200 text-red-800 border border-red-900',
             },
             finalDecision: {
               Pending: 'bg-yellow-100 text-yellow-800',
               Approved: 'bg-green-100 text-green-800',
               Disapproved: 'bg-red-100 text-red-800',
-              Draft: 'bg-gray-100 text-gray-800 border border-gray-900',
             },
           }"
           :date-time-fields="['createdDate']"
           date-time-format="'MMM d, yyyy h:mm a'"
+          :show-export="true"
           :actions="[
             {
               label: IconView,
@@ -296,7 +269,12 @@ onMounted(async () => {
               iconClass: 'text-indigo-500 dark:text-indigo-400',
               buttonClass: 'hover:bg-indigo-100 dark:hover:bg-indigo-100 hover:text-indigo-600 !dark:hover:text-indigo-900',
             },
-            {
+           
+          ]"
+          :export-fetch-data="(params) => fetchAllForExport(params)"
+        />
+      </div>
+       <!-- {
               label: IconApproval,
               tooltip: 'Approve Request',
               handler: approveRequest,
@@ -308,7 +286,7 @@ onMounted(async () => {
               label: IconEdit,
               tooltip: 'Edit Request',
               handler: editProduct,
-              iconClass: '!text-blue-500 dark:!text-blue-400',
+              iconClass: '!text-blue-500 dark:text-blue-400',
               buttonClass: 'hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900',
               visible: (row) =>
                 row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
@@ -323,13 +301,7 @@ onMounted(async () => {
               visible: (row) =>
                 row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
               disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
-            },
-          ]"
-          :policy-filter-items="policyDropdownItems"
-          policy-filter-label="Policy Filter"
-          policy-filter-placeholder="Select policies..."
-        />
-      </div>
+            }, -->
     </main>
 
     <!-- Delete Confirmation Modal -->

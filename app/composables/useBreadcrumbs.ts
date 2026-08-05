@@ -263,11 +263,14 @@ export const useBreadcrumbs = () => {
 
       if (isLast && matched) {
         if (matched.parentTitle) {
-          crumbs.push({
-            label: matched.parentTitle,
-            to: matched.parentClickable ? matched.parentRoute : undefined,
-            clickable: matched.parentClickable ?? false,
-          });
+          const lastCrumb = crumbs[crumbs.length - 1];
+          if (!lastCrumb || lastCrumb.label !== matched.parentTitle) {
+            crumbs.push({
+              label: matched.parentTitle,
+              to: matched.parentClickable ? matched.parentRoute : undefined,
+              clickable: matched.parentClickable ?? false,
+            });
+          }
         }
 
         crumbs.push({

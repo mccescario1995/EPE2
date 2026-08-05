@@ -11,11 +11,19 @@
 //  * as the key.
 //  */
 const STAGE_ROUTE_MAP = {
-  "637120010759985872": "/main/exemptions/create-exemption", // Create Exemption Approval
-  "637951116932400418": "/main/exemptions/pending-for-approval", // Pending for Approval
+  // Main Menu
+  "637120010759985872": "/main/create-exemption", // Create Exemption Approval
+  "637951116932400418": "/main/pending-for-approval", // Pending for Approval
+  "639213542195395100": "/main/request-list", // Request List (Reports)
+  "637951226932433418": "/main/closed", // Closed Request (Reports)
+
+  // Maintenance Menu
   "637262075600163869": "/maintenance/policies", // Maintenance Policy
-  "637951226932433418": "/main/reports/closed", // Closed Request (Reports)
-  "639209381302370850": "/main/exemptions/overall-request", // Closed Request (Reports)
+
+  // Reports Menu
+  "639209381302370850": "/reports/overall-request", // Overall Request (Reports)
+  "639213528913585737": "/reports/policy-transaction", // Policy Transaction (Reports)
+  
 };
 
 function resolvePageRoute(stage, menuGroupName) {
@@ -57,6 +65,8 @@ export const useMenuService = () => {
         },
         parseJson: true,
       });
+
+      console.log("Fetched menu response:", response);
 
       const data = response;
       menuData.value = data.map((menuGroup) => ({

@@ -186,16 +186,6 @@ const isApproved = computed(() => {
     (a) => String(a.employeeId ?? a.EmployeeId) === currentUserId,
   );
 
-  console.log("Checking isApproved - currentUserId:", currentUserId);
-  console.log(
-    "Checking isApproved - currentUserApprover:",
-    currentUserApprover,
-  );
-  console.log("Checking isApproved - approversData:", approversData.value);
-  console.log(
-    "isApproved result:",
-    approversData.value.some((a) => a.respond === 1),
-  );
 
   return currentUserApprover && currentUserApprover.respond === 1;
 });
@@ -530,7 +520,7 @@ const handleBack = () => {
   if (window.history.length > 1) {
     router.back();
   } else {
-    router.push('/main/exemptions/pending-for-approval'); // Change to your desired fallback route
+    router.push('/main/pending-for-approval'); // Change to your desired fallback route
   }
 };
 

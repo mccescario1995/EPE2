@@ -91,8 +91,22 @@
             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-200 text-center mb-4">
               {{ props.policyFilterLabel || 'Policy' }}
             </h3>
+            <!-- Search Input -->
+            <div class="mb-4">
+              <div class="relative">
+                <input type="text" ref="policySearchInput"
+                  :value="policySearchTerm"
+                  class="block w-full px-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:placeholder-gray-400"
+                  placeholder="Search policies..." />
+                <button type="button" @click="updateSearchTerm"
+                  class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600">
+                  Search
+                </button>
+              </div>
+            </div>
+            <!-- Policy Items List -->
             <div class="max-h-64 overflow-y-auto space-y-2 mb-6">
-              <label v-for="item in props.policyFilterItems" :key="item.id"
+              <label v-for="item in filteredPolicyItems" :key="item.id"
                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                 <input type="checkbox" :value="item.id" :checked="tempPolicyObjects.some(
                   (p: any) => String(p.id) === String(item.id)
@@ -464,10 +478,14 @@ const sortField = ref<string>("");
 const sortDirection = ref<"asc" | "desc">("asc");
 const exportStartDate = ref<string>("");
 const exportEndDate = ref<string>("");
+const filterStartDate = ref<string>("");
+const filterEndDate = ref<string>("");
 const showExportModal = ref(false);
 const selectedPolicyObjects = ref<any[]>([]);
 const showPolicyFilterModal = ref(false);
 const tempPolicyObjects = ref<any[]>([]);
+const policySearchTerm = ref("");
+const policySearchInput = ref<HTMLInputElement | null>(null);
 
 // function buildTableQuery() {
 //   const q: Record<string, any> = {};
@@ -627,8 +645,15 @@ const refresh = () => {
   fetchTable();
 };
 
+const setFilterDates = (start: string, end: string) => {
+  filterStartDate.value = start;
+  filterEndDate.value = end;
+  currentPage.value = 1;
+};
+
 defineExpose({
   refresh,
+  setFilterDates,
 });
 
 function openExportModal() {
@@ -649,6 +674,7 @@ async function confirmExport() {
 function openPolicyFilterModal() {
   showPolicyFilterModal.value = true;
   tempPolicyObjects.value = [...selectedPolicyObjects.value];
+  policySearchTerm.value = ""; // Clear search term when opening
 }
 
 function closePolicyFilterModal() {
@@ -657,6 +683,7 @@ function closePolicyFilterModal() {
 
 function applyPolicyFilter() {
   selectedPolicyObjects.value = [...tempPolicyObjects.value];
+  policySearchTerm.value = ""; // Clear search term when applying
   showPolicyFilterModal.value = false;
   currentPage.value = 1;
   if (props.serverPagination && props.fetchData) {
@@ -677,6 +704,7 @@ function togglePolicySelection(item: any) {
 function clearPolicySelection() {
   tempPolicyObjects.value = [];
   selectedPolicyObjects.value = [];
+  policySearchTerm.value = ""; // Clear search term
   showPolicyFilterModal.value = false;
   currentPage.value = 1;
   if (props.serverPagination && props.fetchData) {
@@ -786,10 +814,25 @@ const filterableColumns = computed(() => {
   return [];
 });
 
+// Filtered policy items for search functionality
+const filteredPolicyItems = computed(() => {
+  if (!props.policyFilterItems || !props.policyFilterItems.length) {
+    return [];
+  }
+
+  const searchTerm = policySearchTerm.value.trim().toLowerCase();
+  if (!searchTerm) {
+    return props.policyFilterItems;
+  }
+
+  return props.policyFilterItems.filter(item =>
+    item.label.toLowerCase().includes(searchTerm)
+  );
+});
+
 const showFilterControls = computed(
   () => props.filter && resolvedHeaders.value.length > 0,
 );
-
 const paginatedData = computed(() => {
   if (props.serverPagination) return filteredData.value; // ← already paginated
   if (!props.pagination || !filteredData.value) return filteredData.value || [];
@@ -983,6 +1026,16 @@ function getDateTimeParts(
   }
 }
 
+function updateSearchTerm() {
+  const input = policySearchInput.value;
+  if (input) {
+    policySearchTerm.value = input.value;
+    input.focus();
+  } else {
+    policySearchTerm.value = '';
+  }
+}
+
 function getFilterOptions(key: string) {
   if (!props.tableData) return [];
   const uniqueValues = new Set();
@@ -1153,8 +1206,8 @@ const fetchTable = async () => {
       filters: activeFilters,
       sortField: sortField.value || undefined,
       sortDirection: sortField.value ? sortDirection.value : undefined,
-      startDate: exportStartDate.value || undefined,
-      endDate: exportEndDate.value || undefined,
+      startDate: filterStartDate.value || undefined,
+      endDate: filterEndDate.value || undefined,
       policyNames:
         selectedPolicyObjects.value.length > 0
           ? selectedPolicyObjects.value.map((p: any) => p.id).join(",")

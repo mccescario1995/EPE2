@@ -33,13 +33,13 @@ const deleteLoading = ref(false);
 const exemptionDataLength = computed(() => exemptionData.value?.length ?? 0);
 
 const viewProduct = (row: any) => {
-  router.push(`/main/exemptions/pending-for-approval/view?id=${row.transactionId}`);
+  router.push(`/main/pending-for-approval/view?id=${row.transactionId}`);
 };
 const editProduct = (row: any) => {
-  router.push(`/main/exemptions/pending-for-approval/edit?id=${row.transactionId}`);
+  router.push(`/main/pending-for-approval/edit?id=${row.transactionId}`);
 };
 const approveRequest = (row: any) => {
-  router.push(`/main/exemptions/approve?id=${row.transactionId}`);
+  router.push(`/main/approve?id=${row.transactionId}`);
 };
 
 const confirmDelete = (row: any) => {
@@ -106,7 +106,7 @@ const deleteRequest = async () => {
 const fetchExemptionRequests = async () => {
   loading.value = true;
   try {
-    const responseExemptions = await apiFetch("/api/exemption/pending", {
+    const responseExemptions = await apiFetch("/api/exemption/request-list", {
       method: "POST",
       body: JSON.stringify({ UserId: parseInt(userId.emplId) }),
       headers: {
@@ -129,28 +129,64 @@ const fetchExemptionData = async (params: {
   filters: Record<string, string>;
   sortField?: string;
   sortDirection?: "asc" | "desc";
+  policyNames?: string;
 }) => {
   loading.value = true;
-  const response = await apiFetch("/api/exemption/pending", {
-    method: "POST",
-    body: JSON.stringify({
-      UserId: parseInt(userId.emplId),
-      page: params.page,
-      pageSize: params.limit,
-      search: params.search,
-      sortField: params.sortField,
-      sortDirection: params.sortDirection,
-    }),
-    headers: { "Content-Type": "application/json" },
-    parseJson: true,
-  });
-  
-  loading.value = false;
+  try {
+    const response = await apiFetch("/api/exemption/request-list", {
+      method: "POST",
+      body: JSON.stringify({
+        UserId: parseInt(userId.emplId),
+        page: params.page,
+        pageSize: params.limit,
+        search: params.search,
+        sortField: params.sortField,
+        sortDirection: params.sortDirection,
+        PolicyNames: params.policyNames,
+      }),
+      headers: { "Content-Type": "application/json" },
+      parseJson: true,
+    });
 
-  return {
-    data: response.items ?? [],
-    total: response.totalCount ?? 0,
-  };
+    loading.value = false;
+
+    return {
+      data: response.items ?? [],
+      total: response.totalCount ?? 0,
+    };
+  } catch (error) {
+    loading.value = false;
+    console.error("Error fetching exemption requests:", error);
+    return {
+      data: [],
+      total: 0,
+    };
+  }
+};
+
+// --- Policy filter source data ---
+const allExemptionsForFilter = ref<any[]>([]);
+
+const policyDropdownItems = computed(() => {
+  const items = allExemptionsForFilter.value ?? [];
+  return items
+    .filter((item) => item?.label && item.label !== '-')
+    .sort((a, b) => a.label.localeCompare(b.label));
+});
+
+const fetchAllForPolicyFilter = async () => {
+  try {
+    const res = await apiFetch("/api/exemption/policies", {
+      method: "POST",
+      body: JSON.stringify({ UserId: parseInt(userId.emplId) }),
+      headers: { "Content-Type": "application/json" },
+      parseJson: true,
+    });
+
+    allExemptionsForFilter.value = res.items ?? [];
+  } catch (e) {
+    console.error("Error fetching policies for filter:", e);
+  }
 };
 
 const actions = computed(() => {
@@ -212,6 +248,8 @@ onMounted(async () => {
   canAdd.value = checkCanAdd("/main/exemptions/pending-for-approval");
   canEdit.value = checkCanEdit("/main/exemptions/pending-for-approval");
   canDelete.value = checkCanDelete("/main/exemptions/pending-for-approval");
+
+  await fetchAllForPolicyFilter();
 });
 </script>
 
@@ -220,10 +258,8 @@ onMounted(async () => {
     <header class="bg-white dark:bg-gray-800 shadow">
       <div class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <div class="flex items-center">
-          <Button variant="ghost-primary" size="lg" icon="left_arrow" iconPosition="center" customClass="rounded-full"
-            class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600" @onclick="$router.back()" />
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
-           {{ currentMenuLabel || currentPageName || "Pending Requests" }}
+            {{ currentMenuLabel || currentPageName || "Pending Requests" }}
           </h1>
         </div>
       </div>
@@ -231,14 +267,22 @@ onMounted(async () => {
     <main class="max-w-full mx-auto py-6 sm:px-6">
       <!-- Exemption Requests List -->
       <div class="mb-6 px-2 rounded-lg">
-        <base-table ref="tableRef" :server-pagination="true" :fetch-data="fetchExemptionData" :pagination="true"
-          :per-page="5" :show-search="true" :showlimitfilter="true" :limitfilter="[5, 10, 20, 30, 40, 50]"
+        <base-table
+         ref="tableRef" 
+          :server-pagination="true" 
+          :fetch-data="fetchExemptionData" 
+          :pagination="true"
+          :per-page="5" 
+          :show-search="true" 
+          :showlimitfilter="true" 
+          :limitfilter="[5, 10, 20, 30, 40, 50]"
           :sortable-columns="[
             'transactionNumber',
             'policyName',
             'requesterName',
             'createdDate',
-          ]" :filterable-columns="['status']" :header="[
+          ]" :filterable-columns="['status']" 
+          :header="[
             'transactionNumber',
             'policyName',
             'status',
@@ -266,10 +310,11 @@ onMounted(async () => {
               Approved: 'bg-green-100 text-green-800',
               Disapproved: 'bg-red-100 text-red-800',
             },
-          }" 
-          :date-time-fields="['createdDate']"
+          }" :date-time-fields="['createdDate']" 
           date-time-format="'MMM d, yyyy h:mm a'"
-          
+          :policy-filter-items="policyDropdownItems" 
+           policy-filter-label="Policy Filter"
+          policy-filter-placeholder="Select policies..."
           :actions="actions" />
       </div>
     </main>

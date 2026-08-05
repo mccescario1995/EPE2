@@ -286,12 +286,6 @@ const getProxies = (transApproverId: number): any[] => {
 };
 
 const isApprover = computed((): boolean => {
-  console.log(
-    "Checking if user is approver with data",
-    exemptionDetails.value,
-    "and userId",
-    userId,
-  );
   return exemptionDetails.value?.requesterId === userId?.emplId;
 });
 
