@@ -177,8 +177,9 @@ namespace EPEAPI.Controllers
                 // 2) Base query: pending, not deleted, AND
                 //    (user is the requester OR user is a pending approver)
                 var query = _context.EpeVTransactionHeaders.Where(u =>
-                    u.FinalDecision == "Pending"
-                    && u.IsDelete == 0
+                    u.IsDelete == 0 &&
+                    u.FinalDecision != "Draft" &&
+                    u.Status != "C"
                     && (
                         u.RequesterId == currentUserEmplId
                         || approvableTransactionIds.Contains(u.TransactionId)
@@ -944,7 +945,9 @@ namespace EPEAPI.Controllers
                 _context.EpeTransactionheaders.Add(transactionHeader);
 
                 await _context.SaveChangesAsync();
-                await LogTransactionAsync(transactionHeader.Transactionid, transactionHeader.Policyid, "DRAFT", null, 3, createdBy ?? 0);
+                var userId = _context.CoreVUsers.Where(u => u.EmplId == requesterId).Select(a => a.UserId).FirstOrDefault();
+                
+                await LogTransactionAsync(transactionHeader.Transactionid, transactionHeader.Policyid, "DRAFT", "N", "D", userId);
 
                 // Handle attachments (same as create)
                 if (request.Attachments != null && request.Attachments.Any())
@@ -1021,7 +1024,10 @@ namespace EPEAPI.Controllers
 
                 _context.EpeTransactionheaders.Add(transactionHeader);
                 await _context.SaveChangesAsync();
-                await LogTransactionAsync(transactionHeader.Transactionid, transactionHeader.Policyid, "CREATE", null, 0, createdBy ?? 0);
+
+                var userId = _context.CoreVUsers.Where(u => u.EmplId == userDetails.EmplId).Select(e => e.UserId).FirstOrDefault();
+
+                await LogTransactionAsync(transactionHeader.Transactionid, transactionHeader.Policyid, "CREATE", "N", "O", userId);
 
                 // APPROVERS - Skip the requester's approval group
                 var policyApprovers = await _context
@@ -1287,7 +1293,7 @@ namespace EPEAPI.Controllers
         }
 
         [HttpPost("submit-draft/{id}")]
-        public async Task<IActionResult> SubmitDraft(int id)
+        public async Task<IActionResult> SubmitDraft(int id, [FromBody] ApproverRequest request)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -1320,8 +1326,7 @@ namespace EPEAPI.Controllers
                 draft.Finaldecision = "Pending";
                 draft.Modifieddate = DateTime.UtcNow.AddHours(8);
 
-                
-                await LogTransactionAsync(draft.Transactionid, draft.Policyid, "SUBMIT", 3, 0, draft.Modifiedby ?? 0);
+                await LogTransactionAsync(draft.Transactionid, draft.Policyid, "SUBMIT", "D", "O", request.UserId);
                 await _context.SaveChangesAsync();
 
                 // Get policy approvers and create transaction approvers (same as create)
@@ -1613,7 +1618,7 @@ namespace EPEAPI.Controllers
                     .EpeTransactionapprovers.Where(a => a.Transactionid == id && a.Isdelete == 0)
                     .ExecuteUpdateAsync(b => b.SetProperty(a => a.Isdelete, 1));
 
-                await LogTransactionAsync(id, existingItem.Policyid, "DELETE", existingItem.Status == "C" ? 1 : (existingItem.Status == "D" ? 3 : 0), 4, request.UserId);
+                await LogTransactionAsync(id, existingItem.Policyid, "DELETE", existingItem.Status, "X", request.UserId);
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
@@ -1960,9 +1965,21 @@ namespace EPEAPI.Controllers
                     .FirstOrDefaultAsync();
 
                 approver.Respond = request.Respond;
+                var respond = "";
+                if(request.Respond == 1)
+                {
+                    respond = "A";
+                }
+                else if (request.Respond == 2)
+                {
+                    respond = "Z";
+                }
                 approver.Responddate = DateTime.UtcNow.AddHours(8);
                 approver.Remarks = request.Remarks; // Individual remarks for this approver
-                await LogTransactionAsync(transactionHeader.Transactionid, transactionHeader.Policyid, "RESPOND", 0, request.Respond, request.TransApproverId, request.Remarks);
+
+                var userId = _context.CoreVUsers.Where(u => u.EmplId == request.EmployeeId).Select(e => e.UserId).FirstOrDefault();
+
+                await LogTransactionAsync(transactionHeader.Transactionid, transactionHeader.Policyid, "RESPOND", "P", respond, userId);
                 await _context.SaveChangesAsync();
 
                 if (request.Respond == 1) // Approved
@@ -2133,6 +2150,8 @@ namespace EPEAPI.Controllers
                                     .SetProperty(h => h.Finaldecision, "Approved")
                             );
 
+                        await LogTransactionAsync(transactionHeader.Transactionid, transactionHeader.Policyid, "CLOSE", transactionHeader.Status, "C", userId);
+
                         if (requester != null && !string.IsNullOrEmpty(requester.Emailadd))
                         {
                             try
@@ -2207,6 +2226,8 @@ namespace EPEAPI.Controllers
                             b.SetProperty(h => h.Status, "C")
                                 .SetProperty(h => h.Finaldecision, "Disapproved")
                         );
+
+                        await LogTransactionAsync(transactionHeader.Transactionid, transactionHeader.Policyid, "CLOSE", transactionHeader.Status, "C", userId);
 
                     if (requester != null && !string.IsNullOrEmpty(requester.Emailadd))
                     {
@@ -2809,17 +2830,15 @@ namespace EPEAPI.Controllers
 
                 var approverTransactionIds = await _context
                     .EpeVTransactionApprovers.Where(a =>
-                        a.EmployeeId == currentUserEmplId
-                        && a.IsDelete == 0
+                        a.IsDelete == 0
                     )
                     .Select(a => a.TransactionId)
                     .Distinct()
                     .ToListAsync();
 
-                var query = _context.EpeVTransactionHeaders.Where(u => u.FinalDecision != "Draft" && u.Status != "C" &&
+                var query = _context.EpeVTransactionHeaders.Where(u => 
                     u.IsDelete == 0
-                    && (u.RequesterId == currentUserEmplId
-                        || approverTransactionIds.Contains(u.TransactionId))
+                    && approverTransactionIds.Contains(u.TransactionId)
                 );
 
                 var searchTerm = request.Search ?? search;
@@ -3010,6 +3029,8 @@ namespace EPEAPI.Controllers
                 var page = request.Page > 0 ? request.Page : 1;
                 var pageSize = request.PageSize > 0 ? request.PageSize : 10;
 
+                var createdBy = _context.CoreVEmployeeDetails.Where(u => u.EmplId == query.Select(q => q.CreatedBy).FirstOrDefault()).Select(u => u.Employeename2).FirstOrDefault();
+
                 var items = await query
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
@@ -3023,7 +3044,7 @@ namespace EPEAPI.Controllers
                         CreatedDate = h.CreatedDate,
                         RequesterId = h.RequesterId,
                         FinalDecision = h.FinalDecision,
-                        CreatedBy = h.CreatedBy,
+                        CreatedBy = createdBy,
                         ModifiedBy = h.ModifiedBy,
                         ModifiedDate = h.ModifiedDate,
                         Workstation = h.Workstation,
@@ -3095,11 +3116,15 @@ namespace EPEAPI.Controllers
             }
         }
 
-        private async Task LogTransactionAsync(long transactionId, int policyId, string transactionType, int? previousStatus, int? newStatus, long performedBy, string? remarks = null, string? reason = null, string? metadata = null)
+        private async Task LogTransactionAsync(long transactionId, int policyId, string transactionType, string? previousStatus, string? newStatus, int performedBy, string? remarks = null, string? reason = null, string? metadata = null)
         {
             try
             {
-                var ipAddress = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                var ipAddress = HttpContext.Request.Headers["X-Forwarded-For"]
+                    .FirstOrDefault()?
+                    .Split(',')
+                    .FirstOrDefault()?
+                    .Trim()
                     ?? HttpContext.Connection.RemoteIpAddress?.ToString()
                     ?? "Unknown";
 
@@ -3176,7 +3201,7 @@ namespace EPEAPI.Controllers
                                 log.TransactionType,
                                 log.PreviousStatus,
                                 log.NewStatus,
-                                log.PerformedBy,
+                                PerformedBy = _context.CoreVUsers.Where(e => e.UserId == log.PerformedBy).Select(a => a.Employeename).FirstOrDefault(),
                                 log.PerformedAt,
                                 log.Remarks,
                                 log.Reason,
@@ -3345,30 +3370,31 @@ namespace EPEAPI.Controllers
             }
         }
 
-        [HttpPost("create-transaction-logs")]
-        public async Task<IActionResult> CreateTransactionLog([FromBody] TransactionLogRequest request)
-        {
-            try
-            {
-                await LogTransactionAsync(
-                    request.TransactionId,
-                    request.PolicyId,
-                    request.TransactionType,
-                    request.PreviousStatus,
-                    request.NewStatus,
-                    request.PerformedBy,
-                    request.Remarks,
-                    request.Reason,
-                    request.Metadata
-                );
+        //Create a new transaction log entry
+        //[HttpPost("create-transaction-logs")]
+        //public async Task<IActionResult> CreateTransactionLog([FromBody] TransactionLogRequest request)
+        //{
+        //    try
+        //    {
+        //        await LogTransactionAsync(
+        //            request.TransactionId,
+        //            request.PolicyId,
+        //            request.TransactionType,
+        //            request.PreviousStatus?.ToString(),
+        //            request.NewStatus?.ToString(),
+        //            request.PerformedBy,
+        //            request.Remarks,
+        //            request.Reason,
+        //            request.Metadata
+        //        );
 
-                return Ok(new { success = true });
-            }
-            catch (Exception e)
-            {
-                return StatusCode(500, "Error: " + e.Message);
-            }
-        }
+        //        return Ok(new { success = true });
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        return StatusCode(500, "Error: " + e.Message);
+        //    }
+        //}
 
         public class TransactionLogRequest
         {

@@ -4,7 +4,7 @@ namespace EPEAPI.Models;
 
 public partial class EpeTransactionlog
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     public long TransactionId { get; set; }
 
@@ -12,9 +12,9 @@ public partial class EpeTransactionlog
 
     public string? TransactionType { get; set; }
 
-    public int? PreviousStatus { get; set; }
+    public string? PreviousStatus { get; set; }
 
-    public int? NewStatus { get; set; }
+    public string? NewStatus { get; set; }
 
     public int PerformedBy { get; set; }
 

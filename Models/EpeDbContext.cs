@@ -1044,8 +1044,10 @@ public partial class EpeDbContext : DbContext
 
         modelBuilder.Entity<EpeTransactionlog>(entity =>
         {
+            entity.HasKey(e => e.Id);
             entity.ToTable("epe_transactionlog");
 
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.TransactionType)
                 .HasMaxLength(50)
                 .IsUnicode(false)

@@ -3,6 +3,8 @@ using EPEAPI.Services;
 using EPEAPI.TokenAuthentication;
 using Microsoft.EntityFrameworkCore;
 
+
+try { 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -131,3 +133,9 @@ app.MapControllers();
 app.UseStaticFiles();
 
 app.Run();
+}
+catch (Exception ex)
+{
+    File.WriteAllText("crash.txt", ex.ToString());
+    throw;
+}
