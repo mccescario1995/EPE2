@@ -593,7 +593,7 @@ const handleSubmit = async () => {
         duration: 5000,
       });
 
-      router.push("/main/exemptions/create-exemption");
+      router.push("/main/create-exemption");
     } else {
       throw new Error(response.message || "Failed to create request");
     }
@@ -751,7 +751,7 @@ const canAdd = ref(false);
 
 onMounted(async () => {
   await fetchMenuList();
-  canAdd.value = checkCanAdd("/main/exemptions/create-exemption");
+  canAdd.value = checkCanAdd("/main/create-exemption");
 
   if (!canAdd.value) {
     showToast({
@@ -760,7 +760,7 @@ onMounted(async () => {
       message: "You do not have permission to create exemption requests.",
       duration: 5000,
     });
-    router.push("/main/exemptions/create-exemption");
+    router.push("/main/create-exemption");
     return;
   }
 

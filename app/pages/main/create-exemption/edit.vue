@@ -167,7 +167,7 @@ const fetchExemptionDetails = async () => {
       message: "Invalid exemption ID",
       duration: 5000,
     });
-    router.push("/main/exemptions/create-exemption");
+    router.push("/main/create-exemption");
     return;
   }
 
@@ -237,7 +237,7 @@ const fetchExemptionDetails = async () => {
         message: response.message || "Failed to load exemption details",
         duration: 5000,
       });
-      router.push("/main/exemptions/create-exemption");
+      router.push("/main/create-/                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              create-exemption");
     }
   } catch (error) {
     console.error("Error fetching exemption details:", error);
@@ -247,7 +247,7 @@ const fetchExemptionDetails = async () => {
       message: "Failed to load exemption details",
       duration: 5000,
     });
-    router.push("/main/exemptions/create-exemption");
+    router.push("/main/create-exemption");
   } finally {
     isLoading.value = false;
   }
@@ -370,7 +370,7 @@ const handleSubmit = async () => {
       // Redirect to exemptions view page after success
       // router.push(`/main/exemptions/view?id=${exemptionId.value}`);
       // router.back();
-      router.push("/main/exemptions/pending-for-approval");
+      router.push("/main/create-exemption");
     } else {
       showToast({
         type: "error",
@@ -398,10 +398,17 @@ const handleSubmitDraft = async () => {
 
   isSubmitting.value = true;
   try {
+    const payload = {
+      userId: userId.userId,
+    };
     const response = await apiFetch(
       `/api/exemption/submit-draft/${exemptionId.value}`,
       {
         method: "POST",
+        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
     );
 
@@ -413,7 +420,7 @@ const handleSubmitDraft = async () => {
         duration: 5000,
       });
       // Redirect to exemptions list after success
-      router.push("/main/exemptions/create-exemption");
+      router.push("/main/create-exemption");
     } else {
       showToast({
         type: "error",
@@ -468,7 +475,7 @@ const handleUpdateDraft = async () => {
         duration: 5000,
       });
       // Redirect to exemptions view page after success
-      router.push(`/main/exemptions/view?id=${exemptionId.value}`);
+      router.push(`/main/create-exemption/view?id=${exemptionId.value}`);
     } else {
       showToast({
         type: "error",
@@ -995,7 +1002,8 @@ const activeGroupSort = computed(() => {
 // Fetch policies on mount
 onMounted(async () => {
   await fetchMenuList();
-  canEdit.value = checkCanEdit("/main/exemptions/");
+  // /main/create-exemption
+  canEdit.value = checkCanEdit("/main/create-exemption");
 
   if (!canEdit.value) {
     showToast({
@@ -1004,7 +1012,7 @@ onMounted(async () => {
       message: "You do not have permission to edit exemption requests.",
       duration: 5000,
     });
-    router.push("/main/exemptions/create-exemption");
+    router.push("/main/create-exemption");
     return;
   }
 
@@ -1067,14 +1075,14 @@ const isCurrentUser = (requesterId: number): boolean => {
           </h1>
         </div>
         <div class="flex items-center gap-3">
-          <Button
+          <!-- <Button
             variant="outline-primary"
             size="md"
             @onclick="handleBack"
             :disabled="isSubmitting"
           >
             Cancel
-          </Button>
+          </Button> -->
           <template v-if="exemptionDetails?.status === 'D'">
             <Button
               v-if="canEdit"

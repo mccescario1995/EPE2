@@ -11,15 +11,6 @@ const { breadcrumbs, currentMenuLabel } = useBreadcrumbs();
 const currentPageName = breadcrumbs.value[breadcrumbs.value.length - 1]?.label;
 const router = useRouter();
 
-type PolicyApiItem = {
-  policyid: string;
-  description: string;
-  status: string;
-  shortname: boolean;
-  createddate: string;
-  managerApprover?: string;
-};
-
 const userStore = useUserStore();
 const userId = userStore.profile;
 
@@ -177,13 +168,6 @@ const deleteRequestPolicy = async () => {
           :show-search="true"
           :showlimitfilter="true"
           :limitfilter="[5, 10, 20, 30, 40, 50]"
-          :sortable-columns="[
-            'policyid',
-            'shortname',
-            'status',
-            'description',
-            'createddate',
-          ]"
           :filterable-columns="['status']"
           :header="[
             'policyid',

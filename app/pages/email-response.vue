@@ -195,7 +195,7 @@ async function executeAction() {
 // ─── Navigation helpers ───────────────────────────────────────────────────────
 function viewRequest() {
   if (!resultTxId.value) return;
-  router.push({ path: "/main/exemptions/view", query: { id: resultTxId.value } });
+  router.push({ path: "/main/pending-for-approval/view", query: { id: resultTxId.value } });
 }
 
 function goDashboard() {

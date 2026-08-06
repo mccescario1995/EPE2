@@ -167,7 +167,7 @@ const fetchExemptionDetails = async () => {
       message: "Invalid exemption ID",
       duration: 5000,
     });
-    router.push("/main/exemptions/overall-request");
+    router.push("/reports/overall-request");
     return;
   }
 
@@ -237,7 +237,7 @@ const fetchExemptionDetails = async () => {
         message: response.message || "Failed to load exemption details",
         duration: 5000,
       });
-      router.push("/main/exemptions/overall-request");
+      router.push("/reports/overall-request");
     }
   } catch (error) {
     console.error("Error fetching exemption details:", error);
@@ -247,7 +247,7 @@ const fetchExemptionDetails = async () => {
       message: "Failed to load exemption details",
       duration: 5000,
     });
-    router.push("/main/exemptions/overall-request");
+    router.push("/reports/overall-request");
   } finally {
     isLoading.value = false;
   }
@@ -334,10 +334,10 @@ const hasUnsavedChanges = computed(() => {
 const handleCancel = () => {
   if (hasUnsavedChanges.value) {
     if (confirm("You have unsaved changes. Are you sure you want to leave?")) {
-      router.push("/main/exemptions/overall-request");
+      router.push("/reports/overall-request");
     }
   } else {
-    router.push("/main/exemptions/overall-request");
+    router.push("/reports/overall-request");
   }
 };
 
@@ -381,7 +381,7 @@ const handleSubmit = async () => {
       // Redirect to exemptions view page after success
       // router.push(`/main/exemptions/view?id=${exemptionId.value}`);
       // router.back();
-      router.push("/main/exemptions/pending-for-approval");
+      router.push("/reports/overall-request");
     } else {
       showToast({
         type: "error",
@@ -424,7 +424,7 @@ const handleSubmitDraft = async () => {
         duration: 5000,
       });
       // Redirect to exemptions list after success
-      router.push("/main/exemptions/overall-request");
+      router.push("/reports/overall-request");
     } else {
       showToast({
         type: "error",
@@ -479,7 +479,7 @@ const handleUpdateDraft = async () => {
         duration: 5000,
       });
       // Redirect to exemptions view page after success
-      router.push(`/main/exemptions/view?id=${exemptionId.value}`);
+      router.push(`/reports/overall-request/view?id=${exemptionId.value}`);
     } else {
       showToast({
         type: "error",
@@ -1006,7 +1006,7 @@ const activeGroupSort = computed(() => {
 // Fetch policies on mount
 onMounted(async () => {
   await fetchMenuList();
-  canEdit.value = checkCanEdit("/main/exemptions/");
+  canEdit.value = checkCanEdit("/reports/overall-request/");
 
   if (!canEdit.value) {
     showToast({
@@ -1015,7 +1015,7 @@ onMounted(async () => {
       message: "You do not have permission to edit exemption requests.",
       duration: 5000,
     });
-    router.push("/main/exemptions/overall-request");
+    router.push("/reports/overall-request");
     return;
   }
 

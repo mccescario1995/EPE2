@@ -299,15 +299,15 @@ const handleBack = () => {
 };
 
 const handleEdit = () => {
-  router.push(`/main/exemptions/edit?id=${exemptionId.value}`);
+  router.push(`/main/pending-for-approval/edit?id=${exemptionId.value}`);
 };
 const handleApprove = () => {
-  router.push(`/main/exemptions/approve?id=${exemptionId.value}`);
+  router.push(`/main/pending-for-approval/approve?id=${exemptionId.value}`);
 };
 onMounted(async () => {
   await fetchMenuList();
-  canEdit.value = checkCanEdit("/main/exemptions/");
-  canDelete.value = checkCanDelete("/main/exemptions/");
+  canEdit.value = checkCanEdit("/main/closed/");
+  canDelete.value = checkCanDelete("/main/closed/");
 
   fetchExemptionDetails();
 });

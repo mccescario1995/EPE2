@@ -39,7 +39,7 @@ const editProduct = (row: any) => {
   router.push(`/main/pending-for-approval/edit?id=${row.transactionId}`);
 };
 const approveRequest = (row: any) => {
-  router.push(`/main/approve?id=${row.transactionId}`);
+  router.push(`/main/pending-for-approval/approve?id=${row.transactionId}`);
 };
 
 const confirmDelete = (row: any) => {
@@ -144,7 +144,7 @@ const fetchExemptionData = async (params: {
     headers: { "Content-Type": "application/json" },
     parseJson: true,
   });
-  
+
   loading.value = false;
 
   return {
@@ -173,7 +173,6 @@ const actions = computed(() => {
       buttonClass:
         "hover:bg-teal-100 dark:hover:bg-teal-100 hover:text-teal-600 dark:hover:text-teal-900",
       visible: (row) => {
-        console.log(row.canApprove, typeof row.canApprove);
         return row.canApprove === true;
       },
     },
@@ -209,9 +208,9 @@ const actions = computed(() => {
 
 onMounted(async () => {
   await fetchMenuList();
-  canAdd.value = checkCanAdd("/main/exemptions/pending-for-approval");
-  canEdit.value = checkCanEdit("/main/exemptions/pending-for-approval");
-  canDelete.value = checkCanDelete("/main/exemptions/pending-for-approval");
+  canAdd.value = checkCanAdd("/main/pending-for-approval");
+  canEdit.value = checkCanEdit("/main/pending-for-approval");
+  canDelete.value = checkCanDelete("/main/pending-for-approval");
 });
 </script>
 
@@ -223,7 +222,7 @@ onMounted(async () => {
           <!-- <Button variant="ghost-primary" size="lg" icon="left_arrow" iconPosition="center" customClass="rounded-full"
             class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600" @onclick="$router.back()" /> -->
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
-           {{ currentMenuLabel || currentPageName || "Pending Requests" }}
+            {{ currentMenuLabel || currentPageName || "Pending Requests" }}
           </h1>
         </div>
       </div>
@@ -233,12 +232,7 @@ onMounted(async () => {
       <div class="mb-6 px-2 rounded-lg">
         <base-table ref="tableRef" :server-pagination="true" :fetch-data="fetchExemptionData" :pagination="true"
           :per-page="5" :show-search="true" :showlimitfilter="true" :limitfilter="[5, 10, 20, 30, 40, 50]"
-          :sortable-columns="[
-            'transactionNumber',
-            'policyName',
-            'requesterName',
-            'createdDate',
-          ]" :filterable-columns="['status']" :header="[
+          :filterable-columns="['status']" :header="[
             'transactionNumber',
             'policyName',
             'status',
@@ -266,11 +260,7 @@ onMounted(async () => {
               Approved: 'bg-green-100 text-green-800',
               Disapproved: 'bg-red-100 text-red-800',
             },
-          }" 
-          :date-time-fields="['createdDate']"
-          date-time-format="'MMM d, yyyy h:mm a'"
-          
-          :actions="actions" />
+          }" :date-time-fields="['createdDate']" date-time-format="'MMM d, yyyy h:mm a'" :actions="actions" />
       </div>
     </main>
 

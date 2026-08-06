@@ -66,8 +66,6 @@ export const useMenuService = () => {
         parseJson: true,
       });
 
-      console.log("Fetched menu response:", response);
-
       const data = response;
       menuData.value = data.map((menuGroup) => ({
         title: menuGroup.name,

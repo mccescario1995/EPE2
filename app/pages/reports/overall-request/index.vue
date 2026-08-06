@@ -33,13 +33,13 @@ const deleteLoading = ref(false);
 const exemptionDataLength = computed(() => exemptionData.value?.length ?? 0);
 
 const viewProduct = (row: any) => {
-  router.push(`/main/exemptions/overall-request/view?id=${row.transactionId}`);
+  router.push(`/reports/overall-request/view?id=${row.transactionId}`);
 };
 const editProduct = (row: any) => {
-  router.push(`/main/exemptions/overall-request/edit?id=${row.transactionId}`);
+  router.push(`/reports/overall-request/edit?id=${row.transactionId}`);
 };
 const approveRequest = (row: any) => {
-  router.push(`/main/exemptions/approve?id=${row.transactionId}`);
+  router.push(`/reports/overall-request/approve?id=${row.transactionId}`);
 };
 
 const confirmDelete = (row: any) => {
@@ -182,14 +182,14 @@ const fetchAllForPolicyFilter = async () => {
 
 // Handle create navigation
 const handleCreate = () => {
-  router.push(`/main/exemptions/create`);
+  router.push(`/reports/overall-request/create`);
 };
 
 onMounted(async () => {
   await fetchMenuList();
-  canAdd.value = checkCanAdd("/main/exemptions/overall-request");
-  canEdit.value = checkCanEdit("/main/exemptions/overall-request");
-  canDelete.value = checkCanDelete("/main/exemptions/overall-request");
+  canAdd.value = checkCanAdd("/reports/overall-request");
+  canEdit.value = checkCanEdit("/reports/overall-request");
+  canDelete.value = checkCanDelete("/reports/overall-request");
 
   // Load policy options for the filter dropdown
   await fetchAllForPolicyFilter();
@@ -232,13 +232,7 @@ onMounted(async () => {
           :per-page="5"
           :show-search="true"
           :showlimitfilter="true"
-          :limitfilter="[5, 10, 20, 30, 40, 50]"
-          :sortable-columns="[
-            'transactionNumber',
-            'policyName',
-            'requesterName',
-            'createdDate',
-          ]"
+          :limitfilter="[5, 10, 20, 30, 40, 50]"  
           :filterable-columns="['status']"
           :header="[
             'transactionNumber',

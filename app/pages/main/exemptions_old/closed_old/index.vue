@@ -218,12 +218,6 @@ const handleCreate = () => {
           :show-search="true"
           :showlimitfilter="true"
           :limitfilter="[5, 10, 20, 30, 40, 50]"
-          :sortable-columns="[
-            'transactionNumber',
-            'policyName',
-            'requesterName',
-            'createdDate',
-          ]"
           :filterable-columns="['status']"
           :header="[
             'transactionNumber',

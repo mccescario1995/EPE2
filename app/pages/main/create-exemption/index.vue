@@ -35,7 +35,7 @@ const editProduct = (row: any) => {
   router.push(`/main/create-exemption/edit?id=${row.transactionId}`);
 };
 const approveRequest = (row: any) => {
-  router.push(`/main/approve?id=${row.transactionId}`);
+  router.push(`/main/pending-for-approval/approve?id=${row.transactionId}`);
 };
 
 const confirmDelete = (row: any) => {
@@ -149,7 +149,7 @@ const fetchExemptionData = async (params: {
 
 // Handle create navigation
 const handleCreate = () => {
-  router.push(`/main/create-exemption/create`);
+ navigateTo(`/main/create-exemption/create`);
 };
 
 const actions = computed(() => {
@@ -183,6 +183,7 @@ const actions = computed(() => {
       iconClass: "!text-blue-500 dark:text-blue-400",
       buttonClass:
         "hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900",
+      visible: (row) => canEdit.value == true,
       disabled: (row) => row.status === "P" || row.status === "C", // Disable for Pending or Completed
     });
   }
@@ -203,9 +204,9 @@ const actions = computed(() => {
 
 onMounted(async () => {
   await fetchMenuList();
-  canAdd.value = checkCanAdd("/main/exemptions/create-exemption");
-  canEdit.value = checkCanEdit("/main/exemptions/create-exemption");
-  canDelete.value = checkCanDelete("/main/exemptions/create-exemption");
+  canAdd.value = checkCanAdd("/main/create-exemption");
+  canEdit.value = checkCanEdit("/main/create-exemption");
+  canDelete.value = checkCanDelete("/main/create-exemption");
 });
 </script>
 
@@ -218,15 +219,6 @@ onMounted(async () => {
         class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
       >
         <div class="flex items-center">
-          <!-- <Button
-            variant="ghost-primary"
-            size="lg"
-            icon="left_arrow"
-            iconPosition="center"
-            customClass="rounded-full"
-            class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-            @onclick="$router.back()"
-          /> -->
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
             {{ currentMenuLabel || currentPageName || "All Requests" }}
           </h1>
@@ -256,12 +248,6 @@ onMounted(async () => {
           :show-search="true"
           :showlimitfilter="true"
           :limitfilter="[5, 10, 20, 30, 40, 50]"
-          :sortable-columns="[
-            'transactionNumber',
-            'policyName',
-            'requesterName',
-            'createdDate',
-          ]"
           :filterable-columns="['status']"
           :header="[
             'transactionNumber',

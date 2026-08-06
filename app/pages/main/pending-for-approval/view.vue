@@ -65,7 +65,7 @@ const fetchExemptionDetails = async () => {
         message: response?.message || "Failed to load exemption details",
         duration: 5000,
       });
-      router.push("/main/exemptions/pending-for-approval");
+      router.push("/main/pending-for-approval");
     }
   } catch (error) {
     console.error("Error fetching exemption details:", error);
@@ -75,7 +75,7 @@ const fetchExemptionDetails = async () => {
       message: "Failed to load exemption details",
       duration: 5000,
     });
-    router.push("/main/exemptions/pending-for-approval");
+    router.push("/main/pending-for-approval");
   } finally {
     loading.value = false;
   }
@@ -298,15 +298,15 @@ const handleBack = () => {
 };
 
 const handleEdit = () => {
-  router.push(`/main/exemptions/edit?id=${exemptionId.value}`);
+  router.push(`/main/pending-for-approval/edit?id=${exemptionId.value}`);
 };
 const handleApprove = () => {
-  router.push(`/main/exemptions/approve?id=${exemptionId.value}`);
+  router.push(`/main/pending-for-approval/approve?id=${exemptionId.value}`);
 };
 onMounted(async () => {
   await fetchMenuList();
-  canEdit.value = checkCanEdit("/main/exemptions/");
-  canDelete.value = checkCanDelete("/main/exemptions/");
+  canEdit.value = checkCanEdit("/main/pending-for-approval/");
+  canDelete.value = checkCanDelete("/main/pending-for-approval/");
 
   fetchExemptionDetails();
   isApprover.value;
@@ -442,8 +442,8 @@ const currentUserPendingAction = computed((): boolean => {
                     </label>
                     <p class="text-gray-900 dark:text-gray-100">
                       {{
-                        policyValue?.label ||
                         exemptionDetails.policyName ||
+                        policyValue?.label ||
                         "N/A"
                       }}
                     </p>
@@ -456,7 +456,8 @@ const currentUserPendingAction = computed((): boolean => {
                   </label>
                   <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700">
                     <p class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-                      {{ exemptionDetails.details || "No details provided" }}
+                      <!-- {{ exemptionDetails.details || "No details provided" }} -->
+                      {{ policyValue?.label }}
                     </p>
                   </div>
                 </div>

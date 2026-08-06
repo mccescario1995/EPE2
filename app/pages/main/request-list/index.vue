@@ -33,13 +33,13 @@ const deleteLoading = ref(false);
 const exemptionDataLength = computed(() => exemptionData.value?.length ?? 0);
 
 const viewProduct = (row: any) => {
-  router.push(`/main/pending-for-approval/view?id=${row.transactionId}`);
+  router.push(`/main/request-list/view?id=${row.transactionId}`);
 };
 const editProduct = (row: any) => {
-  router.push(`/main/pending-for-approval/edit?id=${row.transactionId}`);
+  router.push(`/main/request-list/edit?id=${row.transactionId}`);
 };
 const approveRequest = (row: any) => {
-  router.push(`/main/approve?id=${row.transactionId}`);
+  router.push(`/main/request-list/approve?id=${row.transactionId}`);
 };
 
 const confirmDelete = (row: any) => {
@@ -245,9 +245,9 @@ const actions = computed(() => {
 
 onMounted(async () => {
   await fetchMenuList();
-  canAdd.value = checkCanAdd("/main/exemptions/pending-for-approval");
-  canEdit.value = checkCanEdit("/main/exemptions/pending-for-approval");
-  canDelete.value = checkCanDelete("/main/exemptions/pending-for-approval");
+  canAdd.value = checkCanAdd("/main/request-list");
+  canEdit.value = checkCanEdit("/main/request-list");
+  canDelete.value = checkCanDelete("/main/request-list");
 
   await fetchAllForPolicyFilter();
 });
@@ -276,12 +276,7 @@ onMounted(async () => {
           :show-search="true" 
           :showlimitfilter="true" 
           :limitfilter="[5, 10, 20, 30, 40, 50]"
-          :sortable-columns="[
-            'transactionNumber',
-            'policyName',
-            'requesterName',
-            'createdDate',
-          ]" :filterable-columns="['status']" 
+          :filterable-columns="['status']" 
           :header="[
             'transactionNumber',
             'policyName',

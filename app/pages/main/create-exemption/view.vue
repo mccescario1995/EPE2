@@ -65,7 +65,7 @@ const fetchExemptionDetails = async () => {
         message: response?.message || "Failed to load exemption details",
         duration: 5000,
       });
-      router.push("/main/exemptions/create-exemption");
+      router.push("/main/create-exemption");
     }
   } catch (error) {
     console.error("Error fetching exemption details:", error);
@@ -75,7 +75,7 @@ const fetchExemptionDetails = async () => {
       message: "Failed to load exemption details",
       duration: 5000,
     });
-    router.push("/main/exemptions/create-exemption");
+    router.push("/main/create-exemption");
   } finally {
     loading.value = false;
   }
@@ -298,15 +298,15 @@ const handleBack = () => {
 };
 
 const handleEdit = () => {
-  router.push(`/main/exemptions/edit?id=${exemptionId.value}`);
+  router.push(`/main/create-exemption/edit?id=${exemptionId.value}`);
 };
 const handleApprove = () => {
-  router.push(`/main/exemptions/approve?id=${exemptionId.value}`);
+  router.push(`/main/create-exemption/approve?id=${exemptionId.value}`);
 };
 onMounted(async () => {
   await fetchMenuList();
-  canEdit.value = checkCanEdit("/main/exemptions/");
-  canDelete.value = checkCanDelete("/main/exemptions/");
+  canEdit.value = checkCanEdit("/main/create-exemption/");
+  canDelete.value = checkCanDelete("/main/create-exemption/");
 
   fetchExemptionDetails();
   isApprover.value;
@@ -492,8 +492,8 @@ const currentUserPendingAction = computed((): boolean => {
                     </label>
                     <p class="text-gray-900 dark:text-gray-100">
                       {{
-                        policyValue?.label ||
                         exemptionDetails.policyName ||
+                        policyValue?.label ||
                         "N/A"
                       }}
                     </p>
@@ -512,7 +512,8 @@ const currentUserPendingAction = computed((): boolean => {
                     <p
                       class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
                     >
-                      {{ exemptionDetails.details || "No details provided" }}
+                      <!-- {{ exemptionDetails.details || "No details provided" }} -->
+                      {{ policyValue?.label }}
                     </p>
                   </div>
                 </div>

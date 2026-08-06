@@ -37,14 +37,15 @@ const fetchExemptionDetails = async () => {
         parseJson: true,
       }
     );
-
-    if (response && response.success && response.item) {
+      console.log("Exemption Details Response:", response);
+    if (response) {
       exemptionDetails.value = response.item;
 
       if (exemptionDetails.value?.transactionId) {
         await fetchTransactionHeaderDetails(exemptionDetails.value.transactionId);
         await fetchAttachments();
         await fetchTransactionLogs();
+        console.log("fetchTransactionLogs", transactionLogs.value);
       }
     } else {
       showToast({
@@ -163,7 +164,8 @@ const fetchTransactionLogs = async () => {
         parseJson: true,
       }
     );
-    if (response && response.success) {
+    console.log("Transaction Logs Response:", response);
+    if (response) {
       transactionLogs.value = response.items ?? [];
     }
   } catch (error) {
@@ -248,13 +250,18 @@ const formatDateTime = (date: string | Date | null) => {
   };
 };
 
-const formatStatus = (status: number | null | undefined) => {
+const formatStatus = (status: string | number | null | undefined) => {
   if (status === null || status === undefined) return "N/A";
-  const statusMap: Record<number, string> = {
+  const statusMap: Record<string, string> = {
     0: "Open",
     1: "Closed",
     2: "Pending",
     3: "Draft",
+    4: "Deleted",
+    O: "Open",
+    C: "Closed",
+    P: "Pending",
+    D: "Draft",
   };
   return statusMap[status] || String(status);
 };
@@ -281,20 +288,20 @@ const getFinalDecisionDisplay = (decision: string) => {
 
 const getApproverStatusDisplay = (respond: number) => {
   const statusMap: Record<number, string> = {
-    0: "Pending",
+    0: "Open",
     1: "Approved",
     2: "Disapproved",
-    3: "Draft",
+    3: "Pending",
   };
-  return statusMap[respond] || "Pending";
+  return statusMap[respond] ?? "Pending";
 };
 
 const getApproverStatusColor = (respond: number) => {
   const colorMap: Record<number, string> = {
-    0: "bg-yellow-100 text-yellow-800 border border-yellow-900",
+    0: "bg-blue-100 text-blue-800 border border-blue-900",
     1: "bg-green-100 text-green-800 border border-green-900",
     2: "bg-red-100 text-red-800 border border-red-900",
-    3: "bg-gray-100 text-gray-800 border border-gray-900",
+    3: "bg-yellow-100 text-yellow-800 border border-yellow-900",
   };
   return colorMap[respond] || "bg-gray-100 text-gray-800 border border-gray-900";
 };
@@ -305,12 +312,9 @@ const isCurrentUser = (requesterId: number): boolean => {
 
 const approversTableData = computed(() => {
   return allApproversList.value.map(approver => ({
-    approverName: approver.approverName,
-    approverEmail: approver.approverEmail || '',
-    isCurrentUser: isCurrentUser(approver.employeeId),
+    approver: `${approver.approverName}${approver.approverEmail ? '\n' + approver.approverEmail : ''}`,
     approverRole: approver.approverRole,
     respondStatus: getApproverStatusDisplay(approver.respond),
-    respondColor: getApproverStatusColor(approver.respond),
     respondDate: approver.respondDate ? formatDateTime(approver.respondDate).date : 'N/A',
     remarks: approver.remarks || '-'
   }));
@@ -319,16 +323,12 @@ const approversTableData = computed(() => {
 const transactionLogsTableData = computed(() => {
   return transactionLogs.value.map(log => ({
     transactionType: log.transactionType,
-    previousStatus: formatStatus(log.previousStatus),
-    newStatus: formatStatus(log.newStatus),
+    previousStatus: log.previousStatus,
+    newStatus: log.newStatus,
     performedBy: log.performedBy,
-    performedAt: log.performedAt ? formatDateTime(log.performedAt).date : '',
+    performedAt: log.performedAt,
     remarks: log.remarks || '-',
     reason: log.reason || '-',
-    workstation: log.workstation || '-',
-    ipAddress: log.ipAddress || '-',
-    macAddress: log.macAddress || '-',
-    isCurrentLog: isCurrentLog(log.id)
   }));
 });
 
@@ -363,8 +363,8 @@ const viewLog = (logId: number) => {
 
 onMounted(async () => {
   await fetchMenuList();
-  canEdit.value = checkCanEdit("/main/exemptions/");
-  canDelete.value = checkCanDelete("/main/exemptions/");
+  canEdit.value = checkCanEdit("/reports/policy-transaction/");
+  canDelete.value = checkCanDelete("/reports/policy-transaction/");
 
   fetchExemptionDetails();
 });
@@ -517,7 +517,7 @@ onMounted(async () => {
                   {{ exemptionDetails.metadata }}
                 </p>
               </div>
-              <div v-if="exemptionDetails.workstation">
+              <!-- <div v-if="exemptionDetails.workstation">
                 <label
                   class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
                 >
@@ -526,8 +526,8 @@ onMounted(async () => {
                 <p class="text-gray-900 dark:text-gray-100">
                   {{ exemptionDetails.workstation }}
                 </p>
-              </div>
-              <div v-if="exemptionDetails.ipAddress">
+              </div> -->
+              <!-- <div v-if="exemptionDetails.ipAddress">
                 <label
                   class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
                 >
@@ -536,7 +536,7 @@ onMounted(async () => {
                 <p class="text-gray-900 dark:text-gray-100">
                   {{ exemptionDetails.ipAddress }}
                 </p>
-              </div>
+              </div> -->
               <div v-if="exemptionDetails.macAddress">
                 <label
                   class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
@@ -630,8 +630,8 @@ onMounted(async () => {
                     </label>
                     <p class="text-gray-900 dark:text-gray-100">
                       {{
-                        policyValue?.label ||
                         transactionHeaderDetails.policyName ||
+                        policyValue?.label ||                        
                         "N/A"
                       }}
                     </p>
@@ -650,7 +650,8 @@ onMounted(async () => {
                     <p
                       class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
                     >
-                      {{ transactionHeaderDetails.details || "No details provided" }}
+                      <!-- {{ transactionHeaderDetails.details || "No details provided" }} -->
+                        {{ policyValue?.label }}
                     </p>
                   </div>
                 </div>
@@ -869,21 +870,21 @@ onMounted(async () => {
           <div class="mt-4">
             <BaseTable
               :table-data="approversTableData"
-              :header="['Approver', 'Role', 'Status', 'Responded Date', 'Remarks']"
-              :field-mappings="{
-                approver: (row) => {
-                  const name = `<div class='flex items-center'><p class='text-sm font-medium text-gray-900 dark:text-gray-100'>${row.approverName}</p>`;
-                  const youBadge = row.isCurrentUser ? `<span class='text-xs text-green-500 bg-green-100 px-2 py-1 rounded ml-1'>You</span>` : '';
-                  const email = `<p class='text-xs text-gray-500 dark:text-gray-400 mt-1'>${row.approverEmail}</p></div>`;
-                  return name + youBadge + email;
-                },
-                role: (row) => row.approverRole,
-                status: (row) => row.respondStatus,
-                respondedDate: (row) => row.respondDate,
-                remarks: (row) => row.remarks
-              }"
+              :header="[
+                'approver',
+                'approverRole',
+                'respondStatus',
+                'respondDate',
+                'remarks',
+              ]"
+              :badge-fields="['respondStatus']"
               :field-colors="{
-                status: (row) => row.respondColor
+                respondStatus: {
+                  Open: 'bg-blue-100 text-blue-800 border border-blue-900',
+                  Approved: 'bg-green-100 text-green-800 border border-green-900',
+                  Disapproved: 'bg-red-100 text-red-800 border border-red-900',
+                  Pending: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
+                },
               }"
             />
           </div>
@@ -900,16 +901,11 @@ onMounted(async () => {
             <BaseTable
               :table-data="transactionLogsTableData"
               :header="[
-                'Transaction Type', 
-                'Previous Status', 
-                'New Status', 
-                'Performed By', 
-                'Performed At', 
-                'Remarks', 
-                'Reason', 
-                'Workstation', 
-                'IP Address', 
-                'MAC Address'
+                'transactionType', 
+                'previousStatus', 
+                'newStatus', 
+                'performedBy', 
+                'performedAt', 
               ]"
               :field-mappings="{
                 transactionType: {
@@ -918,18 +914,27 @@ onMounted(async () => {
                   SUBMIT: 'Submit',
                   RESPOND: 'Respond',
                   DELETE: 'Delete',
+                  UPDATE: 'Update',
+                  CLOSE: 'Close',
                 },
                 previousStatus: {
-                  0: 'Open',
-                  1: 'Closed',
-                  2: 'Pending',
-                  3: 'Draft',
+                  N: 'N/A',
+                  O: 'Open',
+                  C: 'Closed',
+                  P: 'Pending',
+                  D: 'Draft',
+                  X: 'Deleted',
+                  A: 'Approved',
+                  Z: 'Disapproved',
                 },
                 newStatus: {
-                  0: 'Open',
-                  1: 'Closed',
-                  2: 'Pending',
-                  3: 'Draft',
+                  O: 'Open',
+                  C: 'Closed',
+                  P: 'Pending',
+                  D: 'Draft',
+                  X: 'Deleted',
+                  A: 'Approved',
+                  Z: 'Disapproved',
                 }
               }"
               :field-colors="{
@@ -939,28 +944,29 @@ onMounted(async () => {
                   SUBMIT: 'bg-blue-100 text-blue-800 border border-blue-900',
                   RESPOND: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
                   DELETE: 'bg-red-100 text-red-800 border border-red-900',
+                  UPDATE: 'bg-purple-100 text-purple-800 border border-purple-900',
+                  CLOSE: 'bg-red-100 text-red-800 border border-red-900',
                 },
-                previousStatus: (row) => {
-                  // Map status to colors
-                  const statusMap = {
-                    'Open': 'bg-blue-100 text-blue-800 border border-blue-900',
-                    'Closed': 'bg-gray-100 text-gray-800 border border-gray-900', 
-                    'Pending': 'bg-yellow-100 text-yellow-800 border border-yellow-900',
-                    'Draft': 'bg-gray-100 text-gray-800 border border-gray-900'
-                  };
-                  return statusMap[row.previousStatus] || 'bg-gray-100 text-gray-800 border border-gray-900';
+                previousStatus: {
+                    O: 'bg-blue-100 text-blue-800 border border-blue-900',
+                    C: 'bg-red-100 text-red-800 border border-red-900',
+                    P: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
+                    D: 'bg-gray-100 text-gray-800 border border-gray-900',
+                    X: 'bg-red-100 text-red-800 border border-red-900',
+                    A: 'bg-green-100 text-green-800 border border-green-900',
+                    Z: 'bg-red-100 text-red-800 border border-red-900',
                 },
-                newStatus: (row) => {
-                  // Map status to colors
-                  const statusMap = {
-                    'Open': 'bg-blue-100 text-blue-800 border border-blue-900',
-                    'Closed': 'bg-gray-100 text-gray-800 border border-gray-900', 
-                    'Pending': 'bg-yellow-100 text-yellow-800 border border-yellow-900',
-                    'Draft': 'bg-gray-100 text-gray-800 border border-gray-900'
-                  };
-                  return statusMap[row.newStatus] || 'bg-gray-100 text-gray-800 border border-gray-900';
+                newStatus: {
+                    O: 'bg-blue-100 text-blue-800 border border-blue-900',
+                    C: 'bg-red-100 text-red-800 border border-red-900',
+                    P: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
+                    D: 'bg-gray-100 text-gray-800 border border-gray-900',
+                    X: 'bg-red-100 text-red-800 border border-red-900',
+                    A: 'bg-green-100 text-green-800 border border-green-900',
+                    Z: 'bg-red-100 text-red-800 border border-red-900',
                 }
               }"
+              :badge-fields="['transactionType', 'previousStatus', 'newStatus']"
               :date-time-fields="['performedAt']"
               date-time-format="'MMM d, yyyy h:mm a'"
             />

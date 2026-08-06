@@ -65,7 +65,7 @@ const fetchExemptionDetails = async () => {
         message: response?.message || "Failed to load exemption details",
         duration: 5000,
       });
-      router.push("/main/exemptions/overall-request");
+      router.push("/reports/overall-request");
     }
   } catch (error) {
     console.error("Error fetching exemption details:", error);
@@ -75,7 +75,7 @@ const fetchExemptionDetails = async () => {
       message: "Failed to load exemption details",
       duration: 5000,
     });
-    router.push("/main/exemptions/overall-request");
+    router.push("/reports/overall-request");
   } finally {
     loading.value = false;
   }
@@ -298,15 +298,15 @@ const handleBack = () => {
 };
 
 const handleEdit = () => {
-  router.push(`/main/exemptions/edit?id=${exemptionId.value}`);
+  router.push(`/reports/overall-request/edit?id=${exemptionId.value}`);
 };
 const handleApprove = () => {
-  router.push(`/main/exemptions/approve?id=${exemptionId.value}`);
+  router.push(`/reports/overall-request/approve?id=${exemptionId.value}`);
 };
 onMounted(async () => {
   await fetchMenuList();
-  canEdit.value = checkCanEdit("/main/exemptions/");
-  canDelete.value = checkCanDelete("/main/exemptions/");
+  canEdit.value = checkCanEdit("/reports/overall-request/");
+  canDelete.value = checkCanDelete("/reports/overall-request/");
 
   fetchExemptionDetails();
   isApprover.value;

@@ -87,7 +87,7 @@ const fetchAllForPolicyFilter = async () => {
       headers: { "Content-Type": "application/json" },
       parseJson: true,
     });
-    
+
     allExemptionsForFilter.value = res.items ?? [];
   } catch (e) {
     console.error("Error fetching policies for filter:", e);
@@ -95,14 +95,14 @@ const fetchAllForPolicyFilter = async () => {
 };
 
 const handleCreate = () => {
-  router.push(`/main/exemptions/create`);
+  router.push(`/reports/exemptions/create`);
 };
 
 onMounted(async () => {
   await fetchMenuList();
-  canAdd.value = checkCanAdd("/main/exemptions/overall-request");
-  canEdit.value = checkCanEdit("/main/exemptions/overall-request");
-  canDelete.value = checkCanDelete("/main/exemptions/overall-request");
+  canAdd.value = checkCanAdd("/reports/policy-transaction");
+  canEdit.value = checkCanEdit("/reports/policy-transaction");
+  canDelete.value = checkCanDelete("/reports/policy-transaction");
 
   await fetchAllForPolicyFilter();
 });
@@ -112,73 +112,90 @@ onMounted(async () => {
 <template>
   <div class="bg-gray-50 overflow-auto h-100vh dark:bg-gray-900 dark:text-gray-200 dark:border-gray-3000">
     <header class="bg-white dark:bg-gray-800 shadow">
-      <div
-        class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
-      >
+      <div class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <div class="flex items-center">
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
             {{ currentMenuLabel || currentPageName || "Policy Transaction Reports" }}
           </h1>
         </div>
 
-        <Button
-          v-if="canAdd"
-          variant="primary"
-          size="md"
-          icon="add"
-          iconPosition="left"
-          @onclick="handleCreate"
-        >
+        <Button v-if="canAdd" variant="primary" size="md" icon="add" iconPosition="left" @onclick="handleCreate">
           Create Request
         </Button>
       </div>
     </header>
     <main class="max-w-full mx-auto py-6 sm:px-6 ">
       <div class="mb-6 px-2 rounded-lg">
-        <base-table
-          ref="tableRef"
-          :server-pagination="true"
-          :fetch-data="(params) => fetchExemptionData(params)"
-          :pagination="true"
-          :per-page="5"
-          :show-search="true"
-          :showlimitfilter="true"
-          :limitfilter="[5, 10, 20, 30, 40, 50]"
-          :sortable-columns="[
+        <base-table ref="tableRef" :server-pagination="true" :fetch-data="(params) => fetchExemptionData(params)"
+            :pagination="true" :per-page="5" :show-search="true" :showlimitfilter="true"
+            :limitfilter="[5, 10, 20, 30, 40, 50]" 
+            :filterable-columns="['transactionType']" :header="[
             'transactionNumber',
+            'policyName',
             'transactionType',
-            'performedAt',
-            'performedBy',
-          ]"
-          :filterable-columns="['transactionType']"
-          :header="[
-            'transactionNumber',
-            'transactionType',
+            'previousStatus',
+            'newStatus',
             'performedBy',
             'performedAt',
-          ]"
-          :badge-fields="['transactionType']"
-          :field-mappings="{
+          ]" :badge-fields="['transactionType', 'previousStatus', 'newStatus']" :field-mappings="{
             transactionType: {
               CREATE: 'Create',
               DRAFT: 'Draft',
               SUBMIT: 'Submit',
               RESPOND: 'Respond',
               DELETE: 'Delete',
+              UPDATE: 'Update',
+              CLOSE: 'Closed',
             },
-          }"
-          :field-colors="{
+            previousStatus: {
+              N: 'N/A',
+              O: 'Open',
+              C: 'Closed',
+              P: 'Pending',
+              D: 'Draft',
+              X: 'Deleted',
+              A: 'Approved',
+              Z: 'Disapproved',
+            },
+            newStatus: {
+              O: 'Open',
+              C: 'Closed',
+              P: 'Pending',
+              D: 'Draft',
+              X: 'Deleted',
+              A: 'Approved',
+              Z: 'Disapproved',
+            }
+          }" :field-colors="{
             transactionType: {
               CREATE: 'bg-green-100 text-green-800 border border-green-900',
               DRAFT: 'bg-gray-100 text-gray-800 border border-gray-900',
               SUBMIT: 'bg-blue-100 text-blue-800 border border-blue-900',
               RESPOND: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
               DELETE: 'bg-red-100 text-red-800 border border-red-900',
+              UPDATE: 'bg-purple-100 text-purple-800 border border-purple-900',
+              CLOSE: 'bg-red-100 text-red-800 border border-red-900',
             },
-          }"
-          :date-time-fields="['performedAt']"
-          date-time-format="'MMM d, yyyy h:mm a'"
-          :actions="[
+            previousStatus: {
+              N: 'bg-gray-100 text-gray-800 ',
+              O: 'bg-blue-100 text-blue-800 border border-blue-900',
+              C: 'bg-red-100 text-red-800 border border-red-900',
+              P: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
+              D: 'bg-gray-100 text-gray-800 border border-gray-900',
+              X: 'bg-red-100 text-red-800 border border-red-900',
+              A: 'bg-green-100 text-green-800 border border-green-900',
+              Z: 'bg-red-100 text-red-800 border border-red-900',
+            },
+            newStatus: {
+              O: 'bg-blue-100 text-blue-800 border border-blue-900',
+              C: 'bg-red-100 text-red-800 border border-red-900',
+              P: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
+              D: 'bg-gray-100 text-gray-800 border border-gray-900',
+              X: 'bg-red-100 text-red-800 border border-red-900',
+              A: 'bg-green-100 text-green-800 border border-green-900',
+              Z: 'bg-red-100 text-red-800 border border-red-900',
+            }
+          }" :date-time-fields="['performedAt']" date-time-format="'MMM d, yyyy h:mm a'" :actions="[
             {
               label: IconView,
               tooltip: 'View Log Details',
@@ -186,11 +203,7 @@ onMounted(async () => {
               iconClass: 'text-indigo-500 dark:text-indigo-400',
               buttonClass: 'hover:bg-indigo-100 dark:hover:bg-indigo-100 hover:text-indigo-600 !dark:hover:text-indigo-900',
             },
-          ]"
-          :policy-filter-items="policyDropdownItems"
-          policy-filter-label="Policy Filter"
-          policy-filter-placeholder="Select policies..."
-        />
+          ]"  />
       </div>
     </main>
   </div>

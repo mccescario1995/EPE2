@@ -180,7 +180,7 @@ const cancelCreate = () => {
                 class="mt-1 block w-full focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                 rows="3"
                 is-textarea
-                :max-char-count="1000"
+                :max-char-count="5000"
                 :min-char-count="10"
               ></BaseInput>
             </div>
