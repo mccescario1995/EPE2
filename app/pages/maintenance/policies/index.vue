@@ -166,6 +166,10 @@ const deleteRequestPolicy = async () => {
             status: 'Status',
             createddate: 'Created Date',
           }"
+          :tooltip-fields="[
+            'shortname',
+            'description'
+          ]"
           :badge-fields="['status']" :field-mappings="{
             status: {
               A: 'Active',

@@ -220,17 +220,20 @@
               <!-- Badge display -->
               <StatusBadge v-if="props.badgeFields?.includes(key)" :value="row[key]" :field="key"
                 :field-mappings="props.fieldMappings" :field-colors="props.fieldColors"
-                class="cursor-pointer"
-                @click="openCellTooltip(rowIndex, key, formatValue(key, row[key]))" />
-              <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col cursor-pointer"
+                :class="props.tooltipFields?.includes(key) ? 'cursor-pointer' : ''"
+                @click="props.tooltipFields?.includes(key) ? openCellTooltip(rowIndex, key, formatValue(key, row[key])) : undefined" />
+              <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col"
+                :class="props.tooltipFields?.includes(key) ? 'cursor-pointer' : ''"
                 :title="formatValue(key, row[key])"
-                @click="openCellTooltip(rowIndex, key, formatValue(key, row[key]))">
+                @click="props.tooltipFields?.includes(key) ? openCellTooltip(rowIndex, key, formatValue(key, row[key])) : undefined">
                 <span>{{ getDateTimeParts(key, row[key])?.date }}</span>
                 <span class="text-gray-500  dark:text-gray-400 text-sm">{{
                   getDateTimeParts(key, row[key])?.time
                 }}</span>
               </div>
-              <span v-else class="block truncate max-w-xs cursor-pointer" :title="formatValue(key, row[key])" @click="openCellTooltip(rowIndex, key, formatValue(key, row[key]))">
+              <span v-else class="block truncate max-w-xs" :title="formatValue(key, row[key])"
+                :class="props.tooltipFields?.includes(key) ? 'cursor-pointer' : ''"
+                @click="props.tooltipFields?.includes(key) ? openCellTooltip(rowIndex, key, formatValue(key, row[key])) : undefined">
                 {{ formatValue(key, row[key]) }}
               </span>
             </td>
@@ -317,17 +320,19 @@
         <span class="text-gray-800 text-right break-all dark:text-gray-200">
           <StatusBadge v-if="props.badgeFields?.includes(key)" :value="row[key]" :field="key"
             :field-mappings="props.fieldMappings" :field-colors="props.fieldColors"
-            class="cursor-pointer"
-            @click="openCellTooltip(rowIndex, key, formatValue(key, row[key]))" />
-          <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col items-end cursor-pointer"
-            @click="openCellTooltip(rowIndex, key, formatValue(key, row[key]))"
-            :title="formatValue(key, row[key])">
+            :class="props.tooltipFields?.includes(key) ? 'cursor-pointer' : ''"
+            @click="props.tooltipFields?.includes(key) ? openCellTooltip(rowIndex, key, formatValue(key, row[key])) : undefined" />
+          <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col items-end"
+            :class="props.tooltipFields?.includes(key) ? 'cursor-pointer' : ''"
+            :title="formatValue(key, row[key])"
+            @click="props.tooltipFields?.includes(key) ? openCellTooltip(rowIndex, key, formatValue(key, row[key])) : undefined">
             <span>{{ getDateTimeParts(key, row[key])?.date }}</span>
             <span class="text-gray-500 dark:text-gray-400 text-xs">{{
               getDateTimeParts(key, row[key])?.time
             }}</span>
           </div>
-          <span v-else class="cursor-pointer" @click="openCellTooltip(rowIndex, key, formatValue(key, row[key]))">
+          <span v-else :class="props.tooltipFields?.includes(key) ? 'cursor-pointer' : ''"
+            @click="props.tooltipFields?.includes(key) ? openCellTooltip(rowIndex, key, formatValue(key, row[key])) : undefined">
             {{ formatValue(key, row[key]) }}
           </span>
         </span>
