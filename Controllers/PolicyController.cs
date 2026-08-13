@@ -24,17 +24,6 @@ namespace EPEAPI.Controllers
                 var query = _context.EpePolicymasters.Where(u => u.Isdelete == 0 && u.Status == "A");
 
                 var items = await query
-                    //.Select(u => new
-                    //{
-                    //    u.Policyid,
-                    //    u.Description,
-                    //    u.Status,
-                    //    createdby = _context.CoreVUsers.Where(x => x.UserId == u.Createdby).Select(x => x.Employeename2).FirstOrDefault(),
-                    //    u.Createddate,
-                    //    u.Modifiedby,
-                    //    u.Modifieddate,
-                    //    u.Shortname,
-                    //})
                     .OrderByDescending(u => u.Createddate)
                     .ToListAsync();
 

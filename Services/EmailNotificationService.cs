@@ -198,11 +198,7 @@ public class EmailNotificationService
         try
         {
             var trackUrl = $"https://apps.fastlogistics.com.ph/epe2dev/#/main/pending-for-approval/view?id={requestId}";
-
-            if (changedBy.ToLower() == "closed" || newStatus.ToLower() == "disapproved")
-            {
-                trackUrl = $"https://apps.fastlogistics.com.ph/epe2dev/#/main/closed/view?id={requestId}";
-            }
+            //  var trackUrl = $"http://localhost:3000/epe2dev/main/pending-for-approval/view?id={requestId}";
 
             // toEmail = "mccescario@fastgroup.biz"; // for testing
 
