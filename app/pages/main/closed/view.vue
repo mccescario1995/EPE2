@@ -515,7 +515,6 @@ const currentUserPendingAction = computed((): boolean => {
                 </h2>
               </div>
             </div>
-{{ approversData }}
             <div v-if="approversData && approversData.length > 0" class="space-y-4">
               <template v-for="(approver, index) in groupedApprovers.mainApprovers" :key="approver.transApproverId">
                 <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
