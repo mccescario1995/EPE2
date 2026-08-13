@@ -219,15 +219,18 @@
               class="px-6 py-4 text-sm text-gray-700 font-medium dark:text-gray-200 dark:border-gray-700">
               <!-- Badge display -->
               <StatusBadge v-if="props.badgeFields?.includes(key)" :value="row[key]" :field="key"
-                :field-mappings="props.fieldMappings" :field-colors="props.fieldColors" />
-              <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col"
-                :title="formatValue(key, row[key])">
+                :field-mappings="props.fieldMappings" :field-colors="props.fieldColors"
+                class="cursor-pointer"
+                @click="openCellTooltip(rowIndex, key, formatValue(key, row[key]))" />
+              <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col cursor-pointer"
+                :title="formatValue(key, row[key])"
+                @click="openCellTooltip(rowIndex, key, formatValue(key, row[key]))">
                 <span>{{ getDateTimeParts(key, row[key])?.date }}</span>
                 <span class="text-gray-500  dark:text-gray-400 text-sm">{{
                   getDateTimeParts(key, row[key])?.time
                 }}</span>
               </div>
-              <span v-else class="block truncate max-w-xs" :title="formatValue(key, row[key])">
+              <span v-else class="block truncate max-w-xs cursor-pointer" :title="formatValue(key, row[key])" @click="openCellTooltip(rowIndex, key, formatValue(key, row[key]))">
                 {{ formatValue(key, row[key]) }}
               </span>
             </td>
@@ -313,14 +316,18 @@
 
         <span class="text-gray-800 text-right break-all dark:text-gray-200">
           <StatusBadge v-if="props.badgeFields?.includes(key)" :value="row[key]" :field="key"
-            :field-mappings="props.fieldMappings" :field-colors="props.fieldColors" />
-          <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col items-end">
+            :field-mappings="props.fieldMappings" :field-colors="props.fieldColors"
+            class="cursor-pointer"
+            @click="openCellTooltip(rowIndex, key, formatValue(key, row[key]))" />
+          <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col items-end cursor-pointer"
+            @click="openCellTooltip(rowIndex, key, formatValue(key, row[key]))"
+            :title="formatValue(key, row[key])">
             <span>{{ getDateTimeParts(key, row[key])?.date }}</span>
             <span class="text-gray-500 dark:text-gray-400 text-xs">{{
               getDateTimeParts(key, row[key])?.time
             }}</span>
           </div>
-          <span v-else>
+          <span v-else class="cursor-pointer" @click="openCellTooltip(rowIndex, key, formatValue(key, row[key]))">
             {{ formatValue(key, row[key]) }}
           </span>
         </span>
@@ -374,6 +381,25 @@
       No data available
     </div>
   </div>
+
+  <!-- Cell Tooltip Modal -->
+  <Teleport to="body">
+    <div v-if="expandedCell" class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style="background-color: rgba(0, 0, 0, 0.5)" @click.self="closeCellTooltip" @keydown.escape="closeCellTooltip">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-lg mx-4 border border-gray-200 dark:border-gray-700">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+            {{ formatHeader(expandedCell.key) }}
+          </h3>
+          <button @click="closeCellTooltip"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl leading-none">&times;</button>
+        </div>
+        <p class="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap break-words">
+          {{ expandedCell.value }}
+        </p>
+      </div>
+    </div>
+  </Teleport>
 
   <!-- Pagination -->
   <div class="mt-6">
@@ -440,6 +466,7 @@ const props = defineProps<{
   groupActions?: boolean;
   filterableColumns?: string[] | "all";
   sortableColumns?: string[] | "all";
+  tooltipFields?: string[];
   limitfilter?: Number[];
   showlimitfilter?: boolean;
   policyFilterItems?: any[];
@@ -465,6 +492,7 @@ const router = useRouter();
 const openDropdownIndex = ref<number | null>(null);
 const globalSearch = ref("");
 const hoveredTooltip = ref<string | null>(null);
+const expandedCell = ref<{ rowIndex: number; key: string; value: string } | null>(null);
 const draggingIndex = ref<number | null>(null);
 const targetIndex = ref<number | null>(null);
 const currentPage = ref(1);
@@ -1059,6 +1087,13 @@ function toggleDropdown(index: number) {
 
 function closeDropdown() {
   openDropdownIndex.value = null;
+}
+
+function openCellTooltip(rowIndex: number, key: string, value: string) {
+  expandedCell.value = { rowIndex, key, value };
+}
+function closeCellTooltip() {
+  expandedCell.value = null;
 }
 
 function onDragStart(index: number) {
