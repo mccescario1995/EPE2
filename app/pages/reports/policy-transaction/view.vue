@@ -37,10 +37,10 @@ const fetchExemptionDetails = async () => {
         parseJson: true,
       }
     );
-      console.log("Exemption Details Response:", response);
+
+    console.log("Exemption Details Response:", response);
     if (response) {
       exemptionDetails.value = response.item;
-
       if (exemptionDetails.value?.transactionId) {
         await fetchTransactionHeaderDetails(exemptionDetails.value.transactionId);
         await fetchAttachments();
@@ -258,10 +258,14 @@ const formatStatus = (status: string | number | null | undefined) => {
     2: "Pending",
     3: "Draft",
     4: "Deleted",
+    N: "N/A ",
     O: "Open",
     C: "Closed",
     P: "Pending",
     D: "Draft",
+    X: "Deleted",
+    A: "Approved",
+    Z: "Disapproved",
   };
   return statusMap[status] || String(status);
 };
@@ -272,6 +276,9 @@ const getStatusDisplay = (status: string) => {
     P: "Open",
     C: "Closed",
     D: "Draft",
+    X: "Deleted",
+    A: "Approved",
+    Z: "Disapproved",
   };
   return statusMap[status] || status;
 };
@@ -431,10 +438,10 @@ onMounted(async () => {
                 <label
                   class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
                 >
-                  Transaction ID
+                  Transaction Number
                 </label>
                 <p class="text-gray-900 dark:text-gray-100">
-                  {{ exemptionDetails.transactionId || "N/A" }}
+                  {{ exemptionDetails.id || "N/A" }}
                 </p>
               </div>
               <div>
@@ -475,6 +482,7 @@ onMounted(async () => {
                 </label>
                 <p class="text-gray-900 dark:text-gray-100">
                   {{ exemptionDetails.performedBy || "N/A" }}
+                
                 </p>
               </div>
               <div>
@@ -537,7 +545,7 @@ onMounted(async () => {
                   {{ exemptionDetails.ipAddress }}
                 </p>
               </div> -->
-              <div v-if="exemptionDetails.macAddress">
+              <!-- <div v-if="exemptionDetails.macAddress">
                 <label
                   class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
                 >
@@ -546,7 +554,7 @@ onMounted(async () => {
                 <p class="text-gray-900 dark:text-gray-100">
                   {{ exemptionDetails.macAddress }}
                 </p>
-              </div>
+              </div> -->
             </div>
           </div>
         </div>
@@ -662,7 +670,7 @@ onMounted(async () => {
               <h2
                 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b"
               >
-                Final Decision
+                Status
               </h2>
               <span
                 class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"

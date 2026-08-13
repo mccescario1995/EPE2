@@ -393,9 +393,9 @@ const currentUserPendingAction = computed((): boolean => {
                       'bg-blue-100 text-blue-800 dark:bg-blue-800/20 dark:text-blue-300 border border-blue-900':
                         exemptionDetails.status === 'O' ||
                         exemptionDetails.status === 'P',
-                      'bg-gray-200 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300 border border-gray-900':
+                      'bg-red-200 text-red-800 dark:bg-red/20 dark:text-red-300 border border-red-900':
                         exemptionDetails.status === 'C',
-                      'bg-gray-100 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300 border border-gray-900':
+                      'bg-yellow-100 text-yellow-800 dark:bg-yellow-700/20 dark:text-yellow-300 border border-yellow-900':
                         exemptionDetails.status === 'D',
                     }">
                       {{ getStatusDisplay(exemptionDetails.status) }}
@@ -511,26 +511,6 @@ const currentUserPendingAction = computed((): boolean => {
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
                   Approvers
                 </h2>
-                <!-- <div>
-                  <span
-                    v-if="exemptionDetails.finalDecision"
-                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                    :class="{
-                      'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300':
-                        exemptionDetails.finalDecision === 'Pending',
-                      'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-300':
-                        exemptionDetails.finalDecision === 'Approved',
-                      'bg-red-100 text-red-800 dark:bg-red-800/20 dark:text-red-300':
-                        exemptionDetails.finalDecision === 'Disapproved',
-                      'bg-gray-100 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300':
-                        exemptionDetails.finalDecision === 'Draft',
-                    }"
-                  >
-                    {{
-                      getFinalDecisionDisplay(exemptionDetails.finalDecision)
-                    }}
-                  </span>
-                </div> -->
               </div>
             </div>
 

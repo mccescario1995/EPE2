@@ -1294,7 +1294,14 @@ const isCurrentUser = (requesterId: number): boolean => {
                   class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-3"
                 >
                   Existing Attachments
+                  <span
+                    class="text-sm text-gray-500 dark:text-gray-400 font-normal"
+                  >
+                    ({{ attachments.length }}/{{ MAX_FILES }} used —
+                    {{ remainingAttachmentSlots }} remaining)
+                  </span>
                 </h3>
+                
                 <div class="space-y-2">
                   <div
                     v-for="attachment in attachments"
@@ -1359,12 +1366,7 @@ const isCurrentUser = (requesterId: number): boolean => {
                   class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-3"
                 >
                   Add New Attachments
-                  <span
-                    class="text-sm text-gray-500 dark:text-gray-400 font-normal"
-                  >
-                    ({{ attachments.length }}/{{ MAX_FILES }} used —
-                    {{ remainingAttachmentSlots }} remaining)
-                  </span>
+                  
                 </h3>
 
                 <p
@@ -1461,26 +1463,7 @@ const isCurrentUser = (requesterId: number): boolean => {
                 >
                   Approvers Status
                 </h2>
-                <div>
-                  <span
-                    v-if="exemptionDetails"
-                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                    :class="{
-                      'bg-yellow-100 text-yellow-800 border border-yellow-900':
-                        exemptionDetails.finalDecision === 'Pending',
-                      'bg-green-100 text-green-800 border border-green-900':
-                        exemptionDetails.finalDecision === 'Approved',
-                      'bg-red-100 text-red-800 border border-red-900':
-                        exemptionDetails.finalDecision === 'Disapproved',
-                      'bg-gray-100 text-gray-800 border border-gray-900':
-                        exemptionDetails.finalDecision === 'Draft',
-                    }"
-                  >
-                    {{
-                      getFinalDecisionDisplay(exemptionDetails.finalDecision)
-                    }}
-                  </span>
-                </div>
+                
               </div>
 
               <div

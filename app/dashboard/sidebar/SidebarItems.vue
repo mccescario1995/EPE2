@@ -103,7 +103,6 @@ const updateActiveStates = (path) => {
 };
 
 const navigateToMenu = async (menu) => {
-  console.log(menu);
   if (!menu.route) return;
   startLoading();
   try {

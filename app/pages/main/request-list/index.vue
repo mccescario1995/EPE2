@@ -209,7 +209,6 @@ const actions = computed(() => {
       buttonClass:
         "hover:bg-teal-100 dark:hover:bg-teal-100 hover:text-teal-600 dark:hover:text-teal-900",
       visible: (row) => {
-        console.log(row.canApprove, typeof row.canApprove);
         return row.canApprove === true;
       },
     },
@@ -297,8 +296,8 @@ onMounted(async () => {
           }" :field-colors="{
             status: {
               O: 'bg-blue-100 text-blue-800 border border-blue-900',
-              P: 'bg-blue-100 text-blue-800 border border-blue-900',
-              C: 'bg-gray-200 text-gray-800 border border-gray-900',
+              P: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
+              C: 'bg-red-200 text-red-800 border border-red-900',
             },
             finalDecision: {
               Pending: 'bg-yellow-100 text-yellow-800',

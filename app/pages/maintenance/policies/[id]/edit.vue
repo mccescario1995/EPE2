@@ -138,6 +138,17 @@ onMounted(async () => {
   await fetchEditPolicy();
   await fetchApproversLocal();
 });
+
+const statusItems = [
+  {
+    id: "A",
+    label: "Active"
+  },
+  {
+    id: "I",
+    label: "Inactive"
+  }
+]
 </script>
 
 <template>
@@ -240,14 +251,35 @@ onMounted(async () => {
             >
               Status
             </label>
-            <select
+            <!-- <select
               id="edit-status"
               v-model="editForm.status"
               class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="A">Active</option>
               <option value="I">Inactive</option>
-            </select>
+            </select> -->
+            <Dropdown v-model="editForm                                                                   .status" :initial-items="statusItems" :object-output="false">
+                <template #selected="{ item }">
+                  <span class="inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium"
+                   :class="item === 'A'
+                      ? 'bg-green-100 text-green-800 border border-green-200'
+                      : 'bg-red-100 text-red-800 border border-red-200'
+                    ">
+                    {{ item === 'A' ? 'Active' : 'Inactive' }}
+                  </span>
+                </template>
+
+                <template #option="{ item }">
+                  <span class="inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium"
+                   :class="item.id === 'A'
+                      ? 'bg-green-100 text-green-800 border border-green-200'
+                      : 'bg-red-100 text-red-800 border border-red-200'
+                    ">
+                    {{ item.label }}
+                  </span>
+                </template>
+              </Dropdown>
           </div>
 
           <div v-if="editError" class="text-red-500 text-sm">

@@ -23,12 +23,8 @@ export function useAuth() {
       },
     });
 
-    console.log("Login response:", data); // Log the raw response for debugging
-
     //Parse response (required)
     const dataJson = await data.json();
-
-    console.log("Parsed login response:", dataJson); // Log the parsed response for debugging
 
     //Check for login failure
     if (dataJson.status === "FAILURE")

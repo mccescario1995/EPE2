@@ -35,6 +35,8 @@ const fetchExemptionDetails = async () => {
       },
     );
 
+    console.log("Fetched exemption details:", response);
+
     if (response && response.item) {
       exemptionDetails.value = response.item;
 
@@ -263,6 +265,8 @@ const groupedApprovers = computed(() => {
   const mainApprovers: any[] = [];
   const proxiesMap: Map<number, any[]> = new Map();
 
+  console.log("Grouping approvers from approversData:", approversData.value);
+
   approversData.value.forEach((approver) => {
     const isMain = approver.lineSequence === 1;
 
@@ -392,9 +396,9 @@ const currentUserPendingAction = computed((): boolean => {
                       'bg-blue-100 text-blue-800 dark:bg-blue-800/20 dark:text-blue-300 border border-blue-900':
                         exemptionDetails.status === 'O' ||
                         exemptionDetails.status === 'P',
-                      'bg-gray-200 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300 border border-gray-900':
+                      'bg-red-100 text-red-800 dark:bg-red-800/20 dark:text-red-300 border border-red-900':
                         exemptionDetails.status === 'C',
-                      'bg-gray-100 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300 border border-gray-900':
+                      'bg-yellow-100 text-yellow-800 dark:bg-yellow-700/20 dark:text-yellow-300 border border-yellow-900':
                         exemptionDetails.status === 'D',
                     }">
                       {{ getStatusDisplay(exemptionDetails.status) }}
@@ -509,29 +513,9 @@ const currentUserPendingAction = computed((): boolean => {
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
                   Approvers
                 </h2>
-                <!-- <div>
-                  <span
-                    v-if="exemptionDetails.finalDecision"
-                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                    :class="{
-                      'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300':
-                        exemptionDetails.finalDecision === 'Pending',
-                      'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-300':
-                        exemptionDetails.finalDecision === 'Approved',
-                      'bg-red-100 text-red-800 dark:bg-red-800/20 dark:text-red-300':
-                        exemptionDetails.finalDecision === 'Disapproved',
-                      'bg-gray-100 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300':
-                        exemptionDetails.finalDecision === 'Draft',
-                    }"
-                  >
-                    {{
-                      getFinalDecisionDisplay(exemptionDetails.finalDecision)
-                    }}
-                  </span>
-                </div> -->
               </div>
             </div>
-
+{{ approversData }}
             <div v-if="approversData && approversData.length > 0" class="space-y-4">
               <template v-for="(approver, index) in groupedApprovers.mainApprovers" :key="approver.transApproverId">
                 <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
@@ -551,7 +535,7 @@ const currentUserPendingAction = computed((): boolean => {
                         <p class="text-xs text-gray-500 dark:text-gray-400">
                           {{ approver.approverEmail || "" }}
                         </p>
-                        <div class="flex items-center gap-2 mt-1">
+                        <div class="flex items-center gap-2 mt-1 mb-2">
                           <span v-if="approver.approverRole"
                             class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-600 mt-1">
                             {{ approver.approverRole }}
@@ -565,7 +549,7 @@ const currentUserPendingAction = computed((): boolean => {
                             {{ approver.remarks }}
                           </span>
                         </div>
-                        <div class="text-xs mt-1" :class="getApproverStatusTextColor(approver.respond)">
+                        <div class="text-xs" :class="getApproverStatusTextColor(approver.respond)">
                           <span v-if="approver.respondDate">
                             Responded on
                             {{ formatDateTime(approver.respondDate).date }} •
@@ -574,8 +558,10 @@ const currentUserPendingAction = computed((): boolean => {
                         </div>
                       </div>
                     </div>
-                    <div class="flex flex-col items-end gap-1">
-                      <span v-if="approver.respond != 3"
+                    <div v-if="!getProxies(approver.transApproverId).some(p => p.respond == 1)"
+                      class="flex flex-col items-end gap-1">
+                      <!-- v-if="getProxies(approver.transApproverId).some(p => p.respond != 1)" -->
+                      <span
                         class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
                         :class="getApproverStatusColor(approver.respond)">
                         {{ getApproverStatusDisplay(approver.respond) }}
@@ -587,7 +573,7 @@ const currentUserPendingAction = computed((): boolean => {
                     <div v-for="proxy in getProxies(approver.transApproverId)" :key="proxy.transApproverId"
                       class="flex items-start justify-between py-2 border-b border-gray-200 last:border-0">
                       <div class="flex items-start">
-                        <span class="w-2 h-2 rounded-full bg-orange-400 mt-1.5"></span>
+                        <span class="w-2 h-2 rounded-full bg-blue-400 mt-1.5"></span>
                         <div class="ps-3">
                           <p class="text-sm text-gray-700 dark:text-gray-200">
                             {{ proxy.approverName }}
@@ -597,7 +583,7 @@ const currentUserPendingAction = computed((): boolean => {
                           <p class="text-xs text-gray-500 dark:text-gray-400">
                             {{ proxy.approverEmail || "" }}
                           </p>
-                          <span 
+                          <span
                             class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700 my-1">
                             {{ proxy.approverRole }}
                           </span>
@@ -605,12 +591,14 @@ const currentUserPendingAction = computed((): boolean => {
                             <div v-if="proxy.remarks" class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3">
                               Remark:
                             </div>
+
                             <div v-if="proxy.remarks" class="px-6 pb-2">
                               <span class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                                 {{ proxy.remarks }}
                               </span>
                             </div>
-                            <div class="text-xs" :class="getApproverStatusTextColor(proxy.respond)">
+                            <div v-if="proxy.respondDate" class="text-xs"
+                              :class="getApproverStatusTextColor(proxy.respond)">
                               <span v-if="proxy.respondDate">
                                 Responded on
                                 {{ formatDateTime(proxy.respondDate).date }} •
@@ -620,8 +608,8 @@ const currentUserPendingAction = computed((): boolean => {
                           </div>
                         </div>
                       </div>
-                      <div class="flex flex-col items-end gap-1">
-                        <span v-if="approver.respond != 1"
+                      <div v-if="approver.respond != 1" class="flex flex-col items-end gap-1">
+                        <span v-if="proxy.respond != 3"
                           class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
                           :class="getApproverStatusColor(proxy.respond)">
                           {{ getApproverStatusDisplay(proxy.respond) }}

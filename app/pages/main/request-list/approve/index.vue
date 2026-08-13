@@ -75,7 +75,12 @@ const fetchExemptionDetails = async () => {
           message: "You are not authorized to approve this request",
           duration: 5000,
         });
+        // Redirect to exemptions list
+      if (window.history.length > 1 && document.referrer.startsWith(window.location.origin)) {
         router.back();
+      } else {
+        router.push('/reports/policy-transaction');
+      } // Fallback route
         return;
       }
 
@@ -467,7 +472,11 @@ const handleApprove = async () => {
       });
 
       // Redirect to exemptions list
-      router.back();
+      if (window.history.length > 1 && document.referrer.startsWith(window.location.origin)) {
+        router.back();
+      } else {
+        router.push('/reports/policy-transaction');
+      } // Fallback route
     } else {
       showToast({
         type: "error",
@@ -534,18 +543,10 @@ onMounted(async () => {
 <template>
   <div class="bg-gray-50 dark:bg-gray-900">
     <header class="bg-white dark:bg-gray-800 shadow">
-      <div
-        class="max-w-full mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
-      >
+      <div class="max-w-full mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <div class="flex items-center">
-          <Button
-            variant="ghost-primary"
-            size="lg"
-            icon="left_arrow"
-            iconPosition="center"
-            customClass="rounded-full"
-            @onclick="handleBack"
-          />
+          <Button variant="ghost-primary" size="lg" icon="left_arrow" iconPosition="center" customClass="rounded-full"
+            @onclick="handleBack" />
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-100">Approve Request</h1>
         </div>
       </div>
@@ -554,25 +555,12 @@ onMounted(async () => {
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <!-- Loading State -->
       <div v-if="loading" class="flex items-center justify-center py-20">
-        <svg
-          class="animate-spin h-8 w-8 text-blue-600"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
+        <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+          viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
         </svg>
         <span class="ml-3 text-gray-600">Loading details...</span>
       </div>
@@ -587,17 +575,14 @@ onMounted(async () => {
                 <div class="flex justify-between items-center">
                   <h2>Request Information</h2>
                   <div>
-                    <span
-                      class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                      :class="{
-                        'bg-blue-100 text-blue-800 dark:bg-blue-800/20 dark:text-blue-300':
-                          exemptionData.status === 'O' ||
-                          exemptionData.status === 'P',
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" :class="{
+                      'bg-blue-100 text-blue-800 dark:bg-blue-800/20 dark:text-blue-300':
+                        exemptionData.status === 'O' ||
+                        exemptionData.status === 'P',
 
-                        'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-300':
-                          exemptionData.status === 'C',
-                      }"
-                    >
+                      'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-300':
+                        exemptionData.status === 'C',
+                    }">
                       {{ getStatusDisplay(exemptionData.status) }}
                     </span>
                   </div>
@@ -667,18 +652,15 @@ onMounted(async () => {
                   Your Response
                 </h2>
                 <div>
-                  <span
-                    v-if="exemptionData.finalDecision"
-                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                    :class="{
+                  <span v-if="exemptionData.finalDecision"
+                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" :class="{
                       'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300':
                         exemptionData.finalDecision === 'Pending',
                       'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-300':
                         exemptionData.finalDecision === 'Approved',
                       'bg-red-100 text-red-800 dark:bg-red-800/20 dark:text-red-300':
                         exemptionData.finalDecision === 'Disapproved',
-                    }"
-                  >
+                    }">
                     {{ getFinalDecisionDisplay(exemptionData.finalDecision) }}
                   </span>
                 </div>
@@ -687,20 +669,10 @@ onMounted(async () => {
               <!-- Check if satisfied by proxy/main approver approval -->
               <div v-if="isSatisfiedByGroup" class="text-center py-8">
                 <div
-                  class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-green-100 dark:bg-green-800/20"
-                >
-                  <svg
-                    class="w-8 h-8 text-green-600 dark:text-green-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    ></path>
+                  class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-green-100 dark:bg-green-800/20">
+                  <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                   </svg>
                 </div>
                 <p class="text-lg font-medium text-green-600 dark:text-green-400">
@@ -715,20 +687,11 @@ onMounted(async () => {
               <!-- Check if user is approver but not their turn yet -->
               <div v-else-if="isPendingApproval" class="text-center py-8">
                 <div
-                  class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-yellow-100 dark:bg-yellow-800/20"
-                >
-                  <svg
-                    class="w-8 h-8 text-yellow-600 dark:text-yellow-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    ></path>
+                  class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-yellow-100 dark:bg-yellow-800/20">
+                  <svg class="w-8 h-8 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                 </div>
                 <p class="text-lg font-medium text-yellow-600 dark:text-yellow-400">
@@ -742,59 +705,30 @@ onMounted(async () => {
               </div>
 
               <!-- Check if already responded or disapproved -->
-              <div
-                v-else-if="
-                  (exemptionData.finalDecision &&
-                    exemptionData.finalDecision !== 'Pending') ||
-                  isDisapproved
-                "
-                class="text-center py-8"
-              >
-                <div
-                  class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
-                  :class="
-                    exemptionData.finalDecision === 'Approved'
-                      ? 'bg-green-100 dark:bg-green-800/20'
-                      : 'bg-red-100 dark:bg-red-800/20'
-                  "
-                >
-                  <svg
-                    v-if="exemptionData.finalDecision === 'Approved'"
-                    class="w-8 h-8 text-green-600 dark:text-green-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    ></path>
+              <div v-else-if="
+                (exemptionData.finalDecision &&
+                  exemptionData.finalDecision !== 'Pending') ||
+                isDisapproved
+              " class="text-center py-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4" :class="exemptionData.finalDecision === 'Approved'
+                  ? 'bg-green-100 dark:bg-green-800/20'
+                  : 'bg-red-100 dark:bg-red-800/20'
+                  ">
+                  <svg v-if="exemptionData.finalDecision === 'Approved'"
+                    class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                   </svg>
-                  <svg
-                    v-else
-                    class="w-8 h-8 text-red-600 dark:text-red-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    ></path>
+                  <svg v-else class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
                   </svg>
                 </div>
-                <p
-                  class="text-lg font-medium"
-                  :class="
-                    exemptionData.finalDecision === 'Approved'
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-red-600 dark:text-red-400'
-                  "
-                >
+                <p class="text-lg font-medium" :class="exemptionData.finalDecision === 'Approved'
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-red-600 dark:text-red-400'
+                  ">
                   This request has been {{ exemptionData.finalDecision }}
                 </p>
                 <p v-if="isDisapproved" class="text-gray-500 dark:text-gray-400 mt-2">
@@ -813,53 +747,26 @@ onMounted(async () => {
                     Select your decision <span class="text-red-500">*</span>
                   </label>
                   <div class="flex gap-4">
-                    <button
-                      type="button"
-                      @click="selectedRespond = 1"
+                    <button type="button" @click="selectedRespond = 1"
                       class="flex-1 py-3 px-4 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2"
-                      :class="
-                        selectedRespond === 1
-                          ? 'border-green-500 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-800/20 dark:text-green-300'
-                          : 'border-gray-200 dark:border-gray-600 hover:border-green-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      "
-                    >
-                      <svg
-                        class="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M5 13l4 4L19 7"
-                        ></path>
+                      :class="selectedRespond === 1
+                        ? 'border-green-500 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-800/20 dark:text-green-300'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-green-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        ">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                       </svg>
                       <span class="font-medium">Approve</span>
                     </button>
-                    <button
-                      type="button"
-                      @click="selectedRespond = 2"
+                    <button type="button" @click="selectedRespond = 2"
                       class="flex-1 py-3 px-4 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2"
-                      :class="
-                        selectedRespond === 2
-                          ? 'border-red-500 bg-red-50 text-red-700 dark:border-red-400 dark:bg-red-800/20 dark:text-red-300'
-                          : 'border-gray-200 dark:border-gray-600 hover:border-red-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      "
-                    >
-                      <svg
-                        class="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M6 18L18 6M6 6l12 12"
-                        ></path>
+                      :class="selectedRespond === 2
+                        ? 'border-red-500 bg-red-50 text-red-700 dark:border-red-400 dark:bg-red-800/20 dark:text-red-300'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-red-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        ">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
                       </svg>
                       <span class="font-medium">Disapprove</span>
                     </button>
@@ -870,54 +777,30 @@ onMounted(async () => {
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Remarks (Optional)
                   </label>
-                  <BaseInput
-                    v-model="respondRemarks"
-                    isTextarea
-                    :rowCount="4"
-                    :maxCharCount="250"
-                    class="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-                  />
+                  <BaseInput v-model="respondRemarks" isTextarea :rowCount="4" :maxCharCount="250"
+                    class="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100" />
                 </div>
 
                 <div class="flex gap-4">
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    class="flex-1"
-                    :loading="submitting"
-                    @onclick="handleApprove"
-                    :disabled="selectedRespond === 0 || isDisapproved"
-                  >
+                  <Button variant="primary" size="lg" class="flex-1" :loading="submitting" @onclick="handleApprove"
+                    :disabled="selectedRespond === 0 || isDisapproved">
                     Submit Response
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    @onclick="handleBack"
-                    :disabled="isDisapproved"
-                  >
+                  <Button variant="outline" size="lg" @onclick="handleBack" :disabled="isDisapproved">
                     Cancel
                   </Button>
                 </div>
               </div>
 
               <!-- Approval Status -->
-              <div
-                v-else-if="isApproved"
+              <div v-else-if="isApproved"
                 class="rounded-lg border-l-4 border-green-500 bg-green-50 dark:bg-green-800/20 dark:border-green-400 p-4 shadow-sm"
-                role="alert"
-              >
+                role="alert">
                 <div class="flex items-center">
-                  <svg
-                    class="h-5 w-5 text-green-500 dark:text-green-400 mr-2"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fill-rule="evenodd"
+                  <svg class="h-5 w-5 text-green-500 dark:text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
                       d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.172 7.707 8.879a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clip-rule="evenodd"
-                    />
+                      clip-rule="evenodd" />
                   </svg>
 
                   <span class="font-semibold text-green-800 dark:text-green-300"> Approved </span>

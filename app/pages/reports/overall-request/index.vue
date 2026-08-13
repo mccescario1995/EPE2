@@ -208,17 +208,6 @@ onMounted(async () => {
           {{ currentMenuLabel || currentPageName ||  "Exemption Requests"}}
           </h1>
         </div>
-
-        <Button
-          v-if="canAdd"
-          variant="primary"
-          size="md"
-          icon="add"
-          iconPosition="left"
-          @onclick="handleCreate"
-        >
-          Create Request
-        </Button>
       </div>
     </header>
     <main class="max-w-full mx-auto py-6 sm:px-6 ">
@@ -260,14 +249,14 @@ onMounted(async () => {
             status: {
               O: 'bg-blue-100 text-blue-800 border border-blue-900',
               P: 'bg-blue-100 text-blue-800 border border-blue-900',
-              C: 'bg-gray-200 text-gray-800 border border-gray-900',
+              C: 'bg-red-200 text-red-800 border border-red-900',
               D: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
             },
             finalDecision: {
               Pending: 'bg-yellow-100 text-yellow-800',
               Approved: 'bg-green-100 text-green-800',
               Disapproved: 'bg-red-100 text-red-800',
-              Draft: 'bg-gray-100 text-gray-800 border border-gray-900',
+              Draft: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
             },
           }"
           :date-time-fields="['createdDate']"
@@ -279,34 +268,6 @@ onMounted(async () => {
               handler: viewProduct,
               iconClass: 'text-indigo-500 dark:text-indigo-400',
               buttonClass: 'hover:bg-indigo-100 dark:hover:bg-indigo-100 hover:text-indigo-600 !dark:hover:text-indigo-900',
-            },
-            {
-              label: IconApproval,
-              tooltip: 'Approve Request',
-              handler: approveRequest,
-              iconClass: '!text-teal-500 dark:!text-teal-400',
-              buttonClass: 'hover:bg-teal-100 dark:hover:bg-teal-100 hover:text-teal-600 dark:hover:text-teal-900',
-              visible: (row) => row.canApprove && row.status !== 'C', // This will only be visible to the approver not he requester and for non-completed requests
-            },
-            {
-              label: IconEdit,
-              tooltip: 'Edit Request',
-              handler: editProduct,
-              iconClass: '!text-blue-500 dark:!text-blue-400',
-              buttonClass: 'hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900',
-              visible: (row) =>
-                row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
-              disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
-            },
-            {
-              label: IconDelete,
-              tooltip: 'Delete Request',
-              handler: confirmDelete,
-              iconClass: 'text-red-500 dark:text-red-400',
-              buttonClass: 'hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900',
-              visible: (row) =>
-                row.requesterId === userId.emplId && row.status !== 'C', // Show if user is requester or request is not Completed
-              disabled: (row) => row.status === 'P' || row.status === 'C', // Disable for Pending or Completed
             },
           ]"
           :policy-filter-items="policyDropdownItems"

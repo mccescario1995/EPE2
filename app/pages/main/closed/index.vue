@@ -6,7 +6,6 @@ const { breadcrumbs, currentMenuLabel } = useBreadcrumbs();
 
 // Get the current page's menu name (should be "Policy")
 const currentPageName = breadcrumbs.value[breadcrumbs.value.length - 1]?.label;
-console.log("Current page Name: ", currentPageName);
 
 const userStore = useUserStore();
 
@@ -194,17 +193,6 @@ const handleCreate = () => {
            {{ currentMenuLabel || currentPageName  || "Closed Requests"}}
           </h1>
         </div>
-
-        <!-- <Button
-          v-if="exemptionData"
-          variant="primary"
-          size="md"
-          icon="add"
-          iconPosition="left"
-          @onclick="handleCreate"
-        >
-          Create Request
-        </Button> -->
       </div>
     </header>
     <main class="max-w-full mx-auto py-6 sm:px-6 ">

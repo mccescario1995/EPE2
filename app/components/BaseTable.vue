@@ -1,5 +1,5 @@
 <template>
-  <Button v-if="props.showExport" variant="secondary" size="sm" icon="download" @onclick="openExportModal"
+  <Button v-if="props.showExport" variant="ghost" size="sm" icon="download" @onclick="openExportModal"
     class="border hover:bg-gray-300 mb-3 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
     Export Excel
   </Button>
@@ -223,7 +223,7 @@
               <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col"
                 :title="formatValue(key, row[key])">
                 <span>{{ getDateTimeParts(key, row[key])?.date }}</span>
-                <span class="text-gray-500  dark:text-gray-400">{{
+                <span class="text-gray-500  dark:text-gray-400 text-sm">{{
                   getDateTimeParts(key, row[key])?.time
                 }}</span>
               </div>
@@ -316,7 +316,7 @@
             :field-mappings="props.fieldMappings" :field-colors="props.fieldColors" />
           <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col items-end">
             <span>{{ getDateTimeParts(key, row[key])?.date }}</span>
-            <span class="text-gray-500 dark:text-gray-400">{{
+            <span class="text-gray-500 dark:text-gray-400 text-xs">{{
               getDateTimeParts(key, row[key])?.time
             }}</span>
           </div>
@@ -402,6 +402,7 @@ type TableAction = {
 
 const props = defineProps<{
   header?: string[];
+  headerLabels?: Record<string, string>;
   hiddenFields?: string[];
   tableData?: Array<Record<string, any>> | null;
   actions: TableAction[];
@@ -935,6 +936,12 @@ watch(
 
 // Methods
 function formatHeader(headerKey: string): string {
+
+  // Custom label takes priority
+  if (props.headerLabels?.[headerKey]) {
+    return props.headerLabels[headerKey];
+  }
+
   // First, handle common acronyms and patterns
   let result = headerKey
     // Replace underscores with spaces
