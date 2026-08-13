@@ -1029,90 +1029,208 @@ namespace EPEAPI.Controllers
 
                 await LogTransactionAsync(transactionHeader.Transactionid, transactionHeader.Policyid, "CREATE", "N", "O", userId);
 
-                // APPROVERS - Skip the requester's approval group
-                var policyApprovers = await _context
-                    .EpePolicyapprovers.Where(p =>
-                        p.Policyid == request.Policyid && p.Isdelete == 0
-                    )
+                // REFACTORED: Use all approvers, auto-approve requester's sort group
+                var allApprovers = await _context.EpePolicyapprovers
+                    .Where(p => p.Policyid == request.Policyid && p.Isdelete == 0)
                     .OrderBy(p => p.Linesequence)
                     .ThenBy(p => p.Sort)
                     .ToListAsync();
 
                 // Find the Sort groups that the requester belongs to
-                var requesterSortGroups = policyApprovers
+                var requesterSortGroups = allApprovers
                     .Where(p => p.Approverid == requesterId.ToString())
                     .Select(p => p.Sort)
                     .ToHashSet();
 
-                // Filter out approvers whose Sort group contains the requester
-                var filteredApprovers = policyApprovers
-                    .Where(p => !requesterSortGroups.Contains(p.Sort))
+                // Auto-approve approvers in requester's sort group
+                var autoApprovedApprovers = allApprovers
+                    .Where(a => requesterSortGroups.Contains(a.Sort))
                     .ToList();
 
-                // Renumber Linesequence for the remaining approvers
-                // Group by new sequence numbers
-                var sequenceMap = filteredApprovers
-                    .Select(p => p.Linesequence ?? 0)
-                    .Distinct()
-                    .OrderBy(x => x)
-                    .ToList();
-
-                var newSequenceMap = sequenceMap
-                    .Select((oldSeq, newSeq) => new { oldSeq, newSeq = newSeq + 1 })
-                    .ToDictionary(x => x.oldSeq, x => x.newSeq);
-
-                foreach (var policyApprover in filteredApprovers)
+                // Create transaction approvers for auto-approved group (Respond = 1)
+                foreach (var approver in autoApprovedApprovers)
                 {
-                    var newSequence = newSequenceMap.GetValueOrDefault(
-                        policyApprover.Linesequence ?? 0,
-                        policyApprover.Linesequence ?? 1
-                    );
-                    _context.EpeTransactionapprovers.Add(
-                        new EpeTransactionapprover
+                    _context.EpeTransactionapprovers.Add(new EpeTransactionapprover
+                    {
+                        Transactionid = transactionHeader.Transactionid,
+                        Approverid = approver.Id.ToString(),
+                        Approvertype = approver.Approvertype,
+                        Linesequence = approver.Linesequence ?? 1,
+                        Sort = approver.Sort,
+                        Respond = 1,  // Auto-approved
+                        Responddate = DateTime.UtcNow.AddHours(8),
+                        Issent = 0,
+                        Sentcount = 0,
+                        Isdelete = 0,
+                        Createddate = DateTime.UtcNow.AddHours(8),
+                    });
+                }
+
+                // Create remaining approvers as pending (Respond = 0)
+                var remainingApprovers = allApprovers
+                    .Where(a => !requesterSortGroups.Contains(a.Sort))
+                    .ToList();
+
+                if (remainingApprovers.Any())
+                {
+                    var sequenceMap = remainingApprovers
+                        .Select(p => p.Linesequence ?? 0)
+                        .Distinct()
+                        .OrderBy(x => x)
+                        .ToList();
+
+                    var newSequenceMap = sequenceMap
+                        .Select((oldSeq, newSeq) => new { oldSeq, newSeq = newSeq + 1 })
+                        .ToDictionary(x => x.oldSeq, x => x.newSeq);
+
+                    foreach (var policyApprover in remainingApprovers)
+                    {
+                        var newSequence = newSequenceMap.GetValueOrDefault(
+                            policyApprover.Linesequence ?? 0,
+                            policyApprover.Linesequence ?? 1
+                        );
+
+                        _context.EpeTransactionapprovers.Add(new EpeTransactionapprover
                         {
                             Transactionid = transactionHeader.Transactionid,
                             Approverid = policyApprover.Id.ToString(),
                             Approvertype = policyApprover.Approvertype,
                             Linesequence = newSequence,
                             Sort = policyApprover.Sort,
-                            Respond = 0,
+                            Respond = 0,  // Pending
                             Issent = 0,
                             Sentcount = 0,
                             Isdelete = 0,
                             Createddate = DateTime.UtcNow.AddHours(8),
-                        }
-                    );
+                        });
+                    }
                 }
 
                 await _context.SaveChangesAsync();
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
 
-                if (request.Attachments != null && request.Attachments.Any())
+                await LogTransactionAsync(transactionHeader.Transactionid, transactionHeader.Policyid, "CREATE", "N", "O", userId);
+
+                // Send emails to first pending approver group (if any)
+                if (remainingApprovers.Any())
                 {
-                    foreach (var attachment in request.Attachments)
+                    var firstSort = remainingApprovers.Min(p => p.Sort);
+                    var firstGroupApprovers = remainingApprovers
+                        .Where(p => p.Sort == firstSort)
+                        .OrderBy(p => p.Linesequence ?? int.MaxValue)
+                        .ToList();
+
+                    // Send emails to all approvers in first pending group
+                    foreach (var approver in firstGroupApprovers)
                     {
-                        if (attachment?.File == null)
-                            continue;
+                        string approverEmail = approver.Approveremail ?? "";
+                        string approverName = approver.Approvername ?? "";
+                        int approverUserId = 0;
+                        bool isProxy = approver.Linesequence != 1;
 
-                        var savedFileName = await _fileUploadService.SaveFile(attachment.File);
+                        if (approver.Approvertype == "IM" && userDetails != null)
+                        {
+                            approverEmail = userDetails.ImmediateEmail ?? "";
+                            approverName = userDetails.ImmediateName ?? "";
+                        }
 
-                        _context.EpeAttachments.Add(
-                            new EpeAttachment
+                        if (!string.IsNullOrEmpty(approverEmail))
+                        {
+                            try
                             {
-                                TaskId = transactionHeader.Transactionnumber,
-                                UploadFilename = attachment.File.FileName,
-                                Newfilename = savedFileName,
-                                Filetype = Path.GetExtension(attachment.File.FileName)
-                                    .TrimStart('.'),
-                                Createdate = DateTime.UtcNow.AddHours(8),
-                                Computerhost = HttpContext.Request.Host.Host,
-                            }
-                        );
-                    }
+                                if (!string.IsNullOrEmpty(approver.Approverid))
+                                {
+                                    var approverUser = await _context.CoreVUsers.FirstOrDefaultAsync(u =>
+                                        u.EmplId == approver.Approverid
+                                    );
 
-                    await _context.SaveChangesAsync();
+                                    if (approverUser != null)
+                                    {
+                                        approverUserId = approverUser.UserId;
+                                    }
+                                }
+
+                                if (
+                                    approverUserId == 0
+                                    && approver.Approvertype == "IM"
+                                    && userDetails != null
+                                    && !string.IsNullOrEmpty(userDetails.ImmediateId)
+                                )
+                                {
+                                    var imUser = await _context.CoreVUsers.FirstOrDefaultAsync(u =>
+                                        u.EmplId == userDetails.ImmediateId
+                                    );
+
+                                    if (imUser != null)
+                                    {
+                                        approverUserId = imUser.UserId;
+                                    }
+                                }
+
+                                var transApproverRecord = await _context
+                                    .EpeTransactionapprovers.Where(a =>
+                                        a.Transactionid == transactionHeader.Transactionid
+                                        && a.Approverid == approver.Id.ToString()
+                                        && a.Isdelete == 0
+                                    )
+                                    .FirstOrDefaultAsync();
+
+                                if (isProxy)
+                                {
+                                    await _emailService.SendProxyApproverReminderEmailAsync(
+                                        approverEmail,
+                                        approverName,
+                                        firstGroupApprovers.First().Approvername ?? "Main Approver",
+                                        transactionHeader.Transactionid,
+                                        transactionHeader.Transactionnumber,
+                                        userDetails?.Employeename,
+                                        transactionHeader.Details ?? "No details provided",
+                                        approverUserId,
+                                        transApproverRecord?.Transapproverid ?? 0
+                                    );
+                                }
+                                else
+                                {
+                                    await _emailService.SendApprovalRequestEmailAsync(
+                                        approverEmail,
+                                        transactionHeader.Transactionid,
+                                        transactionHeader.Transactionnumber,
+                                        userDetails?.Employeename,
+                                        transactionHeader.Details ?? "No details provided",
+                                        approverUserId,
+                                        transApproverRecord?.Transapproverid ?? 0
+                                    );
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(
+                                    ex,
+                                    "Failed to send approval request email to {Email}",
+                                    approverEmail
+                                );
+                            }
+                        }
+                    }
                 }
 
-                await transaction.CommitAsync();
+                if (userDetails != null && !string.IsNullOrEmpty(userDetails.Emailadd))
+                {
+                    try
+                    {
+                        await _emailService.SendRequestCreatedEmailAsync(
+                            userDetails.Emailadd,
+                            transactionHeader.Transactionid,
+                            transactionHeader.Transactionnumber,
+                            transactionHeader.Details ?? "No details provided",
+                            0
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send request created email to requester {Email}", userDetails.Emailadd);
+                    }
+                }
 
                 // Get the first sort (lowest Sort value) from policy approvers
                 var firstSort = filteredApprovers.Min(p => p.Sort);
@@ -1347,6 +1465,8 @@ namespace EPEAPI.Controllers
                     .Where(p => !requesterSortGroups.Contains(p.Sort))
                     .ToList();
 
+                _logger.LogWarning("Filtered Approvers", filteredApprovers);
+
                 // Renumber Linesequence
                 var sequenceMap = filteredApprovers
                     .Select(p => p.Linesequence ?? 0)
@@ -1516,6 +1636,67 @@ namespace EPEAPI.Controllers
                         requesterUserId
                     );
                 }
+                else
+                {
+                    await _context.EpeTransactionheaders
+                        .Where(h => h.Transactionid == draft.Transactionid)
+                        .ExecuteUpdateAsync(b => b
+                            .SetProperty(h => h.Status, "C")
+                            .SetProperty(h => h.Finaldecision, "Approved"));
+
+                    var requester = await _context
+                        .CoreVEmployeeDetails.Where(r => r.EmplId == draft.Requestorid)
+                        .FirstOrDefaultAsync();
+
+                    var policyApproverId = await _context.EpePolicyapprovers
+                        .Where(u => u.Approverid == requester.EmplId)
+                        .FirstOrDefaultAsync();
+
+                    // Create approver record for the user who triggered auto-approval
+                    _context.EpeTransactionapprovers.Add(new EpeTransactionapprover
+                    {
+                        Transactionid = draft.Transactionid,
+                        Approverid = policyApproverId.Id.ToString(),
+                        Approvertype = policyApproverId.Approvertype,
+                        Linesequence = policyApproverId.Linesequence,
+                        Sort = policyApproverId.Sort,
+                        Respond = 1,  // Approved
+                        Responddate = DateTime.UtcNow.AddHours(8),
+                        Issent = 0,
+                        Sentcount = 0,
+                        Isdelete = 0,
+                        Createddate = DateTime.UtcNow.AddHours(8),
+                    });
+
+                    await _context.SaveChangesAsync();
+
+                    await LogTransactionAsync(draft.Transactionid, draft.Policyid, "CLOSE", "O", "C", request.UserId);
+
+                    if (requester != null && !string.IsNullOrEmpty(requester.Emailadd))
+                    {
+                        try
+                        {
+                            var requesterUserId = 0;
+                            var user = await _context.CoreVUsers.FirstOrDefaultAsync(u => u.EmplId == requester.EmplId);
+                            if (user != null)
+                                requesterUserId = user.UserId;
+
+                            await _emailService.SendStatusChangedEmailAsync(
+                                requester.Emailadd,
+                                draft.Transactionid,
+                                draft.Transactionnumber,
+                                "Pending",
+                                "Approved",
+                                "System",
+                                requesterUserId
+                            );
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to send auto-approval email to {Email}", requester.Emailadd);
+                        }
+                    }
+                }
 
                 await transaction.CommitAsync();
 
@@ -1679,258 +1860,6 @@ namespace EPEAPI.Controllers
                 return StatusCode(500, "Error" + e.Message);
             }
         }
-
-        //[HttpPost("respond")]
-        //public async Task<IActionResult> RespondToApproval([FromBody] ApproverResponseRequest request)
-        //{
-        //    using var transaction = await _context.Database.BeginTransactionAsync();
-        //    try
-        //    {
-        //        var transactionHeader = await _context.EpeTransactionheaders
-        //            .Where(u => u.Transactionid == request.TransactionId && u.Isdelete == 0)
-        //            .FirstOrDefaultAsync();
-
-        //        if (transactionHeader == null)
-        //            return NotFound(new { success = false, message = "Exemption request not found" });
-
-        //        var approver = await _context.EpeTransactionapprovers
-        //            .Where(a => a.Transapproverid == request.TransApproverId && a.Isdelete == 0)
-        //            .FirstOrDefaultAsync();
-
-        //        if (approver == null)
-        //            return NotFound(new { success = false, message = "Approver not found" });
-
-        //        var requester = await _context.CoreVEmployeeDetails
-        //            .Where(e => e.EmplId == transactionHeader.Requestorid)
-        //            .FirstOrDefaultAsync();
-
-        //        // Update approver directly � bypasses change tracker
-        //        await _context.EpeTransactionapprovers
-        //            .Where(a => a.Transapproverid == request.TransApproverId)
-        //            .ExecuteUpdateAsync(b => b
-        //                .SetProperty(a => a.Respond, request.Respond)
-        //                .SetProperty(a => a.Responddate, DateTime.UtcNow.AddHours(8))
-        //                .SetProperty(a => a.Remarks, request.Remarks)
-        //            );
-
-        //        if (request.Respond == 1) // Approved
-        //        {
-        //            // Reload all approvers fresh after the update above
-        //            var allApprovers = await _context.EpeTransactionapprovers
-        //                .Where(a => a.Transactionid == request.TransactionId && a.Isdelete == 0)
-        //                .OrderBy(a => a.Linesequence)
-        //                .ThenBy(a => a.Sort)
-        //                .ToListAsync();
-
-        //            var currentApprover = allApprovers.First(a => a.Transapproverid == request.TransApproverId);
-        //            var currentSequence = currentApprover.Linesequence;
-        //            var currentSort = currentApprover.Sort;
-
-        //            // Same Sort regardless of Linesequence = same group (main + proxy)
-        //            var approversInGroup = allApprovers
-        //                .Where(a => a.Sort == currentSort && a.Respond == 0)
-        //                .ToList();
-
-        //            if (approversInGroup.Any())
-        //            {
-        //                var groupIds = approversInGroup.Select(a => a.Transapproverid).ToList();
-        //                await _context.EpeTransactionapprovers
-        //                    .Where(a => groupIds.Contains(a.Transapproverid))
-        //                    .ExecuteUpdateAsync(b => b
-        //                        .SetProperty(a => a.Respond, 1)
-        //                        .SetProperty(a => a.Responddate, DateTime.UtcNow.AddHours(8))
-        //                        .SetProperty(a => a.Remarks, request.Remarks ?? "Auto-approved: group member approved")
-        //                    );
-        //            }
-
-        //            // Next sequence = any Linesequence that is NOT in the current group's sequences
-        //            //    Reload after auto-approve to get fresh state
-        //            var updatedApprovers = await _context.EpeTransactionapprovers
-        //                .Where(a => a.Transactionid == request.TransactionId && a.Isdelete == 0)
-        //                .OrderBy(a => a.Linesequence)
-        //                .ThenBy(a => a.Sort)
-        //                .ToListAsync();
-
-        //            // Sequences occupied by the current sort group
-        //            var currentGroupSequences = allApprovers
-        //                .Where(a => a.Sort == currentSort)
-        //                .Select(a => a.Linesequence)
-        //                .Distinct()
-        //                .ToHashSet();
-
-        //            // Next approvers = those whose Linesequence is NOT part of current group
-        //            // AND have a higher Linesequence than the current approver
-        //            var nextApprovers = updatedApprovers
-        //                .Where(a => !currentGroupSequences.Contains(a.Linesequence)
-        //                        && a.Linesequence > currentSequence
-        //                        && a.Respond == 0)
-        //                .ToList();
-
-        //            if (nextApprovers.Any())
-        //            {
-        //                // At least one approved, more sequences ahead ? Status = 'P'
-        //                await _context.EpeTransactionheaders
-        //                    .Where(h => h.Transactionid == request.TransactionId)
-        //                    .ExecuteUpdateAsync(b => b
-        //                        .SetProperty(h => h.Status, "P")
-        //                    );
-
-        //                var nextSequence = nextApprovers.Min(a => a.Linesequence);
-        //                var approversToNotify = nextApprovers
-        //                    .Where(a => a.Linesequence == nextSequence)
-        //                    .ToList();
-
-        //                foreach (var nextApprover in approversToNotify)
-        //                {
-        //                    string approverEmail = "";
-
-        //                    var policyApprover = await _context.EpePolicyapprovers
-        //                            .Where(e => e.Id == int.Parse(nextApprover.Approverid))
-        //                            .FirstOrDefaultAsync();
-
-        //                    if (nextApprover.Approvertype == "IM" && requester != null)
-        //                    {
-        //                        approverEmail = requester.ImmediateEmail ?? "";
-        //                    }
-        //                    else
-        //                    {
-
-        //                        approverEmail = policyApprover?.Approveremail ?? "";
-        //                    }
-
-        //                    var transApproverRecord = await _context.EpeTransactionapprovers
-        //                        .Where(a => a.Transactionid == transactionHeader.Transactionid
-        //                                 && a.Approverid == policyApprover.Id.ToString()
-        //                                 && a.Isdelete == 0)
-        //                        .FirstOrDefaultAsync();
-
-        //                    if (!string.IsNullOrEmpty(approverEmail))
-        //                    {
-        //                        try
-        //                        {
-        //                            await _emailService.SendApprovalRequestEmailAsync(
-        //                                approverEmail,
-        //                                transactionHeader.Transactionid,
-        //                                transactionHeader.Transactionnumber,
-        //                                requester?.Employeename ?? transactionHeader.Requestorid,
-        //                                transactionHeader.Details ?? "No details provided",
-        //                                int.Parse(requester?.EmplId),
-        //                                transApproverRecord?.Transapproverid ?? 0
-        //                            );
-        //                        }
-        //                        catch (Exception ex)
-        //                        {
-        //                            // Log error but don't fail the request creation
-        //                            _logger.LogError(ex, "Failed to send next approver email to {Email}", approverEmail);
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //            else
-        //            {
-        //                // No pending approvers outside this group ? fully approved
-        //                await _context.EpeTransactionheaders
-        //                    .Where(h => h.Transactionid == request.TransactionId)
-        //                    .ExecuteUpdateAsync(b => b
-        //                        .SetProperty(h => h.Status, "C")
-        //                        .SetProperty(h => h.Finaldecision, "Approved")
-        //                    );
-
-        //                if (requester != null && !string.IsNullOrEmpty(requester.Emailadd))
-        //                {
-        //                    try
-        //                    {
-        //                        var requesterUserId = 0;
-        //                        if (requester != null && !string.IsNullOrEmpty(requester.EmplId))
-        //                        {
-        //                            var user = await _context.CoreVUsers
-        //                                .FirstOrDefaultAsync(u => u.EmplId == requester.EmplId);
-        //                            if (user != null)
-        //                            {
-        //                                requesterUserId = user.UserId;
-        //                            }
-        //                        }
-
-        //                        await _emailService.SendStatusChangedEmailAsync(
-        //                            requester.Emailadd,
-        //                            transactionHeader.Transactionid,
-        //                            transactionHeader.Transactionnumber,
-        //                            "Pending",
-        //                            "Approved",
-        //                            "System",
-        //                            requesterUserId
-        //                        );
-        //                    }
-        //                    catch (Exception ex)
-        //                    {
-        //                        _logger.LogError(ex, "Failed to send approval email to {Email}", requester.Emailadd);
-        //                    }
-        //                }
-        //            }
-        //        }
-        //        else if (request.Respond == 2) // Disapproved
-        //        {
-        //            // Auto-disapprove everyone else in same sequence
-        //            await _context.EpeTransactionapprovers
-        //                .Where(a => a.Transactionid == request.TransactionId
-        //                         && a.Linesequence == approver.Linesequence
-        //                         && a.Respond == 0
-        //                         && a.Isdelete == 0)
-        //                .ExecuteUpdateAsync(b => b
-        //                    .SetProperty(a => a.Respond, 2)
-        //                    .SetProperty(a => a.Responddate, DateTime.UtcNow.AddHours(8))
-        //                    .SetProperty(a => a.Remarks, "Auto-disapproved: sequence disapproved")
-        //                );
-
-        //            //  Any disapproval closes immediately
-        //            await _context.EpeTransactionheaders
-        //                .Where(h => h.Transactionid == request.TransactionId)
-        //                .ExecuteUpdateAsync(b => b
-        //                    .SetProperty(h => h.Status, "C")
-        //                    .SetProperty(h => h.Finaldecision, "Disapproved")
-        //                );
-
-        //            if (requester != null && !string.IsNullOrEmpty(requester.Emailadd))
-        //            {
-        //                try
-        //                {
-        //                    var requesterUserId = 0;
-        //                    if (requester != null && !string.IsNullOrEmpty(requester.EmplId))
-        //                    {
-        //                        var user = await _context.CoreVUsers
-        //                            .FirstOrDefaultAsync(u => u.EmplId == requester.EmplId);
-        //                        if (user != null)
-        //                        {
-        //                            requesterUserId = user.UserId;
-        //                        }
-        //                    }
-
-        //                    await _emailService.SendStatusChangedEmailAsync(
-        //                        requester.Emailadd,
-        //                        transactionHeader.Transactionid,
-        //                        transactionHeader.Transactionnumber,
-        //                        "Pending",
-        //                        "Disapproved",
-        //                        "System",
-        //                        requesterUserId
-        //                    );
-        //                }
-        //                catch (Exception ex)
-        //                {
-        //                    _logger.LogError(ex, "Failed to send disapproved email to {Email}", requester.Emailadd);
-        //                }
-        //            }
-        //        }
-
-        //        await transaction.CommitAsync();
-        //        return Ok(new { success = true, message = "Response recorded successfully" });
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        await transaction.RollbackAsync();
-        //        return StatusCode(500, "Error: " + e.Message);
-        //    }
-        //}
 
         [HttpPost("respond")]
         public async Task<IActionResult> RespondToApproval(
@@ -3341,10 +3270,38 @@ namespace EPEAPI.Controllers
 
                 if (log == null)
                 {
-                    return NotFound(new { success = false, message = "Transaction log not found" });
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "Transaction log not found"
+                    });
                 }
 
-                return Ok(new { success = true, item = log });
+                var item = new
+                {
+                    log.Id,
+                    log.TransactionId,
+                    log.TransactionType,
+                    log.PreviousStatus,
+                    log.NewStatus,
+                    PerformedBy = await _context.CoreVUsers
+                        .Where(u => u.UserId == log.PerformedBy)
+                        .Select(u => u.Employeename)
+                        .FirstOrDefaultAsync(),
+                    log.PerformedAt,
+                    log.Remarks,
+                    log.Reason,
+                    log.Metadata,
+                    log.Workstation,
+                    log.IpAddress,
+                    log.MacAddress
+                };
+
+                return Ok(new
+                {
+                    success = true,
+                    item
+                });
             }
             catch (Exception e)
             {
@@ -3361,8 +3318,24 @@ namespace EPEAPI.Controllers
                     .Where(l => l.TransactionId == transactionId)
                     .OrderByDescending(l => l.PerformedAt)
                     .ToListAsync();
+                var items = logs.Select(log => new
+                {
+                    log.Id,
+                    TransactionId = _context.EpeVTransactionHeaders.Where(t => t.TransactionId == log.TransactionId).Select(t => t.TransactionNumber).FirstOrDefault(),
+                    log.TransactionType,
+                    log.PreviousStatus,
+                    log.NewStatus,
+                    PerformedBy = _context.CoreVUsers.Where(e => e.UserId == log.PerformedBy).Select(a => a.Employeename).FirstOrDefault(),
+                    log.PerformedAt,
+                    log.Remarks,
+                    log.Reason,
+                    log.Metadata,
+                    log.Workstation,
+                    log.IpAddress,
+                    log.MacAddress
+                }).ToList();
 
-                return Ok(new { success = true, items = logs });
+                return Ok(new { success = true, items = items });
             }
             catch (Exception e)
             {
