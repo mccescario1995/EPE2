@@ -1333,17 +1333,19 @@ const isCurrentUser = (requesterId: number): boolean => {
                       </div>
                     </div>
                     <div class="flex items-center gap-2">
-                      <a
+                      <a v-if="isViewableInBrowser(attachment.filetype)"
                         :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
-                        :download="!isViewableInBrowser(attachment.filetype)"
-                        :class="
-                          isViewableInBrowser(attachment.filetype)
-                            ? 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700'
-                            : 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white'
-                        "
                         target="_blank"
+                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700"
                       >
-                        {{ getAttachmentButtonLabel(attachment.filetype) }}
+                        View
+                      </a>
+                      <a v-else
+                        :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
+                        download
+                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white"
+                      >
+                        Download
                       </a>
                       <button
                         @click="deleteAttachment(attachment.attachId)"
@@ -1558,7 +1560,7 @@ const isCurrentUser = (requesterId: number): boolean => {
                       </div>
                       <div class="flex flex-col items-end gap-1">
                         <span
-                          v-if="approver.respond != 3"
+                          v-if="approver.respond != 3 && (approver.respond == 1 || approver.respond == 2)"
                           class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
                           :class="getApproverStatusColor(approver.respond)"
                         >

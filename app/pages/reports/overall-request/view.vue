@@ -323,16 +323,49 @@ const isCurrentUserAnApprover = computed((): boolean => {
   );
 });
 
-// Helper to check if current user needs to take action (hasn't responded yet)
 const currentUserPendingAction = computed((): boolean => {
-  if (!userId?.emplId || !approversData.value?.length) return false;
+  if (!userId?.emplId || !approversData.value?.length) {
+    return false;
+  }
 
+  // Find the current user's approver record
   const currentUserApprover = approversData.value.find(
-    (x) => String(x.employeeId) === String(userStore.profile.emplId),
+    (approver) =>
+      String(approver.employeeId) === String(userId.emplId) ||
+      String(approver.transApproverId) === String(userId.emplId) ||
+      String(approver.approverEmail).toLowerCase() ===
+        String(userId.email).toLowerCase(),
   );
 
-  // User needs to act if they're an approver and haven't responded (respond === 0 means pending)
-  return currentUserApprover?.respond === 0;
+  // Current user is not an approver
+  if (!currentUserApprover) {
+    return false;
+  }
+
+  // Current user already responded
+  if (currentUserApprover.respond !== 0) {
+    return false;
+  }
+
+  // Get all approvers in the same sort group
+  const sameSortGroup = approversData.value.filter(
+    (approver) => approver.sort === currentUserApprover.sort,
+  );
+
+  // If ANY approver in the same sort group has already responded,
+  // the current user can no longer respond.
+  const someoneAlreadyResponded = sameSortGroup.some(
+    (approver) =>
+      approver.respond === 1 || // Approved
+      approver.respond === 2,   // Disapproved
+  );
+
+  if (someoneAlreadyResponded) {
+    return false;
+  }
+
+  // Current user is pending and nobody in their group has responded
+  return true;
 });
 
 //
@@ -434,7 +467,7 @@ const currentUserPendingAction = computed((): boolean => {
                         'bg-blue-100 text-blue-800 dark:bg-blue-800/20 dark:text-blue-300 border border-blue-900':
                           exemptionDetails.status === 'O' ||
                           exemptionDetails.status === 'P',
-                        'bg-gray-200 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300 border border-gray-900':
+                        'bg-red-200 text-red-800 dark:bg-red-800/20 dark:text-red-300 border border-red-900':
                           exemptionDetails.status === 'C',
                         'bg-gray-100 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300 border border-gray-900':
                           exemptionDetails.status === 'D',
@@ -560,17 +593,19 @@ const currentUserPendingAction = computed((): boolean => {
                       </p>
                     </div>
                   </div>
-                  <a
+                  <a v-if="isViewableInBrowser(attachment.filetype)"
                     :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
-                    :download="!isViewableInBrowser(attachment.filetype)"
-                    :class="
-                      isViewableInBrowser(attachment.filetype)
-                        ? 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200  dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700 dark:hover:text-white'
-                        : 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white'
-                    "
                     target="_blank"
+                    class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200  dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700 dark:hover:text-white"
                   >
-                    {{ getAttachmentButtonLabel(attachment.filetype) }}
+                    View
+                  </a>
+                  <a v-else
+                    :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
+                    download
+                    class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white"
+                  >
+                    Download
                   </a>
                 </div>
               </div>
@@ -590,26 +625,6 @@ const currentUserPendingAction = computed((): boolean => {
                 >
                   Approvers
                 </h2>
-                <!-- <div>
-                  <span
-                    v-if="exemptionDetails.finalDecision"
-                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                    :class="{
-                      'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300':
-                        exemptionDetails.finalDecision === 'Pending',
-                      'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-300':
-                        exemptionDetails.finalDecision === 'Approved',
-                      'bg-red-100 text-red-800 dark:bg-red-800/20 dark:text-red-300':
-                        exemptionDetails.finalDecision === 'Disapproved',
-                      'bg-gray-100 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300':
-                        exemptionDetails.finalDecision === 'Draft',
-                    }"
-                  >
-                    {{
-                      getFinalDecisionDisplay(exemptionDetails.finalDecision)
-                    }}
-                  </span>
-                </div> -->
               </div>
             </div>
 
@@ -679,10 +694,10 @@ const currentUserPendingAction = computed((): boolean => {
                         </div>
                       </div>
                     </div>
-                    <div v-if="!getProxies(approver.transApproverId).some(p => p.respond == 1)"
+                    <div v-if="!getProxies(approver.transApproverId).some(p => p.respond == 2)"
                      class="flex flex-col items-end gap-1">
                       <span
-                        v-if="approver.respond != 3"
+                        v-if="approver.respond != 3 && (approver.respond == 1 || approver.respond == 2)"
                         class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
                         :class="getApproverStatusColor(approver.respond)"
                       >
@@ -750,7 +765,7 @@ const currentUserPendingAction = computed((): boolean => {
                       <div v-if="approver.respond != 1"
                        class="flex flex-col items-end gap-1">
                         <span
-                          v-if="proxy.respond != 3"
+                          v-if="proxy.respond != 3 && (proxy.respond == 1 || proxy.respond == 2)"
                           class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
                           :class="getApproverStatusColor(proxy.respond)"
                         >

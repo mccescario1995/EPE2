@@ -10,13 +10,16 @@ export const useNotificationStore = defineStore("notification", () => {
 
   // Fetch notifications for the current user
   const fetchNotifications = async () => {
+    const currentProfile = userStore.profile;
+    if (!currentProfile?.userId) return;
+
     try {
       const response = await apiFetch("/api/notification", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ UserId: parseInt(userId.userId) }),
+        body: JSON.stringify({ UserId: parseInt(currentProfile.userId) }),
         credentials: "include",
         parseJson: true,
       });
@@ -64,12 +67,12 @@ export const useNotificationStore = defineStore("notification", () => {
   };
 
   // Remove a notification (optional)
-const removeNotification = (id: string | number) => {
+  const removeNotification = (id: string | number) => {
     notifications.value = notifications.value.filter((n) => n.id !== id);
     updateUnreadCount();
   };
 
-const clearNotifications = () => {
+  const clearNotifications = () => {
     notifications.value = [];
     unreadCount.value = 0;
   };

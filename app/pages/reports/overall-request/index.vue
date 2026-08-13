@@ -180,6 +180,35 @@ const fetchAllForPolicyFilter = async () => {
   }
 };
 
+const fetchAllForExport = async (params: {
+  startDate?: string;
+  endDate?: string;
+}) => {
+  loading.value = true
+  try {
+    const response = await apiFetch("/api/exemption/overall/export", {
+      method: "POST",
+      body: JSON.stringify({
+        UserId: parseInt(userId.emplId),
+        startDate: params.startDate,
+        endDate: params.endDate,
+      }),
+      headers: { "Content-Type": "application/json" },
+      parseJson: true,
+    })
+
+    return {
+      data: response.items ?? [],
+      total: response.items?.length ?? 0,
+    }
+  } catch (error) {
+    console.error('Export error:', error)
+    return { data: [], total: 0 }
+  } finally {
+    loading.value = false
+  }
+}
+
 // Handle create navigation
 const handleCreate = () => {
   router.push(`/reports/overall-request/create`);
@@ -261,6 +290,7 @@ onMounted(async () => {
           }"
           :date-time-fields="['createdDate']"
           date-time-format="'MMM d, yyyy h:mm a'"
+          :show-export="true"
           :actions="[
             {
               label: IconView,
@@ -273,6 +303,7 @@ onMounted(async () => {
           :policy-filter-items="policyDropdownItems"
           policy-filter-label="Policy Filter"
           policy-filter-placeholder="Select policies..."
+          :export-fetch-data="(params) => fetchAllForExport(params)"
         />
       </div>
     </main>

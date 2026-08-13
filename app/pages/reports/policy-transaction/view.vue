@@ -570,12 +570,13 @@ onMounted(async () => {
                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                   :class="{
                     'bg-blue-100 text-blue-800 dark:bg-blue-800/20 dark:text-blue-300 border border-blue-900':
-                      transactionHeaderDetails.status === 'O' ||
-                      transactionHeaderDetails.status === 'P',
-                    'bg-gray-200 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300 border border-gray-900':
+                      transactionHeaderDetails.status === 'O',
+                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-700/20 dark:text-yellow-300 border border-yellow-900':
+                      transactionHeaderDetails.status === 'P' || transactionHeaderDetails.status === 'D',
+                    'bg-red-200 text-red-800 dark:bg-red-700/20 dark:text-red-300 border border-red-900':
                       transactionHeaderDetails.status === 'C',
-                    'bg-gray-100 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300 border border-gray-900':
-                      transactionHeaderDetails.status === 'D',
+                    'bg-yellow-100 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300 border border-gray-900':
+                      transactionHeaderDetails.status === 'D'
                   }"
                 >
                   {{ getStatusDisplay(transactionHeaderDetails.status) }}
@@ -751,17 +752,19 @@ onMounted(async () => {
                       </p>
                     </div>
                   </div>
-                  <a
+                  <a v-if="isViewableInBrowser(attachment.filetype)"
                     :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
-                    :download="!isViewableInBrowser(attachment.filetype)"
-                    :class="
-                      isViewableInBrowser(attachment.filetype)
-                        ? 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200  dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700 dark:hover:text-white'
-                        : 'inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white'
-                    "
                     target="_blank"
+                    class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200  dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700 dark:hover:text-white"
                   >
-                    {{ getAttachmentButtonLabel(attachment.filetype) }}
+                    View
+                  </a>
+                  <a v-else
+                    :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
+                    download
+                    class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white"
+                  >
+                    Download
                   </a>
                 </div>
               </div>
@@ -876,7 +879,7 @@ onMounted(async () => {
           </div>
 
           <div class="mt-4">
-            <BaseTable
+            <base-table
               :table-data="approversTableData"
               :header="[
                 'approver',
@@ -885,7 +888,7 @@ onMounted(async () => {
                 'respondDate',
                 'remarks',
               ]"
-              :badge-fields="['respondStatus']"
+              :badge-fields="['respondStatus', 'approverRole']"
               :field-colors="{
                 respondStatus: {
                   Open: 'bg-blue-100 text-blue-800 border border-blue-900',
@@ -893,7 +896,13 @@ onMounted(async () => {
                   Disapproved: 'bg-red-100 text-red-800 border border-red-900',
                   Pending: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
                 },
+                approverRole: {
+                  Main: 'bg-blue-100 text-blue-800 border border-blue-900',
+                  Proxy: 'bg-orange-100 text-orange-800 border border-orange-900',
+                }
               }"
+              :date-time-fields="['respondDate']" 
+              date-time-format="'MMM d, yyyy h:mm a'"
             />
           </div>
         </div>
@@ -975,7 +984,7 @@ onMounted(async () => {
                 }
               }"
               :badge-fields="['transactionType', 'previousStatus', 'newStatus']"
-              :date-time-fields="['performedAt']"
+              :date-time-fields="['performedAt']" 
               date-time-format="'MMM d, yyyy h:mm a'"
             />
           </div>

@@ -22,14 +22,50 @@ const editForm = reactive({
 const editLoading = ref(false);
 const editSubmitting = ref(false);
 const editError = ref("");
+const shortnameExists = ref(false);
+const checkingShortname = ref(false);
+
+watch(() => editForm.shortname, () => {
+  shortnameExists.value = false;
+  editError.value = "";
+});
 
 const approvers = ref<any[]>([]);
 const approversLoading = ref(false);
 const approversError = ref("");
 const manageApproversRef = ref();
 
+const checkShortnameExists = async () => {
+  if (!editForm.shortname.trim()) {
+    shortnameExists.value = false;
+    return;
+  }
+  checkingShortname.value = true;
+  try {
+    const response: any = await apiFetch("/api/Maintenance/policy", {
+      method: "POST",
+      body: JSON.stringify({
+        UserId: parseInt(userId.emplId),
+        page: 1,
+        pageSize: 10,
+        search: editForm.shortname.trim(),
+      }),
+      headers: { "Content-Type": "application/json" },
+      parseJson: true,
+    });
+    const exists = (response.items || []).some(
+      (p: any) => p.shortname === editForm.shortname.trim() && p.isdelete === 0 && p.policyid != policyid
+    );
+    shortnameExists.value = exists;
+  } catch {
+    shortnameExists.value = false;
+  } finally {
+    checkingShortname.value = false;
+  }
+};
+
 const isEditFormValid = computed(() => {
-  const hasShortname = editForm.shortname.trim().length > 0;
+  const hasShortname = editForm.shortname.trim().length > 0 && !shortnameExists.value;
   const hasDescription = editForm.description.trim().length > 0;
   const hasApprovers = approvers.value.length > 0;
   return hasShortname && hasDescription && hasApprovers;
@@ -93,6 +129,17 @@ const fetchApproversLocal = async () => {
 };
 
 const submitEditForm = async () => {
+  await checkShortnameExists();
+  if (shortnameExists.value) {
+    editError.value = "A policy with this shortname already exists";
+    showToast({
+      title: "Duplicate Shortname",
+      message: "A policy with this shortname already exists",
+      type: "warning",
+      duration: 5000,
+    });
+    return;
+  }
   editSubmitting.value = true;
   editError.value = "";
   try {
@@ -225,7 +272,10 @@ const statusItems = [
               type="text"
               required
               class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              @blur="checkShortnameExists"
             />
+            <p v-if="shortnameExists" class="mt-1 text-sm text-red-600">Shortname already exists</p>
+            <p v-if="checkingShortname" class="mt-1 text-sm text-gray-500">Checking...</p>
           </div>
 
           <div>

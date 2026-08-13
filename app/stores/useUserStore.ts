@@ -18,7 +18,7 @@ const encryptedSerializer = {
   }
 };
 
-export const useUserStore = defineStore("user", {
+export const useUserStore = defineStore("epe2_user", {
   state: () => ({
     token: null as string | null,
     profile: null as any,
@@ -69,12 +69,15 @@ export const useUserStore = defineStore("user", {
       this.profile = null;
       this.role = null;
       this.menu = null;
-      localStorage.removeItem("user");
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("user_profile");
+      nextTick(() => {
+        localStorage.removeItem("user");
+        localStorage.removeItem("epe2_user");
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("user_profile");
+      });
       navigateTo("/");
     },
-    
+
     async refreshMenuIfNeeded() {
       try {
         const backend: any = await apiFetch("/menu/version");

@@ -25,26 +25,35 @@ const fetchPolicyData = async (params: {
   sortDirection?: "asc" | "desc";
 }) => {
   loading.value = true;
-  const response = await apiFetch("/api/Maintenance/policy", {
-    method: "POST",
-    body: JSON.stringify({
-      UserId: parseInt(userId.emplId),
-      page: params.page,
-      pageSize: params.limit,
-      search: params.search,
-      sortField: params.sortField,
-      sortDirection: params.sortDirection,
-    }),
-    headers: { "Content-Type": "application/json" },
-    parseJson: true,
-  });
+  try {
+    const response = await apiFetch("/api/Maintenance/policy", {
+      method: "POST",
+      body: JSON.stringify({
+        UserId: parseInt(userId.emplId),
+        page: params.page,
+        pageSize: params.limit,
+        search: params.search,
+        sortField: params.sortField,
+        sortDirection: params.sortDirection,
+      }),
+      headers: { "Content-Type": "application/json" },
+      parseJson: true,
+    });
 
-  loading.value = false;
+    loading.value = false;
 
-  return {
-    data: response.items ?? [],
-    total: response.totalCount ?? 0,
-  };
+    return {
+      data: response.items ?? [],
+      total: response.totalCount ?? 0,
+    };
+  } catch (error) {
+    loading.value = false;
+    console.error("Error fetching policies:", error);
+    return {
+      data: [],
+      total: 0,
+    };
+  }
 };
 
 // ── Delete state ───────────────────────────────────────────────────

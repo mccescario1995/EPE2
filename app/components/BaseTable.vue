@@ -763,10 +763,10 @@ async function exportToExcel() {
 
   // Create workbook
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Closed Requests");
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Exported Requests");
 
   // Download the file
-  XLSX.writeFile(workbook, "closed_requests.xlsx");
+  XLSX.writeFile(workbook, "exported_requests.xlsx");
 }
 
 // Computed properties

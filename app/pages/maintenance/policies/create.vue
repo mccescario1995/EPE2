@@ -22,16 +22,64 @@ const createError = ref("");
 const createApproverCount = ref(0);
 const createdPolicyId = ref<string | null>(null);
 const createManageApproversRef = ref();
+const shortnameExists = ref(false);
+const checkingShortname = ref(false);
+
+watch(() => createForm.shortname, () => {
+  shortnameExists.value = false;
+  createError.value = "";
+});
+
+const checkShortnameExists = async () => {
+  if (!createForm.shortname.trim()) {
+    shortnameExists.value = false;
+    return;
+  }
+  checkingShortname.value = true;
+  try {
+    const response: any = await apiFetch("/api/Maintenance/policy", {
+      method: "POST",
+      body: JSON.stringify({
+        UserId: parseInt(userId.emplId),
+        page: 1,
+        pageSize: 10,
+        search: createForm.shortname.trim(),
+      }),
+      headers: { "Content-Type": "application/json" },
+      parseJson: true,
+    });
+    const exists = (response.items || []).some(
+      (p: any) => p.shortname === createForm.shortname.trim() && p.isdelete === 0
+    );
+    shortnameExists.value = exists;
+  } catch {
+    shortnameExists.value = false;
+  } finally {
+    checkingShortname.value = false;
+  }
+};
 
 const isCreateFormValid = computed(() => {
   return (
     createForm.shortname.trim().length > 0 &&
     createForm.description.trim().length > 0 &&
-    createApproverCount.value > 0
+    createApproverCount.value > 0 &&
+    !shortnameExists.value
   );
 });
 
 const submitCreateForm = async () => {
+  await checkShortnameExists();
+  if (shortnameExists.value) {
+    createError.value = "A policy with this name already exists";
+    showToast({
+      title: "Duplicate Policy Name",
+      message: "A policy with this name already exists",
+      type: "warning",
+      duration: 5000,
+    });
+    return;
+  }
   createLoading.value = true;
   createError.value = "";
   try {
@@ -139,11 +187,13 @@ const statusItems = [
           <form id="create-policy-form" @submit.prevent="submitCreateForm" class="space-y-4">
             <div>
               <label for="create-shortname" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Short Name <span class="text-red-500 text-md">*</span>
+                Policy Name <span class="text-red-500 text-md">*</span>
               </label>
               <BaseInput id="create-shortname" v-model="createForm.shortname" type="text" required
                 class="mt-1 block w-full focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                :max-char-count="50" :min-char-count="1" />
+                :max-char-count="50" :min-char-count="1" @blur="checkShortnameExists" />
+              <p v-if="shortnameExists" class="mt-1 text-sm text-red-600">Policy name already exists</p>
+              <p v-if="checkingShortname" class="mt-1 text-sm text-gray-500">Checking...</p>
             </div>
 
             <div>
@@ -186,14 +236,7 @@ const statusItems = [
                   </span>
                 </template>
               </Dropdown>
-
             </div>
-
-            <div v-if="createError" class="text-red-500 text-sm">
-              {{ createError }}
-            </div>
-
-
           </form>
         </div>
 
