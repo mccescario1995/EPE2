@@ -107,11 +107,6 @@ namespace EPEAPI.Controllers
 
                 var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-                if (items == null || items.Count == 0)
-                {
-                    return NotFound(new { success = false, message = "No policy found" });
-                }
-
                 return Ok(
                     new
                     {
@@ -156,6 +151,19 @@ namespace EPEAPI.Controllers
             if (request == null)
             {
                 return BadRequest(new { message = "Invalid request" });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Shortname))
+            {
+                return BadRequest(new { success = false, message = "Shortname is required" });
+            }
+
+            var existingShortname = await _context.EpePolicymasters
+                .AnyAsync(p => p.Shortname == request.Shortname && p.Isdelete == 0);
+
+            if (existingShortname)
+            {
+                return Conflict(new { success = false, message = "Shortname already exists" });
             }
 
             try
@@ -210,6 +218,14 @@ namespace EPEAPI.Controllers
                     return BadRequest(
                         new { success = false, message = "Description and Shortname are required" }
                     );
+                }
+
+                var existingShortname = await _context.EpePolicymasters
+                    .AnyAsync(p => p.Shortname == request.Shortname && p.Isdelete == 0 && p.Policyid != id);
+
+                if (existingShortname)
+                {
+                    return Conflict(new { success = false, message = "Shortname already exists" });
                 }
 
                 policy.Description = request.Description;
