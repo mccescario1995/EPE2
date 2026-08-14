@@ -7,6 +7,8 @@ import { showToast } from "~/stores/globalvar";
  * If 5 requests get 401 → only ONE refresh runs.
  */
 let refreshPromise: Promise<string | null> | null = null;
+const FORBIDDEN_RELOAD_KEY = "epe2_forbidden_reload";
+const FORBIDDEN_RELOAD_COOLDOWN = 5000;
 
 /**
  * Universal API Fetch (Nuxt 3)
@@ -80,6 +82,25 @@ const baseURL = import.meta.env.PROD
    * 4. Initial request
    * ------------------------------------------------------------------ */
   let response = await executeFetch(accessToken.value ?? undefined);
+
+  /* ------------------------------------------------------------------
+   * 4.5 Forbidden guard (403 -> reload with cooldown)
+   * ------------------------------------------------------------------ */
+  if (response.status === 403) {
+    if (process.client) {
+      try {
+        const now = Date.now();
+        const lastReload = sessionStorage.getItem(FORBIDDEN_RELOAD_KEY);
+        if (!lastReload || now - parseInt(lastReload) > FORBIDDEN_RELOAD_COOLDOWN) {
+          sessionStorage.setItem(FORBIDDEN_RELOAD_KEY, String(now));
+          window.location.reload();
+        }
+      } catch {
+        window.location.reload();
+      }
+    }
+    throw new Error("Forbidden");
+  }
 
   /* ------------------------------------------------------------------
    * 5. Exit early if authorized
