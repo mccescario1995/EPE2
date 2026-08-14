@@ -179,7 +179,7 @@ const handleCreate = () => {
         class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
       >
         <div class="flex items-center">
-          <Button
+          <!-- <Button
             variant="ghost-primary"
             size="lg"
             icon="left_arrow"
@@ -188,7 +188,7 @@ const handleCreate = () => {
             class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
 
             @onclick="$router.back()"
-          />
+          /> -->
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
            {{ currentMenuLabel || currentPageName  || "Closed Requests"}}
           </h1>

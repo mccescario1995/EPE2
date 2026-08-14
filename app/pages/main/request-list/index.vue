@@ -234,7 +234,7 @@ const actions = computed(() => {
       iconClass: "text-red-500 dark:text-red-400",
       buttonClass:
         "hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900",
-      visible: (row) => row.canApprove !== true && row.hasApproverResponded !== true,
+      visible: (row) => row.canApprove !== true && row.hasApproverResponded !== true && row.status != "C",
       disabled: (row) => row.status === "P" || row.status === "C", // Disable for Pending or Completed
     });
   }
@@ -296,7 +296,7 @@ onMounted(async () => {
           }" :field-colors="{
             status: {
               O: 'bg-blue-100 text-blue-800 border border-blue-900',
-              P: 'bg-yellow-100 text-yellow-800 border border-yellow-900',
+              P: 'bg-blue-100 text-blue-800 border border-blue-900',
               C: 'bg-red-200 text-red-800 border border-red-900',
             },
             finalDecision: {

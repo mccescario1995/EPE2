@@ -524,10 +524,19 @@ const groupedApprovers = computed(() => {
 
 // Handle back navigation with fallback
 const handleBack = () => {
-  if (window.history.length > 1) {
+  console.log("Back button clicked. History length:", window.history.length);
+  if (window.history.length < 1) {
     router.back();
   } else {
     router.push('/main/pending-for-approval'); // Change to your desired fallback route
+  }
+};
+
+const handleBackClick = () => {
+  if (window.history.length < 1 && document.referrer.startsWith(window.location.origin)) {
+    router.back();
+  } else {
+    router.push('/main/pending-for-approval'); // Fallback route
   }
 };
 
@@ -535,6 +544,8 @@ const handleBack = () => {
 onMounted(async () => {
   await fetchCurrentUser();
   await fetchExemptionDetails();
+
+  const historylength = window.history.length;
 });
 </script>
 
@@ -543,9 +554,9 @@ onMounted(async () => {
     <header class="bg-white dark:bg-gray-800 shadow">
       <div class="max-w-full mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <div class="flex items-center">
-          <Button variant="ghost-primary" size="lg" icon="left_arrow" iconPosition="center" customClass="rounded-full"
-            @onclick="handleBack" />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-100">Approve Request</h1>
+          <Button size="lg" icon="left_arrow" iconPosition="center" customClass="rounded-full"
+            @onclick="handleBackClick" />
+          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-100">Approve Request {{ historylength }}</h1>
         </div>
       </div>
     </header>
@@ -649,8 +660,8 @@ onMounted(async () => {
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 pb-2">
                   Your Response
                 </h2>
-                <div>
-                  <span v-if="exemptionData.finalDecision"
+                <!-- <div>
+                  <span v-if="exemptionData.finalDecision && isSatisfiedByGroup != true"
                     class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" :class="{
                       'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300':
                         exemptionData.finalDecision === 'Pending',
@@ -661,7 +672,7 @@ onMounted(async () => {
                     }">
                     {{ getFinalDecisionDisplay(exemptionData.finalDecision) }}
                   </span>
-                </div>
+                </div> -->
               </div>
 
               <!-- Check if satisfied by proxy/main approver approval -->
@@ -780,11 +791,11 @@ onMounted(async () => {
                 </div>
 
                 <div class="flex gap-4">
-                  <Button variant="primary" size="lg" class="flex-1" :loading="submitting" @onclick="handleApprove"
+                  <Button  size="lg" class="flex-1" :loading="submitting" @onclick="handleApprove"
                     :disabled="selectedRespond === 0 || isDisapproved">
                     Submit Response
                   </Button>
-                  <Button variant="outline" size="lg" @onclick="handleBack" :disabled="isDisapproved">
+                  <Button  size="lg" @onclick="handleBack" :disabled="isDisapproved">
                     Cancel
                   </Button>
                 </div>
@@ -807,15 +818,6 @@ onMounted(async () => {
                 <p class="mt-2 text-sm text-green-700 dark:text-green-300">
                   You already approved this exemption request.
                 </p>
-
-                <!-- <Button
-                  variant="primary"
-                  size="lg"
-                  @onclick="handleBack"
-                  class="mt-4"
-                >
-                  Back to List
-                </Button> -->
               </div>
 
               <!-- Debug fallback - shows when none of the above conditions match -->
@@ -823,14 +825,6 @@ onMounted(async () => {
                 <p class="text-gray-600 dark:text-gray-400 mb-2">
                   You are not assigned as an approver for this request.
                 </p>
-                <!-- <Button
-                  variant="primary"
-                  size="lg"
-                  @onclick="handleBack"
-                  class="mt-4"
-                >
-                  Back to List
-                </Button> -->
               </div>
             </div>
           </div>
@@ -840,7 +834,7 @@ onMounted(async () => {
       <!-- Not Found State -->
       <div v-else class="bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-12 text-center">
         <p class="text-gray-500 dark:text-gray-400 text-lg mb-4">No exemption details found.</p>
-        <Button variant="primary" size="lg" @onclick="handleBack">
+        <Button size="lg" @onclick="handleBack">
           Back to List
         </Button>
       </div>

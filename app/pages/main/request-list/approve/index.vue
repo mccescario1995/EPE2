@@ -526,10 +526,11 @@ const groupedApprovers = computed(() => {
 
 // Handle back navigation with fallback
 const handleBack = () => {
-  if (window.history.length > 1) {
+  console.log("Window history length:", window.history.length);
+  if (window.history.length > 0 && document.referrer.startsWith(window.location.origin)) {
     router.back();
   } else {
-    router.push('/main/pending-for-approval'); // Change to your desired fallback route
+    router.push('/main/request-list'); // Change to your desired fallback route
   }
 };
 
@@ -651,7 +652,7 @@ onMounted(async () => {
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 pb-2">
                   Your Response
                 </h2>
-                <div>
+                <!-- <div>
                   <span v-if="exemptionData.finalDecision"
                     class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" :class="{
                       'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-300':
@@ -663,7 +664,7 @@ onMounted(async () => {
                     }">
                     {{ getFinalDecisionDisplay(exemptionData.finalDecision) }}
                   </span>
-                </div>
+                </div> -->
               </div>
 
               <!-- Check if satisfied by proxy/main approver approval -->
@@ -786,7 +787,7 @@ onMounted(async () => {
                     :disabled="selectedRespond === 0 || isDisapproved">
                     Submit Response
                   </Button>
-                  <Button variant="outline" size="lg" @onclick="handleBack" :disabled="isDisapproved">
+                  <Button  size="lg" @onclick="handleBack" :disabled="isDisapproved">
                     Cancel
                   </Button>
                 </div>
