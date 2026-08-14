@@ -178,8 +178,7 @@ namespace EPEAPI.Controllers
                 //    (user is the requester OR user is a pending approver)
                 var query = _context.EpeVTransactionHeaders.Where(u =>
                     u.IsDelete == 0
-                    && u.FinalDecision != "Draft"
-                    && u.Status != "C"
+                    && u.FinalDecision != "Draft" || u.FinalDecision == "Approved" || u.FinalDecision == "Disapproved"
                     && (
                         u.RequesterId == currentUserEmplId
                         || approvableTransactionIds.Contains(u.TransactionId)
