@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useMenuService } from "~/services/menuService";
+import { usePendingTransactionStore } from "~/stores/usePendingTransactionStore";
 const { fetchMenuList, canEdit: checkCanEdit } = useMenuService();
 const router = useRouter();
 const route = useRoute();
@@ -9,6 +10,8 @@ const userStore = useUserStore();
 const userId = userStore.profile;
 
 const canEdit = ref(false);
+
+const pendingStore = usePendingTransactionStore();
 
 const config = useRuntimeConfig();
 
@@ -34,6 +37,51 @@ const policyName = ref<string>("");
 const policyValue = ref<{ id: number; label: string } | null>(null);
 const attachments = ref<any[]>([]);
 const newAttachments = ref<{ file: File /* referenceType: string */ }[]>([]);
+
+// Auto-save debounce timer
+const autoSaveTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+const AUTO_SAVE_DEBOUNCE_MS = 1500;
+
+const getPolicyIdForStorage = () => {
+  return policyValue.value?.id ?? formData.value.policyId;
+};
+
+const autoSavePending = () => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
+  }
+
+  autoSaveTimer.value = setTimeout(() => {
+    pendingStore.saveSnapshot(userId.userId, "/main/exemptions_old/edit", "autoSave", {
+      policyId: getPolicyIdForStorage(),
+      details: formData.value.details,
+      corporate: formData.value.corporate,
+      exemptionId: exemptionId.value,
+    }, newAttachments.value.map((a) => ({ name: a.file.name, size: a.file.size, type: a.file.type })));
+  }, AUTO_SAVE_DEBOUNCE_MS);
+};
+
+// Watch for form changes to auto-save
+watch(
+  () => formData.value.policyId,
+  () => autoSavePending(),
+);
+
+watch(
+  () => formData.value.details,
+  () => autoSavePending(),
+);
+
+watch(
+  () => formData.value.corporate,
+  () => autoSavePending(),
+);
+
+watch(
+  () => newAttachments.value.map((a) => a.file.name),
+  () => autoSavePending(),
+  { deep: true },
+);
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -1021,6 +1069,31 @@ onMounted(async () => {
 
   fetchPolicies();
   fetchExemptionDetails();
+
+  const pendingData = pendingStore.checkPending(userId.userId, "/main/exemptions_old/edit");
+  if (pendingData) {
+    const actionLabel = pendingData.action === "saveDraft" ? "draft" : pendingData.action === "create" ? "submission" : pendingData.action === "autoSave" ? "changes" : pendingData.action;
+    const restored = confirm(
+      `We detected an unsaved ${actionLabel} from a previous session. ` +
+      `Do you want to restore it? (Attachments must be re-attached.)`
+    );
+    if (restored && pendingData.data) {
+      formData.value.policyId = pendingData.data.policyId ?? null;
+      formData.value.details = pendingData.data.details ?? "";
+      formData.value.corporate = pendingData.data.corporate ?? null;
+      if (pendingData.attachmentMeta?.length) {
+        const names = pendingData.attachmentMeta.map(a => `• ${a.name} (${(a.size / 1024 / 1024).toFixed(2)} MB)`).join("\n");
+        showToast({
+          type: "warning",
+          title: "Re-select attachments",
+          message: `Please re-attach these files:\n${names}`,
+          duration: 8000,
+        });
+      }
+    } else {
+      pendingStore.discardPending(userId.userId, "/main/exemptions_old/edit");
+    }
+  }
 });
 
 const formatDateTime = (date: string | Date | null) => {
@@ -1053,6 +1126,12 @@ const getApproverStatusTextColor = (respond: number) => {
 const isCurrentUser = (requesterId: number): boolean => {
   return userId?.emplId === requesterId;
 };
+
+onBeforeUnmount(() => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
+  }
+});
 </script>
 
 <template>

@@ -344,9 +344,11 @@ definePageMeta({
   // alias: "/dashboard"
 });
 
-// const username = ref("test@fastgroup.biz");
-// const password = ref("test");
-const username = ref("");
+const userStore = useUserStore();
+const rememberMeStore = useRememberMeStore();
+
+const rememberMe = ref(rememberMeStore.isRemembered ?? false);
+const username = ref(rememberMe.value ? rememberMeStore.email : "");
 const password = ref("");
 const showPassword = ref(false);
 const isCapsLockOn = ref(false);
@@ -354,7 +356,6 @@ const loginspinnerindicator = ref(true);
 const focusedField = ref(null);
 const emailInputRef = ref(null);
 
-const rememberMe = ref(false);
 
 const router = useRouter();
 const route = useRoute();
@@ -394,9 +395,9 @@ async function Login() {
   if (user.status === "SUCCESS") {
     // Remember me logic
     if (rememberMe.value) {
-      localStorage.setItem("remembered_email", username.value);
+      rememberMeStore.setRemembered(true, username.value);
     } else {
-      localStorage.removeItem("remembered_email");
+      rememberMeStore.setRemembered(false, null);
     }
 
     showToast({
@@ -414,16 +415,16 @@ function forgot() {
   window.location.href = "https://apps.fastlogistics.com.ph/utility/";
 }
 
-onMounted(() => {
-  const savedEmail = localStorage.getItem("remembered_email");
-  if (savedEmail) {
-    username.value = savedEmail;
-    rememberMe.value = true;
-  }
-  if (emailInputRef.value) {
-    emailInputRef.value.focus();
-  }
-});
+// onMounted(() => {
+//   // const savedEmail = localStorage.getItem("remembered_email");
+//   // if (savedEmail) {
+//   //   username.value = savedEmail;
+//   //   rememberMe.value = true;
+//   // }
+//   // if (emailInputRef.value) {
+//   //   emailInputRef.value.focus();
+//   // }
+// });
 </script>
 
 <style scoped>

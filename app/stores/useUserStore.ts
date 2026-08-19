@@ -70,7 +70,6 @@ export const useUserStore = defineStore("epe2_user", {
       this.role = null;
       this.menu = null;
       nextTick(() => {
-        localStorage.removeItem("user");
         localStorage.removeItem("epe2_user");
         localStorage.removeItem("auth_token");
         localStorage.removeItem("user_profile");
@@ -96,6 +95,6 @@ export const useUserStore = defineStore("epe2_user", {
   },
   persist: {
     serializer: encryptedSerializer,
-    paths: ['token', 'profile', 'menu', 'menuAccess', 'menuVersion', 'role'],
+    pick: ['token', 'profile', 'menu', 'menuAccess', 'menuVersion', 'role'],
   },
 });

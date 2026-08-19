@@ -7,6 +7,8 @@ const userStore = useUserStore();
 
 const userId = userStore.profile;
 
+const pendingStore = usePendingTransactionStore();
+
 // Form data
 // Form data (remove attachments from here)
 const formData = ref({
@@ -17,6 +19,9 @@ const formData = ref({
 });
 
 // Add newAttachments (from edit.vue)
+
+const reSelectAttachmentWarning = ref<{ fileNames: string[], fileCount: number } | null>(null);
+
 const newAttachments = ref<{ file: File /* referenceType: string */ }[]>([]);
 
 const MAX_FILES = 5;
@@ -57,6 +62,68 @@ const remainingAttachmentSlots = computed(() =>
 const isDraft = ref(false);
 const draftId = ref<number | null>(null);
 const isDraftMode = ref(false);
+
+// Auto-save debounce timer
+const autoSaveTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+const AUTO_SAVE_DEBOUNCE_MS = 1500;
+
+const getPolicyIdForStorage = () => {
+  const policyId = formData.value.policyid;
+  if (policyId && typeof policyId === "object") {
+    return policyId.id;
+  }
+  return policyId;
+};
+
+const getCorporateIdForStorage = () => {
+  const corporate = formData.value.corporate;
+  if (corporate && typeof corporate === "object") {
+    return corporate.id;
+  }
+  return corporate;
+};
+
+const autoSavePending = () => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
+  }
+
+  autoSaveTimer.value = setTimeout(() => {
+    pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/create", "autoSave", {
+      policyid: getPolicyIdForStorage(),
+      details: formData.value.details,
+      corporate: getCorporateIdForStorage(),
+      draftId: draftId.value,
+    }, newAttachments.value.map((a) => ({ name: a.file.name, size: a.file.size, type: a.file.type })));
+  }, AUTO_SAVE_DEBOUNCE_MS);
+};
+
+// Watch for form changes to auto-save
+watch(
+  () => formData.value.policyid,
+  () => autoSavePending(),
+);
+
+watch(
+  () => formData.value.details,
+  () => autoSavePending(),
+);
+
+watch(
+  () => formData.value.corporate,
+  () => autoSavePending(),
+);
+
+watch(
+  () => newAttachments.value.map((a) => a.file.name),
+  () => autoSavePending(),
+  { deep: true },
+);
+
+watch(
+  () => draftId.value,
+  () => autoSavePending(),
+);
 
 // Policy options - will be fetched from API
 const policyOptions = ref<{ id: number; label: string }[]>([]);
@@ -191,7 +258,7 @@ const fetchApprovers = async (policyId: number) => {
 
     const items = response ? response.items : response;
 
-    console.log("Fetched approvers in Create Page", items);
+    // console.log("Fetched approvers in Create Page", items);
 
     if (!items || !Array.isArray(items)) {
       console.error("Invalid approvers response:", items);
@@ -301,6 +368,13 @@ watch(
   { deep: true },
 );
 
+
+// Auto-clear re-select attachment warning when enough files are attached
+watch(() => newAttachments.value.length, (newCount) => {
+  if (reSelectAttachmentWarning.value && newCount >= reSelectAttachmentWarning.value.fileCount) {
+    reSelectAttachmentWarning.value = null;
+  }
+});
 // Clear referenceType error when any referenceType is selected
 // watch(
 //   () => newAttachments.value.map(a => a.referenceType),
@@ -452,6 +526,13 @@ const handleSaveDraft = async () => {
       formDataToSend.append("files", attachment.file);
     });
 
+    pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/create", "saveDraft", {
+      policyid: getPolicyId(),
+      details: formData.value.details,
+      corporate: formData.value.corporate,
+      draftId: draftId.value,
+    }, newAttachments.value.map(a => ({ name: a.file.name, size: a.file.size, type: a.file.type })));
+
     let response;
     if (draftId.value) {
       // Update existing draft
@@ -503,6 +584,7 @@ const handleSaveDraft = async () => {
         duration: 5000,
       });
       router.back();
+      pendingStore.discardPending(userId.userId, "/main/create-exemption/create");
     } else {
       showToast({
         type: "error",
@@ -566,6 +648,12 @@ const handleSubmit = async () => {
     //   console.log(`${pair[0]}:`, pair[1]);
     // }
 
+    pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/create", "create", {
+      policyid: getPolicyId(),
+      details: formData.value.details,
+      corporate: formData.value.corporate,
+    }, newAttachments.value.map(a => ({ name: a.file.name, size: a.file.size, type: a.file.type })));
+
     const response: any = await apiFetch("/api/exemption/create", {
       method: "POST",
       body: formDataToSend,
@@ -594,6 +682,7 @@ const handleSubmit = async () => {
       });
 
       router.push("/main/create-exemption");
+      pendingStore.discardPending(userId.userId, "/main/create-exemption/create");
     } else {
       throw new Error(response.message || "Failed to create request");
     }
@@ -613,6 +702,7 @@ const handleSubmit = async () => {
 
 // Handle cancel
 const handleCancel = () => {
+  pendingStore.discardPending(userId.userId, "/main/create-exemption/create");
   router.back();
 };
 
@@ -764,14 +854,51 @@ onMounted(async () => {
     return;
   }
 
-  fetchPolicies();
+  await fetchPolicies();
+  const pendingData = pendingStore.checkPending(userId.userId, "/main/create-exemption/create");
+  if (pendingData) {
+    
+    const restored = confirm(`We detected an unsaved ${pendingData.action === "saveDraft" ? "draft" : pendingData.action === "create" ? "submission" : "changes"} from a previous session. Do you want to restore it? (Attachments must be re-attached.)`);
+    if (restored && pendingData.data) {
+      const pendingPolicyId = pendingData.data.policyid;
+      if (pendingPolicyId != null) {
+        const matchingOption = policyOptions.value.find(
+          (p) => p.id === pendingPolicyId,
+        );
+        console.log("Matching policy option found:", matchingOption);
+        formData.value.policyid = matchingOption
+          ? { id: matchingOption.id, label: matchingOption.label }
+          : null;
+      } else {
+        formData.value.policyid = null;
+      }
+      console.log("Pending data found:", formData.value.policyid);
+      formData.value.details = pendingData.data.details ?? "";
+      formData.value.corporate = pendingData.data.corporate ?? null;
+      draftId.value = pendingData.data.draftId ?? null;
+      if (draftId.value) { isDraft.value = true; isDraftMode.value = true; }
+      if (pendingData.attachmentMeta?.length) {
+        const names = pendingData.attachmentMeta.map(a => `${a.name} (${(a.size / 1024 / 1024).toFixed(2)} MB)`);
+        reSelectAttachmentWarning.value = { fileNames: names, fileCount: pendingData.attachmentMeta.length };
+        // Keep the toast too if desired, but banner is the main UI
+      }
+    } else {
+      pendingStore.discardPending(userId.userId, "/main/create-exemption/create");
+    }
+  }
   const query = new URLSearchParams(window.location.search);
   const draftParam = query.get("draftId");
-  if (draftParam) {
-    const id = parseInt(draftParam);
-    if (id) {
-      await loadDraft(id);
+    if (draftParam) {
+      const id = parseInt(draftParam);
+      if (id) {
+        await loadDraft(id);
+      }
     }
+  });
+
+onBeforeUnmount(() => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
   }
 });
 </script>
@@ -852,6 +979,32 @@ onMounted(async () => {
               Attachments <span class="text-red-500">*</span> (Max 5 files, 10MB
               each)
             </label>
+
+            <!-- Re-select Attachments Banner -->
+            <div v-if="reSelectAttachmentWarning" class="mt-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/30 dark:border-amber-800">
+              <div class="flex items-start gap-3">
+                <svg class="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-amber-900 dark:text-amber-100">
+                    Attachments need to be re-attached
+                  </p>
+                  <p class="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                    Please re-attach the following {{ reSelectAttachmentWarning.fileCount }} file(s):
+                  </p>
+                  <ul class="text-xs text-amber-700 dark:text-amber-300 mt-1 ml-4 list-disc space-y-0.5">
+                    <li v-for="name in reSelectAttachmentWarning.fileNames" :key="name">{{ name }}</li>
+                  </ul>
+                  <p class="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                    The banner will disappear once you re-attach all files.
+                  </p>
+                </div>
+                <button @click="reSelectAttachmentWarning = null" class="text-amber-500 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 flex-shrink-0 ml-2" title="Dismiss">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+            </div>
 
             <p
               v-if="errors.attachments"
@@ -1121,3 +1274,8 @@ onMounted(async () => {
     </main>
   </div>
 </template>
+
+
+
+
+

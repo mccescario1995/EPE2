@@ -191,7 +191,7 @@ const fetchApprovers = async (policyId: number) => {
 
     const items = response ? response.items : response;
 
-    console.log("Fetched approvers in Create Page", items);
+    // console.log("Fetched approvers in Create Page", items);
 
     if (!items || !Array.isArray(items)) {
       console.error("Invalid approvers response:", items);

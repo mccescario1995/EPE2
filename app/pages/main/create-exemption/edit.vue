@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { usePendingTransactionStore } from "~/stores/usePendingTransactionStore";
 import { useMenuService } from "~/services/menuService";
 const { fetchMenuList, canEdit: checkCanEdit } = useMenuService();
 const router = useRouter();
@@ -7,6 +8,8 @@ const { showToast } = useToast();
 const userStore = useUserStore();
 
 const userId = userStore.profile;
+
+const pendingStore = usePendingTransactionStore();
 
 const canEdit = ref(false);
 
@@ -35,6 +38,53 @@ const policyValue = ref<{ id: number; label: string } | null>(null);
 const attachments = ref<any[]>([]);
 const newAttachments = ref<{ file: File /* referenceType: string */ }[]>([]);
 
+// Auto-save debounce timer
+const autoSaveTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+const AUTO_SAVE_DEBOUNCE_MS = 1500;
+
+const getPolicyIdForStorage = () => {
+  return policyValue.value?.id ?? formData.value.policyId;
+};
+
+const autoSavePending = () => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
+  }
+
+  autoSaveTimer.value = setTimeout(() => {
+    pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/edit", "autoSave", {
+      policyId: getPolicyIdForStorage(),
+      details: formData.value.details,
+      corporate: formData.value.corporate,
+      exemptionId: exemptionId.value,
+    }, newAttachments.value.map((a) => ({ name: a.file.name, size: a.file.size, type: a.file.type })));
+  }, AUTO_SAVE_DEBOUNCE_MS);
+};
+
+// Watch for form changes to auto-save
+watch(
+  () => formData.value.policyId,
+  () => autoSavePending(),
+);
+
+watch(
+  () => formData.value.details,
+  () => autoSavePending(),
+);
+
+watch(
+  () => formData.value.corporate,
+  () => autoSavePending(),
+);
+
+watch(
+  () => newAttachments.value.map((a) => a.file.name),
+  () => autoSavePending(),
+  { deep: true },
+);
+
+
+const reSelectAttachmentWarning = ref<{ fileNames: string[], fileCount: number } | null>(null);
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
@@ -332,6 +382,7 @@ const hasUnsavedChanges = computed(() => {
 
 // Handle back (go to view page)
 const handleBack = () => {
+  pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
   router.back();
 };
 
@@ -348,6 +399,17 @@ const handleSubmit = async () => {
       details: formData.value.details,
       modifiedby: userId.userId,
     };
+
+    pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/edit", "update", {
+      policyId: formData.value.policyId,
+      details: formData.value.details,
+      corporate: formData.value.corporate,
+      exemptionId: exemptionId.value,
+    }, newAttachments.value.map(a => ({
+      name: a.file.name,
+      size: a.file.size,
+      type: a.file.type,
+    })));
 
     const response = await apiFetch(
       `/api/exemption/update/${exemptionId.value}`,
@@ -371,6 +433,7 @@ const handleSubmit = async () => {
       // router.push(`/main/exemptions/view?id=${exemptionId.value}`);
       // router.back();
       router.push("/main/create-exemption");
+      pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
     } else {
       showToast({
         type: "error",
@@ -401,6 +464,17 @@ const handleSubmitDraft = async () => {
     const payload = {
       userId: userId.userId,
     };
+    pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/edit", "submitDraft", {
+      policyId: formData.value.policyId,
+      details: formData.value.details,
+      corporate: formData.value.corporate,
+      exemptionId: exemptionId.value,
+    }, newAttachments.value.map(a => ({
+      name: a.file.name,
+      size: a.file.size,
+      type: a.file.type,
+    })));
+
     const response = await apiFetch(
       `/api/exemption/submit-draft/${exemptionId.value}`,
       {
@@ -421,6 +495,7 @@ const handleSubmitDraft = async () => {
       });
       // Redirect to exemptions list after success
       router.push("/main/create-exemption");
+      pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
     } else {
       showToast({
         type: "error",
@@ -456,6 +531,17 @@ const handleUpdateDraft = async () => {
       modifiedby: userId.userId,
     };
 
+    pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/edit", "updateDraft", {
+      policyId: formData.value.policyId,
+      details: formData.value.details,
+      corporate: formData.value.corporate,
+      exemptionId: exemptionId.value,
+    }, newAttachments.value.map(a => ({
+      name: a.file.name,
+      size: a.file.size,
+      type: a.file.type,
+    })));
+
     const response = await apiFetch(
       `/api/exemption/update-draft/${exemptionId.value}`,
       {
@@ -476,6 +562,7 @@ const handleUpdateDraft = async () => {
       });
       // Redirect to exemptions view page after success
       router.push(`/main/create-exemption/view?id=${exemptionId.value}`);
+      pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
     } else {
       showToast({
         type: "error",
@@ -517,6 +604,13 @@ watch(
   },
 );
 
+
+// Auto-clear re-select attachment warning when enough files are attached
+watch(() => newAttachments.value.length, (newCount) => {
+  if (reSelectAttachmentWarning.value && newCount >= reSelectAttachmentWarning.value.fileCount) {
+    reSelectAttachmentWarning.value = null;
+  }
+});
 // Get final decision display
 const getFinalDecisionDisplay = (decision: string) => {
   const decisionMap: Record<string, string> = {
@@ -951,7 +1045,7 @@ const fetchApprovers = async (policyId: number) => {
 
     const items = response.success ? response.items : response;
 
-    console.log("Fetched approvers in Edit page", items);
+    //                                                                                                                                                                                              // console.log("Fetched approvers in Edit page", items);qqqqqq
 
     if (!items || !Array.isArray(items)) {
       console.error("Invalid approvers response:", items);
@@ -1018,6 +1112,26 @@ onMounted(async () => {
 
   fetchPolicies();
   fetchExemptionDetails();
+
+  const pendingData = pendingStore.checkPending(userId.userId, "/main/create-exemption/edit");
+  if (pendingData) {
+    const actionLabel = pendingData.action === "saveDraft" ? "draft" : pendingData.action === "create" ? "submission" : pendingData.action === "autoSave" ? "changes" : pendingData.action;
+    const restored = confirm(
+      `We detected an unsaved ${actionLabel} from a previous session. ` +
+      `Do you want to restore it? (Attachments must be re-attached.)`
+    );
+    if (restored && pendingData.data) {
+      formData.value.policyId = pendingData.data.policyId ?? null;
+      formData.value.details = pendingData.data.details ?? "";
+      formData.value.corporate = pendingData.data.corporate ?? null;
+      if (pendingData.attachmentMeta?.length) {
+        const names = pendingData.attachmentMeta.map(a => `${a.name} (${(a.size / 1024 / 1024).toFixed(2)} MB)`);
+        reSelectAttachmentWarning.value = { fileNames: names, fileCount: pendingData.attachmentMeta.length };
+      }
+    } else {
+      pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
+    }
+  }
 });
 
 const formatDateTime = (date: string | Date | null) => {
@@ -1050,6 +1164,12 @@ const getApproverStatusTextColor = (respond: number) => {
 const isCurrentUser = (requesterId: number): boolean => {
   return userId?.emplId === requesterId;
 };
+
+onBeforeUnmount(() => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
+  }
+});
 </script>
 
 <template>
@@ -1287,6 +1407,32 @@ const isCurrentUser = (requesterId: number): boolean => {
               >
                 Attachments
               </h2>
+
+              <!-- Re-select Attachments Banner -->
+              <div v-if="reSelectAttachmentWarning" class="mt-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/30 dark:border-amber-800">
+                <div class="flex items-start gap-3">
+                  <svg class="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                  </svg>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-amber-900 dark:text-amber-100">
+                      Attachments need to be re-attached
+                    </p>
+                    <p class="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                      Please re-attach the following {{ reSelectAttachmentWarning.fileCount }} file(s):
+                    </p>
+                    <ul class="text-xs text-amber-700 dark:text-amber-300 mt-1 ml-4 list-disc space-y-0.5">
+                      <li v-for="name in reSelectAttachmentWarning.fileNames" :key="name">{{ name }}</li>
+                    </ul>
+                    <p class="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                      The banner will disappear once you re-attach all files.
+                    </p>
+                  </div>
+                  <button @click="reSelectAttachmentWarning = null" class="text-amber-500 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 flex-shrink-0 ml-2" title="Dismiss">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              </div>
 
               <!-- Existing Attachments -->
               <div v-if="attachments.length > 0" class="mb-6">
@@ -1630,11 +1776,7 @@ const isCurrentUser = (requesterId: number): boolean => {
                               class="text-sm text-gray-700 dark:text-gray-300 mb-1"
                             >
                               {{ proxy.approverName }}
-                              <proxy
-                                v-if="isCurrentUser(approver.employeeId)"
-                                class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded border-2 border-green-11121w11                                                                                                                                               00"
-                                >You</proxy
-                              >
+                              <span v-if="isCurrentUser(approver.employeeId)" class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded border-2 border-green-11121w11                                                                                                                                               00">You</span>
                             </p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">
                               {{ proxy.approverEmail || "" }}
@@ -1785,3 +1927,9 @@ const isCurrentUser = (requesterId: number): boolean => {
     </main>
   </div>
 </template>
+
+
+
+
+
+

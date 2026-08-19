@@ -4,9 +4,11 @@ definePageMeta({
 });
 
 import ManageApprovers from "~/components/ManageApprovers.vue";
+import { usePendingTransactionStore } from "~/stores/usePendingTransactionStore";
 
 const userStore = useUserStore();
 const userId = userStore.profile;
+const pendingStore = usePendingTransactionStore();
 
 // Create form state
 const createForm = reactive({
@@ -83,6 +85,13 @@ const submitCreateForm = async () => {
   createLoading.value = true;
   createError.value = "";
   try {
+    pendingStore.saveSnapshot(userId.userId, "/maintenance/policies/create", "createPolicy", {
+      shortname: createForm.shortname,
+      description: createForm.description,
+      status: createForm.status,
+      managerApprover: createForm.managerApprover,
+    });
+
     const response: any = await apiFetch("/api/Maintenance/policy/create", {
       method: "POST",
       body: JSON.stringify(createForm),
@@ -128,6 +137,7 @@ const submitCreateForm = async () => {
       });
 
       navigateTo("/maintenance/policies");
+      pendingStore.discardPending(userId.userId, "/maintenance/policies/create");
     } else {
       createError.value = response.message || "Failed to create policy";
     }
@@ -140,6 +150,7 @@ const submitCreateForm = async () => {
 };
 
 const cancelCreate = () => {
+  pendingStore.discardPending(userId.userId, "/maintenance/policies/create");
   navigateTo("/maintenance/policies");
 };
 
@@ -153,6 +164,21 @@ const statusItems = [
     label: "Inactive"
   }
 ]
+
+onMounted(async () => {
+  const pendingData = pendingStore.checkPending(userId.userId, "/maintenance/policies/create");
+  if (pendingData) {
+    const restored = confirm("We detected an unsaved policy from a previous session. Do you want to restore it?");
+    if (restored && pendingData.data) {
+      createForm.shortname = pendingData.data.shortname ?? "";
+      createForm.description = pendingData.data.description ?? "";
+      createForm.status = pendingData.data.status ?? "A";
+      createForm.managerApprover = pendingData.data.managerApprover ?? "";
+    } else {
+      pendingStore.discardPending(userId.userId, "/maintenance/policies/create");
+    }
+  }
+});
 </script>
 
 <template>
