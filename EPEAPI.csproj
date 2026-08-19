@@ -27,8 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="FastNetCoreLibrary">
-      <HintPath>FastNetCoreLibrary\FastNetCoreLibrary.dll</HintPath>
-    </Reference>
+	  <Reference Include="FastNetCoreLibrary">
+		  <HintPath>FastNetCoreLibrary\FastNetCoreLibrary.dll</HintPath>
+		  <Private>true</Private>
+	  </Reference>
   </ItemGroup>
 </Project>
