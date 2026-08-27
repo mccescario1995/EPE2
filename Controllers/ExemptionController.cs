@@ -1439,9 +1439,10 @@ namespace EPEAPI.Controllers
         }
 
         [HttpPost("update-draft/{id}")]
+        [Consumes("multipart/form-data")]
         public async Task<IActionResult> UpdateDraft(
             int id,
-            [FromBody] EpeTransactionheader request
+            [FromForm] DraftExemptionRequestDto request
         )
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -1459,14 +1460,36 @@ namespace EPEAPI.Controllers
                 }
 
                 // Only allow updating these fields for drafts
-                existingItem.Corporate = request.Corporate ?? existingItem.Corporate;
                 existingItem.Policyid =
-                    request.Policyid != 0 ? request.Policyid : existingItem.Policyid;
+                    request.Policyid != 0 ? request.Policyid.Value : existingItem.Policyid;
                 existingItem.Details = request.Details ?? existingItem.Details;
                 existingItem.Modifieddate = DateTime.UtcNow.AddHours(8);
-                existingItem.Modifiedby = request.Modifiedby; // Use Modifiedby as modifier
+                existingItem.Modifiedby = request.Modifiedby;
 
                 await _context.SaveChangesAsync();
+
+                // Handle attachments (same as save-draft)
+                if (request.Attachments != null && request.Attachments.Any())
+                {
+                    foreach (var attachment in request.Attachments)
+                    {
+                        if (attachment?.File == null)
+                            continue;
+
+                        var savedFileName = await _fileUploadService.SaveFile(attachment.File);
+                        var epeAttachment = new EpeAttachment
+                        {
+                            TaskId = existingItem.Transactionnumber,
+                            UploadFilename = attachment.File.FileName,
+                            Newfilename = savedFileName,
+                            Filetype = Path.GetExtension(attachment.File.FileName).TrimStart('.'),
+                            Createdate = DateTime.UtcNow.AddHours(8),
+                            Computerhost = HttpContext.Request.Host.Host,
+                        };
+                        _context.EpeAttachments.Add(epeAttachment);
+                    }
+                    await _context.SaveChangesAsync();
+                }
 
                 await transaction.CommitAsync();
 
