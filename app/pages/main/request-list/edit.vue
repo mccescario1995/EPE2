@@ -20,6 +20,11 @@ const exemptionId = computed(() => {
   return Number(route.query.id) || null;
 });
 
+// Transaction ID for pending transaction storage
+const transactionIdRef = computed(() => {
+  return exemptionDetails.value?.transactionId ?? exemptionId.value?.toString() ?? userId.userId.toString();
+});
+
 // Form data
 const formData = ref({
   transactionNumber: "" as string | null,
@@ -38,6 +43,24 @@ const policyValue = ref<{ id: number; label: string } | null>(null);
 const attachments = ref<any[]>([]);
 const newAttachments = ref<{ file: File /* referenceType: string */ }[]>([]);
 
+// Pending data restore modal state
+const showPendingRestoreModal = ref(false);
+const pendingRestoreData = ref<{
+  action: string;
+  data: Record<string, any>;
+  attachmentMeta: { name: string; size: number; type: string }[];
+  timestamp: string;
+} | null>(null);
+const pendingRestoreServerData = ref<Record<string, any> | null>(null);
+const reSelectAttachmentWarning = ref<{ fileNames: string[]; fileCount: number } | null>(null);
+
+// Auto-clear re-select attachment warning when enough files are attached
+watch(() => newAttachments.value.length, (newCount) => {
+  if (reSelectAttachmentWarning.value && newCount >= reSelectAttachmentWarning.value.fileCount) {
+    reSelectAttachmentWarning.value = null;
+  }
+});
+
 // Auto-save debounce timer
 const autoSaveTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 const AUTO_SAVE_DEBOUNCE_MS = 1500;
@@ -53,7 +76,7 @@ const autoSavePending = () => {
 
   autoSaveTimer.value = setTimeout(() => {
     if (isInitialized.value && hasUnsavedChanges.value) {
-      pendingStore.saveSnapshot(userId.userId, "/main/request-list/edit", "autoSave", {
+      pendingStore.saveSnapshot(transactionIdRef.value, "/main/request-list/edit", "autoSave", {
         policyId: getPolicyIdForStorage(),
         details: formData.value.details,
         corporate: formData.value.corporate,
@@ -412,7 +435,7 @@ const handleSubmit = async () => {
       modifiedby: userId.userId,
     };
 
-    pendingStore.saveSnapshot(userId.userId, "/main/request-list/edit", "update", {
+    pendingStore.saveSnapshot(transactionIdRef.value, "/main/request-list/edit", "update", {
       policyId: formData.value.policyId,
       details: formData.value.details,
       corporate: formData.value.corporate,
@@ -445,7 +468,7 @@ const handleSubmit = async () => {
       // router.push(`/main/exemptions/view?id=${exemptionId.value}`);
       // router.back();
       router.push("/main/request-list");
-      pendingStore.discardPending(userId.userId, "/main/request-list/edit");
+      pendingStore.discardPending(transactionIdRef.value, "/main/request-list/edit");
     } else {
       showToast({
         type: "error",
@@ -473,7 +496,7 @@ const handleSubmitDraft = async () => {
 
   isSubmitting.value = true;
   try {
-    pendingStore.saveSnapshot(userId.userId, "/main/request-list/edit", "submitDraft", {
+    pendingStore.saveSnapshot(transactionIdRef.value, "/main/request-list/edit", "submitDraft", {
       policyId: formData.value.policyId,
       details: formData.value.details,
       corporate: formData.value.corporate,
@@ -500,7 +523,7 @@ const handleSubmitDraft = async () => {
       });
       // Redirect to exemptions list after success
       router.push("/main/request-list");
-      pendingStore.discardPending(userId.userId, "/main/request-list/edit");
+      pendingStore.discardPending(transactionIdRef.value, "/main/request-list/edit");
     } else {
       showToast({
         type: "error",
@@ -536,7 +559,7 @@ const handleUpdateDraft = async () => {
       modifiedby: userId.userId,
     };
 
-    pendingStore.saveSnapshot(userId.userId, "/main/request-list/edit", "updateDraft", {
+    pendingStore.saveSnapshot(transactionIdRef.value, "/main/request-list/edit", "updateDraft", {
       policyId: formData.value.policyId,
       details: formData.value.details,
       corporate: formData.value.corporate,
@@ -567,7 +590,7 @@ const handleUpdateDraft = async () => {
       });
       // Redirect to exemptions view page after success
       router.push(`/main/request-list/view?id=${exemptionId.value}`);
-      pendingStore.discardPending(userId.userId, "/main/request-list/edit");
+      pendingStore.discardPending(transactionIdRef.value, "/main/request-list/edit");
     } else {
       showToast({
         type: "error",
@@ -1092,6 +1115,79 @@ const activeGroupSort = computed(() => {
 });
 
 // Fetch policies on mount
+// Pending restore modal handlers
+const handleRestorePending = () => {
+  if (!pendingRestoreData.value?.data) return;
+
+  const pending = pendingRestoreData.value.data;
+  if (pending.policyId) {
+    formData.value.policyId = pending.policyId;
+    const matchedPolicy = policyOptions.value.find((p) => p.id === pending.policyId);
+    policyValue.value = matchedPolicy
+      ? { id: matchedPolicy.id, label: matchedPolicy.label }
+      : { id: pending.policyId, label: policyName.value || `Policy ${pending.policyId}` };
+  } else {
+    formData.value.policyId = null;
+    policyValue.value = null;
+  }
+  formData.value.details = pending.details ?? "";
+  formData.value.corporate = pending.corporate ?? null;
+  if (pendingRestoreData.value.attachmentMeta?.length) {
+    const names = pendingRestoreData.value.attachmentMeta.map(
+      (a) => `${a.name} (${(a.size / 1024 / 1024).toFixed(2)} MB)`
+    );
+    reSelectAttachmentWarning.value = { fileNames: names, fileCount: pendingRestoreData.value.attachmentMeta.length };
+  }
+  pendingStore.discardPending(transactionIdRef.value, "/main/request-list/edit");
+  closePendingRestoreModal();
+};
+
+const handleDiscardPending = () => {
+  pendingStore.discardPending(transactionIdRef.value, "/main/request-list/edit");
+  closePendingRestoreModal();
+};
+
+const closePendingRestoreModal = () => {
+  showPendingRestoreModal.value = false;
+  pendingRestoreData.value = null;
+  pendingRestoreServerData.value = null;
+};
+
+const getActionLabel = (action: string): string => {
+  return action === "saveDraft" ? "draft" : action === "create" ? "submission" : action === "autoSave" ? "changes" : action;
+};
+
+const formatTimestamp = (timestamp: string): string => {
+  const date = new Date(timestamp);
+  return date.toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const comparisonFields = computed(() => {
+  if (!pendingRestoreData.value?.data || !pendingRestoreServerData.value) return [];
+
+  const pending = pendingRestoreData.value.data;
+  const server = pendingRestoreServerData.value;
+
+  const fields = [
+    { key: "policyId", label: "Policy", serverValue: server.policyId, pendingValue: pending.policyId },
+    { key: "details", label: "Details", serverValue: server.details, pendingValue: pending.details },
+  ];
+
+  return fields.map(field => ({
+    ...field,
+    changed: field.serverValue !== field.pendingValue,
+    serverValue: field.serverValue ?? "—",
+    pendingValue: field.pendingValue ?? "—",
+  }));
+});
+
 onMounted(async () => {
   await fetchMenuList();
   canEdit.value = checkCanEdit("/main/request-list/");
@@ -1110,29 +1206,21 @@ onMounted(async () => {
   await fetchPolicies();
   await fetchExemptionDetails();
 
-  const pendingData = pendingStore.checkPending(userId.userId, "/main/request-list/edit");
+  const pendingData = pendingStore.checkPending(transactionIdRef.value, "/main/request-list/edit");
+
   if (pendingData) {
-    const actionLabel = pendingData.action === "saveDraft" ? "draft" : pendingData.action === "create" ? "submission" : pendingData.action === "autoSave" ? "changes" : pendingData.action;
-    const restored = confirm(
-      `We detected an unsaved ${actionLabel} from a previous session. ` +
-      `Do you want to restore it? (Attachments must be re-attached.)`
-    );
-    if (restored && pendingData.data) {
-      formData.value.policyId = pendingData.data.policyId ?? null;
-      formData.value.details = pendingData.data.details ?? "";
-      formData.value.corporate = pendingData.data.corporate ?? null;
-      if (pendingData.attachmentMeta?.length) {
-        const names = pendingData.attachmentMeta.map(a => `• ${a.name} (${(a.size / 1024 / 1024).toFixed(2)} MB)`).join("\n");
-        showToast({
-          type: "warning",
-          title: "Re-select attachments",
-          message: `Please re-attach these files:\n${names}`,
-          duration: 8000,
-        });
-      }
-    } else {
-      pendingStore.discardPending(userId.userId, "/main/request-list/edit");
-    }
+    // Capture server data for comparison before showing restore modal
+    const serverDataSnapshot = {
+      policyId: formData.value.policyId,
+      details: formData.value.details,
+      corporate: formData.value.corporate,
+      transactionNumber: formData.value.transactionNumber,
+      requestorName: formData.value.requestorName,
+    };
+
+    pendingRestoreData.value = pendingData;
+    pendingRestoreServerData.value = serverDataSnapshot;
+    showPendingRestoreModal.value = true;
   }
   isInitialized.value = true;
   window.addEventListener("beforeunload", flushAutoSave);
@@ -1173,7 +1261,7 @@ const isInitialized = ref(false);
 
 const flushAutoSave = () => {
   if (!isInitialized.value || !hasUnsavedChanges.value) return;
-  pendingStore.saveSnapshot(userId.userId, "/main/request-list/edit", "autoSave", {
+  pendingStore.saveSnapshot(transactionIdRef.value, "/main/request-list/edit", "autoSave", {
     policyId: getPolicyIdForStorage(),
     details: formData.value.details,
     corporate: formData.value.corporate,
@@ -1426,6 +1514,37 @@ onBeforeUnmount(() => {
               >
                 Attachments
               </h2>
+
+              <!-- Re-select Attachments Banner -->
+              <div v-if="reSelectAttachmentWarning"
+                class="mt-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/30 dark:border-amber-800">
+                <div class="flex items-start gap-3">
+                  <svg class="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clip-rule="evenodd" />
+                  </svg>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-amber-900 dark:text-amber-100">
+                      Attachments need to be re-attached
+                    </p>
+                    <p class="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                      Please re-attach the following {{ reSelectAttachmentWarning.fileCount }} file(s):
+                    </p>
+                    <ul class="text-xs text-amber-700 dark:text-amber-300 mt-1 ml-4 list-disc space-y-0.5">
+                      <li v-for="name in reSelectAttachmentWarning.fileNames" :key="name">{{ name }}</li>
+                    </ul>
+                  </div>
+                  <button @click="reSelectAttachmentWarning = null"
+                    class="text-amber-500 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 flex-shrink-0 ml-2"
+                    title="Dismiss">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
               <!-- Existing Attachments -->
               <div v-if="attachments.length > 0" class="mb-6">
@@ -1900,7 +2019,87 @@ onBeforeUnmount(() => {
                       </div>
                     </div>
                   </div>
-                </template>
+  <!-- Pending Data Restore Modal -->
+  <Modal v-model:isOpen="showPendingRestoreModal" size="lg" :closeOnOverlayClick="false" :closeOnEsc="false"
+    :showCloseButton="false">
+    <template #header>
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          Unsaved Changes Detected
+        </h3>
+      </div>
+    </template>
+
+    <div v-if="pendingRestoreData && pendingRestoreServerData" class="space-y-6">
+      <!-- Action label -->
+      <div class="p-4 bg-amber-50 dark:bg-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-800">
+        <p class="text-sm text-amber-800 dark:text-amber-200">
+          We detected an unsaved <strong>{{ getActionLabel(pendingRestoreData.action) }}</strong> from a
+          previous session
+          ({{ formatTimestamp(pendingRestoreData.timestamp) }}).
+          Do you want to restore it?
+          <span v-if="pendingRestoreData.attachmentMeta?.length" class="text-amber-600 dark:text-amber-400">
+            ({{ pendingRestoreData.attachmentMeta.length }} attachment(s) must be re-attached.)
+          </span>
+        </p>
+      </div>
+
+      <!-- Comparison Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200 dark:border-gray-700">
+              <th class="text-left p-2 font-medium text-gray-500 dark:text-gray-400">Field</th>
+              <th class="text-left p-2 font-medium text-gray-500 dark:text-gray-400">Current</th>
+              <th class="text-left p-2 font-medium text-gray-500 dark:text-gray-400">Unsaved</th>
+              <th class="text-left p-2 font-medium text-gray-500 dark:text-gray-400">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+            <tr v-for="field in comparisonFields" :key="field.key" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              <td class="p-2 font-medium text-gray-700 dark:text-gray-300">{{ field.label }}</td>
+              <td class="p-2 text-gray-900 dark:text-gray-100">{{ field.serverValue || "—" }}</td>
+              <td class="p-2 text-gray-900 dark:text-gray-100">{{ field.pendingValue || "—" }}</td>
+              <td class="p-2">
+                <span
+                  :class="field.changed
+                    ? 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
+                    : 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'">
+                  {{ field.changed ? "Changed" : "Same" }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Attachment warning -->
+      <div v-if="pendingRestoreData.attachmentMeta?.length"
+        class="p-4 bg-amber-50 dark:bg-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-800">
+        <p class="text-sm text-amber-800 dark:text-amber-200">
+          <strong>Attachments ({{ pendingRestoreData.attachmentMeta.length }}):</strong> The following files
+          were attached in the pending session and must be re-attached:
+        </p>
+        <ul class="mt-2 list-disc list-inside text-xs text-amber-700 dark:text-amber-300 space-y-1">
+          <li v-for="att in pendingRestoreData.attachmentMeta" :key="att.name">
+            {{ att.name }} ({{ (att.size / 1024 / 1024).toFixed(2) }} MB)
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <template #footer>
+      <div class="flex justify-end gap-3">
+        <Button variant="ghost" @click="handleDiscardPending" class="dark:hover:bg-gray-700">
+          Discard
+        </Button>
+        <Button variant="primary" @click="handleRestorePending">
+          Restore Changes
+        </Button>
+      </div>
+    </template>
+  </Modal>
+</template>
               </div>
               <div
                 v-else

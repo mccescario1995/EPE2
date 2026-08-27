@@ -25,6 +25,11 @@ const exemptionId = computed(() => {
   return Number(route.query.id) || null;
 });
 
+// Transaction ID for pending transaction storage
+const transactionIdRef = computed(() => {
+  return exemptionDetails.value?.transactionId ?? exemptionId.value?.toString() ?? userId.userId.toString();
+});
+
 // Form data
 const formData = ref({
   transactionNumber: "" as string | null,
@@ -58,7 +63,7 @@ const autoSavePending = () => {
 
   autoSaveTimer.value = setTimeout(() => {
     if (isInitialized.value && hasUnsavedChanges.value) {
-      pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/edit", "autoSave", {
+      pendingStore.saveSnapshot(transactionIdRef.value, "/main/create-exemption/edit", "autoSave", {
         policyId: getPolicyIdForStorage(),
         details: formData.value.details,
         corporate: formData.value.corporate,
@@ -403,7 +408,7 @@ const hasUnsavedChanges = computed(() => {
 // Handle back (go to view page)
 const handleBack = () => {
   // flushAutoSave();
-  pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
+  pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/edit");
   router.back();
 };
 
@@ -488,12 +493,12 @@ const handleRestorePending = () => {
     );
     reSelectAttachmentWarning.value = { fileNames: names, fileCount: pendingRestoreData.value.attachmentMeta.length };
   }
-  pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
+  pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/edit");
   closePendingRestoreModal();
 };
 
 const handleDiscardPending = () => {
-  pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
+  pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/edit");
   closePendingRestoreModal();
 };
 
@@ -559,7 +564,7 @@ const handleSubmit = async () => {
       modifiedby: userId.userId,
     };
 
-    pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/edit", "update", {
+    pendingStore.saveSnapshot(transactionIdRef.value, "/main/create-exemption/edit", "update", {
       policyId: formData.value.policyId,
       details: formData.value.details,
       corporate: formData.value.corporate,
@@ -592,7 +597,7 @@ const handleSubmit = async () => {
       // router.push(`/main/exemptions/view?id=${exemptionId.value}`);
       // router.back();
       router.push("/main/create-exemption");
-      pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
+      pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/edit");
     } else {
       showToast({
         type: "error",
@@ -623,7 +628,7 @@ const handleSubmitDraft = async () => {
     const payload = {
       userId: userId.userId,
     };
-    pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/edit", "submitDraft", {
+    pendingStore.saveSnapshot(transactionIdRef.value, "/main/create-exemption/edit", "submitDraft", {
       policyId: formData.value.policyId,
       details: formData.value.details,
       corporate: formData.value.corporate,
@@ -654,7 +659,7 @@ const handleSubmitDraft = async () => {
       });
       // Redirect to exemptions list after success
       router.push("/main/create-exemption");
-      pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
+      pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/edit");
     } else {
       showToast({
         type: "error",
@@ -690,7 +695,7 @@ const handleUpdateDraft = async () => {
       modifiedby: userId.userId,
     };
 
-    pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/edit", "updateDraft", {
+    pendingStore.saveSnapshot(transactionIdRef.value, "/main/create-exemption/edit", "updateDraft", {
       policyId: formData.value.policyId,
       details: formData.value.details,
       corporate: formData.value.corporate,
@@ -721,7 +726,7 @@ const handleUpdateDraft = async () => {
       });
       // Redirect to exemptions view page after success
       router.push(`/main/create-exemption/view?id=${exemptionId.value}`);
-      pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
+      pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/edit");
     } else {
       showToast({
         type: "error",
@@ -1280,7 +1285,7 @@ onMounted(async () => {
     requestorName: formData.value.requestorName,
   };
 
-  const pendingData = pendingStore.checkPending(userId.userId, "/main/create-exemption/edit");
+  const pendingData = pendingStore.checkPending(transactionIdRef.value, "/main/create-exemption/edit");
 
   if (pendingData) {
     // Store pending data and server snapshot for modal comparison
@@ -1327,7 +1332,7 @@ const isInitialized = ref(false);
 
 const flushAutoSave = () => {
   if (!isInitialized.value || !hasUnsavedChanges.value) return;
-  pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/edit", "autoSave", {
+  pendingStore.saveSnapshot(transactionIdRef.value, "/main/create-exemption/edit", "autoSave", {
     policyId: getPolicyIdForStorage(),
     details: formData.value.details,
     corporate: formData.value.corporate,

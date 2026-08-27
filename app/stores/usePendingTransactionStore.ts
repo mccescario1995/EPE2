@@ -37,18 +37,18 @@ export const usePendingTransactionStore = defineStore(
     }),
 
     actions: {
-      getKey(userId: number, route: string): string {
-        return `${PREFIX}_${userId}_${route.replace(/\//g, "_")}`;
+      getKey(transactionId: string, route: string): string {
+        return `${PREFIX}_${transactionId}_${route.replace(/\//g, "_")}`;
       },
 
       saveSnapshot(
-        userId: number,
+        transactionId: string,
         route: string,
         action: string,
         data: Record<string, any>,
         attachmentMeta: { name: string; size: number; type: string }[] = []
       ) {
-        const key = this.getKey(userId, route);
+        const key = this.getKey(transactionId, route);
         this.snapshots[key] = {
           route,
           action,
@@ -58,8 +58,8 @@ export const usePendingTransactionStore = defineStore(
         };
       },
 
-      checkPending(userId: number, route: string): Snapshot | null {
-        const key = this.getKey(userId, route);
+      checkPending(transactionId: string, route: string): Snapshot | null {
+        const key = this.getKey(transactionId, route);
         const snapshot = this.snapshots[key];
         if (!snapshot) return null;
 
@@ -72,8 +72,8 @@ export const usePendingTransactionStore = defineStore(
         return snapshot;
       },
 
-      discardPending(userId: number, route: string) {
-        const key = this.getKey(userId, route);
+      discardPending(transactionId: string, route: string) {
+        const key = this.getKey(transactionId, route);
         delete this.snapshots[key];
         try {
           const storeKey = "epe2_pending_transaction";
@@ -85,7 +85,7 @@ export const usePendingTransactionStore = defineStore(
               if (parsed.snapshots && parsed.snapshots[key]) {
                 delete parsed.snapshots[key];
                 localStorage.setItem(storeKey, encryptString(JSON.stringify(parsed)));
-                console.log(`Discarded pending transaction for user ${userId} and route ${route}`);
+                console.log(`Discarded pending transaction for transaction ${transactionId} and route ${route}`);
               }
             }
           }

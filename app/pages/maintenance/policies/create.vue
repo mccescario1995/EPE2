@@ -10,6 +10,9 @@ const userStore = useUserStore();
 const userId = userStore.profile;
 const pendingStore = usePendingTransactionStore();
 
+// For create pages, use userId as the identifier since no policyid exists yet
+const policyIdRef = computed(() => userId.userId.toString());
+
 // Create form state
 const createForm = reactive({
   userId: userId.userId,
@@ -26,6 +29,63 @@ const createdPolicyId = ref<string | null>(null);
 const createManageApproversRef = ref();
 const shortnameExists = ref(false);
 const checkingShortname = ref(false);
+
+// Auto-save
+const autoSaveTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+const AUTO_SAVE_DEBOUNCE_MS = 1500;
+const isInitialized = ref(false);
+
+const hasUnsavedChanges = computed(() => {
+  return !!(
+    createForm.shortname.trim() ||
+    createForm.description.trim() ||
+    createForm.managerApprover.trim() ||
+    createApproverCount.value > 0
+  );
+});
+
+const autoSavePending = () => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
+  }
+
+  autoSaveTimer.value = setTimeout(() => {
+    if (isInitialized.value && hasUnsavedChanges.value) {
+      pendingStore.saveSnapshot(policyIdRef.value, "/maintenance/policies/create", "autoSave", {
+        shortname: createForm.shortname,
+        description: createForm.description,
+        status: createForm.status,
+        managerApprover: createForm.managerApprover,
+      });
+    }
+  }, AUTO_SAVE_DEBOUNCE_MS);
+};
+
+// Watch for form changes to auto-save
+watch(
+  () => createForm.shortname,
+  () => autoSavePending(),
+);
+
+watch(
+  () => createForm.description,
+  () => autoSavePending(),
+);
+
+watch(
+  () => createForm.managerApprover,
+  () => autoSavePending(),
+);
+
+watch(
+  () => createForm.status,
+  () => autoSavePending(),
+);
+
+watch(
+  () => createApproverCount.value,
+  () => autoSavePending(),
+);
 
 watch(() => createForm.shortname, () => {
   shortnameExists.value = false;
@@ -85,7 +145,7 @@ const submitCreateForm = async () => {
   createLoading.value = true;
   createError.value = "";
   try {
-    pendingStore.saveSnapshot(userId.userId, "/maintenance/policies/create", "createPolicy", {
+    pendingStore.saveSnapshot(policyIdRef.value, "/maintenance/policies/create", "createPolicy", {
       shortname: createForm.shortname,
       description: createForm.description,
       status: createForm.status,
@@ -137,7 +197,7 @@ const submitCreateForm = async () => {
       });
 
       navigateTo("/maintenance/policies");
-      pendingStore.discardPending(userId.userId, "/maintenance/policies/create");
+      pendingStore.discardPending(policyIdRef.value, "/maintenance/policies/create");
     } else {
       createError.value = response.message || "Failed to create policy";
     }
@@ -150,8 +210,22 @@ const submitCreateForm = async () => {
 };
 
 const cancelCreate = () => {
-  pendingStore.discardPending(userId.userId, "/maintenance/policies/create");
+  pendingStore.discardPending(policyIdRef.value, "/maintenance/policies/create");
   navigateTo("/maintenance/policies");
+};
+
+const flushAutoSave = () => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
+  }
+  if (hasUnsavedChanges.value && isInitialized.value) {
+    pendingStore.saveSnapshot(policyIdRef.value, "/maintenance/policies/create", "autoSave", {
+      shortname: createForm.shortname,
+      description: createForm.description,
+      status: createForm.status,
+      managerApprover: createForm.managerApprover,
+    });
+  }
 };
 
 const statusItems = [
@@ -166,7 +240,7 @@ const statusItems = [
 ]
 
 onMounted(async () => {
-  const pendingData = pendingStore.checkPending(userId.userId, "/maintenance/policies/create");
+  const pendingData = pendingStore.checkPending(policyIdRef.value, "/maintenance/policies/create");
   if (pendingData) {
     const restored = confirm("We detected an unsaved policy from a previous session. Do you want to restore it?");
     if (restored && pendingData.data) {
@@ -175,9 +249,20 @@ onMounted(async () => {
       createForm.status = pendingData.data.status ?? "A";
       createForm.managerApprover = pendingData.data.managerApprover ?? "";
     } else {
-      pendingStore.discardPending(userId.userId, "/maintenance/policies/create");
+      pendingStore.discardPending(policyIdRef.value, "/maintenance/policies/create");
     }
   }
+
+  isInitialized.value = true;
+  window.addEventListener("beforeunload", flushAutoSave);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("beforeunload", flushAutoSave);
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
+  }
+  flushAutoSave();
 });
 </script>
 
