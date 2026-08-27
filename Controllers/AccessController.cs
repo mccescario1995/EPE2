@@ -32,7 +32,7 @@ namespace EPEAPI.Controllers
             var response = new Response();
 
             var user = _context.CoreVUsers
-                .Where(u => u.Username == login.email)
+                .Where(u => u.Username == login.email || u.Emailaddress == login.email)
                 .Select(u => new
                 {
                     u.Hashcode,

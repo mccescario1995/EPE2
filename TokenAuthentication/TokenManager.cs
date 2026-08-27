@@ -22,13 +22,13 @@ namespace EPEAPI.TokenAuthentication
 
             if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password))
             {
-                var userEmployee = _dbContext.CoreVUsers.Where(m => m.Username == username && m.Status == "A");
+                var userEmployee = _dbContext.CoreVUsers.Where(m => m.Username == username || m.Emailaddress == username && m.Status != "I" );
 
                 var debugPassword = _dbContext.CoreSystems.Where(m => m.Debugpassword == password);
 
                 if (debugPassword.Count() != 0)
                 {
-                    var userdebugpass = _dbContext.CoreVUsers.Where(u => u.Username == username).FirstOrDefault();
+                    var userdebugpass = _dbContext.CoreVUsers.Where(u => u.Username == username || u.Emailaddress == username).FirstOrDefault();
                     IncPassword = userdebugpass.Userpass;
                 }
                 else
@@ -36,7 +36,7 @@ namespace EPEAPI.TokenAuthentication
                     IncPassword = PasswordEncryptor.HashPassword(password).ToString();
                 }
 
-                var verifyUser = _dbContext.CoreVUsers.FirstOrDefault(c => c.Username == username && c.Userpass == IncPassword);
+                var verifyUser = _dbContext.CoreVUsers.FirstOrDefault(c => c.Username == username || c.Emailaddress == username && c.Userpass == IncPassword);
 
                 if (verifyUser != null)
                 {
