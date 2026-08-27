@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { usePendingTransactionStore } from "~/stores/usePendingTransactionStore";
 import { useMenuService } from "~/services/menuService";
-const { fetchMenuList, canEdit: checkCanEdit } = useMenuService();
+import Modal from "~/components/Modal.vue";
+import BaseInput from "~/components/BaseInput.vue";
+import Dropdown from "~/components/Dropdown.vue";
+import Button from "~/components/Button.vue";
+const { fetchMenuList, canEdit: checkCanEdit, canDelete: checkCanDelete } = useMenuService();
 const router = useRouter();
 const route = useRoute();
 const { showToast } = useToast();
@@ -12,6 +16,7 @@ const userId = userStore.profile;
 const pendingStore = usePendingTransactionStore();
 
 const canEdit = ref(false);
+const canDelete = ref(false);
 
 const config = useRuntimeConfig();
 
@@ -52,12 +57,14 @@ const autoSavePending = () => {
   }
 
   autoSaveTimer.value = setTimeout(() => {
-    pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/edit", "autoSave", {
-      policyId: getPolicyIdForStorage(),
-      details: formData.value.details,
-      corporate: formData.value.corporate,
-      exemptionId: exemptionId.value,
-    }, newAttachments.value.map((a) => ({ name: a.file.name, size: a.file.size, type: a.file.type })));
+    if (isInitialized.value && hasUnsavedChanges.value) {
+      pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/edit", "autoSave", {
+        policyId: getPolicyIdForStorage(),
+        details: formData.value.details,
+        corporate: formData.value.corporate,
+        exemptionId: exemptionId.value,
+      }, newAttachments.value.map((a) => ({ name: a.file.name, size: a.file.size, type: a.file.type })));
+    }
   }, AUTO_SAVE_DEBOUNCE_MS);
 };
 
@@ -83,8 +90,18 @@ watch(
   { deep: true },
 );
 
-
 const reSelectAttachmentWarning = ref<{ fileNames: string[], fileCount: number } | null>(null);
+
+// Pending data restore modal state
+const showPendingRestoreModal = ref(false);
+const pendingRestoreData = ref<{
+  action: string;
+  data: Record<string, any>;
+  attachmentMeta: { name: string; size: number; type: string }[];
+  timestamp: string;
+} | null>(null);
+const pendingRestoreServerData = ref<Record<string, any> | null>(null);
+
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
@@ -146,6 +163,8 @@ const errors = ref({
 // Loading state
 const isLoading = ref(false);
 const isSubmitting = ref(false);
+const showDeleteConfirm = ref(false);
+const deleteLoading = ref(false);
 
 // Fetch policies from API
 const fetchPolicies = async () => {
@@ -195,7 +214,6 @@ const fetchPolicyName = async (policyId: number) => {
 
     if (items) {
       const policy = items.find((p: any) => p.policyid === policyId);
-
       if (policy) {
         policyName.value =
           policy.shortname || policy.description || `Policy ${policyId}`;
@@ -272,13 +290,14 @@ const fetchExemptionDetails = async () => {
       await fetchAttachments();
 
       // If there's a policy ID, fetch the policy name
+      let fetchedPolicyName: string | undefined;
       if (item.policyId) {
-        var policyName = await fetchPolicyName(item.policyId);
+        fetchedPolicyName = await fetchPolicyName(item.policyId);
       }
 
       policyValue.value = {
         id: item.policyId,
-        label: policyName || `Policy ${item.policyId}`,
+        label: fetchedPolicyName || `Policy ${item.policyId}`,
       };
     } else {
       showToast({
@@ -287,7 +306,7 @@ const fetchExemptionDetails = async () => {
         message: response.message || "Failed to load exemption details",
         duration: 5000,
       });
-      router.push("/main/create-/                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              create-exemption");
+      router.push("/main/create-exemption");
     }
   } catch (error) {
     console.error("Error fetching exemption details:", error);
@@ -364,6 +383,7 @@ const validateForm = () => {
 
 // Get policy ID from form data (handles both object and number)
 const getPolicyId = () => {
+console.log("getPolicyId called, policyValue:", policyValue.value, "formData.policy:", formData.value);
   return policyValue.value?.id ?? formData.value.policyId;
 };
 
@@ -382,9 +402,148 @@ const hasUnsavedChanges = computed(() => {
 
 // Handle back (go to view page)
 const handleBack = () => {
+  // flushAutoSave();
   pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
   router.back();
 };
+
+const confirmDelete = () => {
+  showDeleteConfirm.value = true;
+};
+
+const cancelDelete = () => {
+  showDeleteConfirm.value = false;
+};
+
+const deleteRequest = async () => {
+  if (!exemptionId.value) return;
+
+  deleteLoading.value = true;
+  try {
+    const payload = {
+      userId: userId.userId,
+    };
+
+    const response = await apiFetch(
+      `/api/exemption/delete/${exemptionId.value}`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    if (response) {
+      showDeleteConfirm.value = false;
+      showToast({
+        title: "Request Deleted",
+        message: "The exemption request has been successfully deleted.",
+        type: "error",
+        duration: 5000,
+      });
+      router.push("/main/create-exemption");
+    } else {
+      showToast({
+        title: "Error",
+        message: response?.message || "Failed to delete exemption request",
+        type: "error",
+        duration: 5000,
+      });
+    }
+  } catch (error: any) {
+    console.error("Error deleting exemption request:", error);
+    showToast({
+      title: "Error",
+      message: error.message || "An error occurred while deleting the request",
+      type: "error",
+      duration: 5000,
+    });
+  } finally {
+    deleteLoading.value = false;
+  }
+};
+
+// Pending restore modal handlers
+const handleRestorePending = () => {
+  if (!pendingRestoreData.value?.data) return;
+
+  const pending = pendingRestoreData.value.data;
+  if (pending.policyId) {
+    formData.value.policyId = pending.policyId;
+    const matchedPolicy = policyOptions.value.find((p) => p.id === pending.policyId);
+    policyValue.value = matchedPolicy
+      ? { id: matchedPolicy.id, label: matchedPolicy.label }
+      : { id: pending.policyId, label: policyName.value || `Policy ${pending.policyId}` };
+  } else {
+    formData.value.policyId = null;
+    policyValue.value = null;
+  }
+  formData.value.details = pending.details ?? "";
+  formData.value.corporate = pending.corporate ?? null;
+  if (pendingRestoreData.value.attachmentMeta?.length) {
+    const names = pendingRestoreData.value.attachmentMeta.map(
+      (a) => `${a.name} (${(a.size / 1024 / 1024).toFixed(2)} MB)`
+    );
+    reSelectAttachmentWarning.value = { fileNames: names, fileCount: pendingRestoreData.value.attachmentMeta.length };
+  }
+  pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
+  closePendingRestoreModal();
+};
+
+const handleDiscardPending = () => {
+  pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
+  closePendingRestoreModal();
+};
+
+const closePendingRestoreModal = () => {
+  showPendingRestoreModal.value = false;
+  pendingRestoreData.value = null;
+  pendingRestoreServerData.value = null;
+};
+
+// Helper functions for pending restore modal
+const getActionLabel = (action: string): string => {
+  return action === "saveDraft" ? "draft" : action === "create" ? "submission" : action === "autoSave" ? "changes" : action;
+};
+
+const formatTimestamp = (timestamp: string): string => {
+  const date = new Date(timestamp);
+  return date.toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const serverPolicyName = ref("");
+const pendingPolicyName = ref("");
+
+const comparisonFields = computed(() => {
+  if (!pendingRestoreData.value?.data || !pendingRestoreServerData.value) return [];
+
+  const pending = pendingRestoreData.value.data;
+  const server = pendingRestoreServerData.value;
+
+  pendingPolicyName.value = pending.policyId ? policyOptions.value.find((p) => p.id === pending.policyId)?.label || `Policy ${pending.policyId}` : "—";
+  serverPolicyName.value = server.policyId ? policyOptions.value.find((p) => p.id === server.policyId)?.label || `Policy ${server.policyId}` : "—";
+
+  const fields = [
+    { key: "policyId", label: "Policy", serverValue: pendingPolicyName.value, pendingValue: serverPolicyName.value },
+    { key: "details", label: "Details", serverValue: server.details, pendingValue: pending.details },
+  ];
+
+  return fields.map(field => ({
+    ...field,
+    changed: field.serverValue !== field.pendingValue,
+    serverValue: field.serverValue ?? "—",
+    pendingValue: field.pendingValue ?? "—",
+  }));
+});
 
 // Submit form
 const handleSubmit = async () => {
@@ -886,7 +1045,7 @@ const handleMultipleFileSelect = (event: Event) => {
   if (
     addedSize <
     validFiles.reduce((s, f) => s + f.size, 0) -
-      (filesToAdd.reduce((s, f) => s + f.size, 0) || 0)
+    (filesToAdd.reduce((s, f) => s + f.size, 0) || 0)
   ) {
     errors.value.attachments =
       "Adding these files would exceed the 50MB total limit.";
@@ -1045,8 +1204,6 @@ const fetchApprovers = async (policyId: number) => {
 
     const items = response.success ? response.items : response;
 
-    //                                                                                                                                                                                              // console.log("Fetched approvers in Edit page", items);qqqqqq
-
     if (!items || !Array.isArray(items)) {
       console.error("Invalid approvers response:", items);
       approversData.value = [];
@@ -1098,6 +1255,7 @@ onMounted(async () => {
   await fetchMenuList();
   // /main/create-exemption
   canEdit.value = checkCanEdit("/main/create-exemption");
+  canDelete.value = checkCanDelete("/main/create-exemption");
 
   if (!canEdit.value) {
     showToast({
@@ -1110,28 +1268,28 @@ onMounted(async () => {
     return;
   }
 
-  fetchPolicies();
-  fetchExemptionDetails();
+  await fetchPolicies();
+  await fetchExemptionDetails();
+
+  // Capture server data for comparison before showing restore modal
+  const serverDataSnapshot = {
+    policyId: formData.value.policyId,
+    details: formData.value.details,
+    corporate: formData.value.corporate,
+    transactionNumber: formData.value.transactionNumber,
+    requestorName: formData.value.requestorName,
+  };
 
   const pendingData = pendingStore.checkPending(userId.userId, "/main/create-exemption/edit");
+
   if (pendingData) {
-    const actionLabel = pendingData.action === "saveDraft" ? "draft" : pendingData.action === "create" ? "submission" : pendingData.action === "autoSave" ? "changes" : pendingData.action;
-    const restored = confirm(
-      `We detected an unsaved ${actionLabel} from a previous session. ` +
-      `Do you want to restore it? (Attachments must be re-attached.)`
-    );
-    if (restored && pendingData.data) {
-      formData.value.policyId = pendingData.data.policyId ?? null;
-      formData.value.details = pendingData.data.details ?? "";
-      formData.value.corporate = pendingData.data.corporate ?? null;
-      if (pendingData.attachmentMeta?.length) {
-        const names = pendingData.attachmentMeta.map(a => `${a.name} (${(a.size / 1024 / 1024).toFixed(2)} MB)`);
-        reSelectAttachmentWarning.value = { fileNames: names, fileCount: pendingData.attachmentMeta.length };
-      }
-    } else {
-      pendingStore.discardPending(userId.userId, "/main/create-exemption/edit");
-    }
+    // Store pending data and server snapshot for modal comparison
+    pendingRestoreData.value = pendingData;
+    pendingRestoreServerData.value = serverDataSnapshot;
+    showPendingRestoreModal.value = true;
   }
+  isInitialized.value = true;
+  window.addEventListener("beforeunload", flushAutoSave);
 });
 
 const formatDateTime = (date: string | Date | null) => {
@@ -1165,29 +1323,36 @@ const isCurrentUser = (requesterId: number): boolean => {
   return userId?.emplId === requesterId;
 };
 
+const isInitialized = ref(false);
+
+const flushAutoSave = () => {
+  if (!isInitialized.value || !hasUnsavedChanges.value) return;
+  pendingStore.saveSnapshot(userId.userId, "/main/create-exemption/edit", "autoSave", {
+    policyId: getPolicyIdForStorage(),
+    details: formData.value.details,
+    corporate: formData.value.corporate,
+    exemptionId: exemptionId.value,
+  }, newAttachments.value.map((a) => ({ name: a.file.name, size: a.file.size, type: a.file.type })));
+};
+
 onBeforeUnmount(() => {
+  window.removeEventListener("beforeunload", flushAutoSave);
   if (autoSaveTimer.value) {
     clearTimeout(autoSaveTimer.value);
+    autoSaveTimer.value = null;
   }
+  flushAutoSave();
 });
 </script>
 
 <template>
   <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900">
     <header class="bg-white dark:bg-gray-800 shadow">
-      <div
-        class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
-      >
+      <div class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <div class="flex items-center">
           <!-- v-if="row.requesterId === userId.emplId && exemptionDetails.status !== 'C'" -->
-          <Button
-            variant="ghost-primary"
-            size="lg"
-            icon="left_arrow"
-            iconPosition="center"
-            customClass="rounded-full"
-            @onclick="handleBack"
-          />
+          <Button variant="ghost-primary" size="lg" icon="left_arrow" iconPosition="center" customClass="rounded-full"
+            @onclick="handleBack" />
           <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-100">
             {{
               exemptionDetails?.status === "D" ? "Edit Draft" : "Edit Request"
@@ -1204,36 +1369,17 @@ onBeforeUnmount(() => {
             Cancel
           </Button> -->
           <template v-if="exemptionDetails?.status === 'D'">
-            <Button
-              v-if="canEdit"
-              variant="outline-info"
-              size="md"
-              @onclick="handleUpdateDraft"
-              :loading="isSubmitting"
-            >
+            <Button v-if="canEdit" variant="outline-info" size="md" @onclick="handleUpdateDraft"
+              :loading="isSubmitting">
               Update Draft
             </Button>
-            <Button
-              v-if="canEdit"
-              variant="primary"
-              size="md"
-              @onclick="handleSubmitDraft"
-              :loading="isSubmitting"
-            >
+            <Button v-if="canEdit" variant="primary" size="md" @onclick="handleSubmitDraft" :loading="isSubmitting">
               Submit Request
             </Button>
           </template>
           <template v-else>
-            <Button
-              v-if="canEdit"
-              variant="primary"
-              size="md"
-              icon="save"
-              iconPosition="left"
-              @onclick="handleSubmit"
-              :loading="isSubmitting"
-              :disabled="newAttachments.length > 0"
-            >
+            <Button v-if="canEdit" variant="primary" size="md" icon="save" iconPosition="left" @onclick="handleSubmit"
+              :loading="isSubmitting" :disabled="newAttachments.length > 0">
               Save Changes
             </Button>
           </template>
@@ -1244,50 +1390,28 @@ onBeforeUnmount(() => {
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <!-- Loading State -->
       <div v-if="isLoading" class="flex items-center justify-center py-20">
-        <svg
-          class="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
+        <svg class="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg"
+          fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
         </svg>
-        <span class="ml-3 text-gray-600 dark:text-gray-400"
-          >Loading exemption details...</span
-        >
+        <span class="ml-3 text-gray-600 dark:text-gray-400">Loading exemption details...</span>
       </div>
 
       <!-- Content -->
       <div v-else>
         <!-- Info Notice -->
         <div
-          class="bg-blue-50 dark:bg-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mt-4 mb-3"
-        >
+          class="bg-blue-50 dark:bg-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mt-4 mb-3">
           <div class="flex">
             <div class="shrink-0">
-              <svg
-                class="h-5 w-5 text-blue-400 dark:text-blue-300"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
+              <svg class="h-5 w-5 text-blue-400 dark:text-blue-300" xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
                   d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                  clip-rule="evenodd"
-                />
+                  clip-rule="evenodd" />
               </svg>
             </div>
             <div class="ml-3">
@@ -1300,29 +1424,22 @@ onBeforeUnmount(() => {
         </div>
         <div class="grid grid-cols-4 gap-6">
           <!-- Left Column -->
-          <div
-            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow p-6 dark:bg-gray-800"
-          >
+          <div class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow p-6 dark:bg-gray-800">
             <!-- Transaction Info -->
             <div class="mb-8">
-              <div
-                class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b"
-              >
+              <div class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b">
                 <div class="flex justify-between items-center">
                   <h2 class="dark:text-gray-100">Request Information</h2>
                   <div v-if="exemptionDetails">
-                    <span
-                      class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                      :class="{
-                        'bg-blue-100 text-blue-800 border border-blue-900':
-                          exemptionDetails.status === 'O' ||
-                          exemptionDetails.status === 'P',
-                        'bg-red-200 text-red-800 border border-red-900':
-                          exemptionDetails.status === 'C',
-                        'bg-yellow-100 text-yellow-800 border border-yellow-900':
-                          exemptionDetails.status === 'D',
-                      }"
-                    >
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" :class="{
+                      'bg-blue-100 text-blue-800 border border-blue-900':
+                        exemptionDetails.status === 'O' ||
+                        exemptionDetails.status === 'P',
+                      'bg-red-200 text-red-800 border border-red-900':
+                        exemptionDetails.status === 'C',
+                      'bg-yellow-100 text-yellow-800 border border-yellow-900':
+                        exemptionDetails.status === 'D',
+                    }">
                       {{ getStatusDisplay(exemptionDetails.status) }}
                     </span>
                   </div>
@@ -1330,9 +1447,7 @@ onBeforeUnmount(() => {
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label
-                    class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
-                  >
+                  <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     Transaction Number
                   </label>
                   <p class="text-gray-900 dark:text-gray-100">
@@ -1340,9 +1455,7 @@ onBeforeUnmount(() => {
                   </p>
                 </div>
                 <div>
-                  <label
-                    class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
-                  >
+                  <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     Requestor Name
                   </label>
                   <p class="text-gray-900 dark:text-gray-100">
@@ -1358,43 +1471,23 @@ onBeforeUnmount(() => {
                 <div class="grid grid-cols-1 gap-6">
                   <!-- md:grid-cols-2 -->
                   <div>
-                    <label
-                      class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
-                    >
+                    <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                       Policy To Override
-                      <span
-                        v-if="exemptionDetails?.status !== 'D'"
-                        class="text-red-500"
-                        >*</span
-                      >
+                      <span v-if="exemptionDetails?.status !== 'D'" class="text-red-500">*</span>
                     </label>
-                    <Dropdown
-                      v-model="policyValue"
-                      :initialItems="policyOptions"
-                      placeholder="Select a policy"
-                      :disabled="isLoadingPolicies"
-                      :errorMessage="errors.policyId"
-                      class="dark:text-gray-200 dark:bg-gray-700"
-                    />
+                    <Dropdown v-model="policyValue" :initialItems="policyOptions" placeholder="Select a policy"
+                      :disabled="isLoadingPolicies" :errorMessage="errors.policyId"
+                      class="dark:text-gray-200 dark:bg-gray-700" />
                   </div>
 
                   <div>
-                    <label
-                      class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
-                    >
+                    <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                       Details <span class="text-red-500">*</span>
                     </label>
-                    <BaseInput
-                      v-model="formData.details"
-                      type="textarea"
-                      isTextarea
-                      :rowCount="5"
-                      placeholder="Explain the reason for your exemption request..."
-                      :errorMessage="errors.details"
-                      :maxCharCount="5000"
-                      :minCharCount="10"
-                      class="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-                    />
+                    <BaseInput v-model="formData.details" type="textarea" isTextarea :rowCount="5"
+                      placeholder="Explain the reason for your exemption request..." :errorMessage="errors.details"
+                      :maxCharCount="5000" :minCharCount="10"
+                      class="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
                   </div>
                 </div>
               </div>
@@ -1402,17 +1495,19 @@ onBeforeUnmount(() => {
 
             <!-- Attachments -->
             <div class="mb-8">
-              <h2
-                class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b dark:text-gray-100"
-              >
+              <h2 class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b dark:text-gray-100">
                 Attachments
               </h2>
 
               <!-- Re-select Attachments Banner -->
-              <div v-if="reSelectAttachmentWarning" class="mt-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/30 dark:border-amber-800">
+              <div v-if="reSelectAttachmentWarning"
+                class="mt-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/30 dark:border-amber-800">
                 <div class="flex items-start gap-3">
-                  <svg class="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                  <svg class="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clip-rule="evenodd" />
                   </svg>
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-amber-900 dark:text-amber-100">
@@ -1424,54 +1519,41 @@ onBeforeUnmount(() => {
                     <ul class="text-xs text-amber-700 dark:text-amber-300 mt-1 ml-4 list-disc space-y-0.5">
                       <li v-for="name in reSelectAttachmentWarning.fileNames" :key="name">{{ name }}</li>
                     </ul>
-                    <p class="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                    <!-- <p class="text-xs text-amber-600 dark:text-amber-400 mt-2">
                       The banner will disappear once you re-attach all files.
-                    </p>
+                    </p> -->
                   </div>
-                  <button @click="reSelectAttachmentWarning = null" class="text-amber-500 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 flex-shrink-0 ml-2" title="Dismiss">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  <button @click="reSelectAttachmentWarning = null"
+                    class="text-amber-500 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 flex-shrink-0 ml-2"
+                    title="Dismiss">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
                 </div>
               </div>
 
               <!-- Existing Attachments -->
               <div v-if="attachments.length > 0" class="mb-6">
-                <h3
-                  class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-3"
-                >
+                <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Existing Attachments
-                  <span
-                    class="text-sm text-gray-500 dark:text-gray-400 font-normal"
-                  >
+                  <span class="text-sm text-gray-500 dark:text-gray-400 font-normal">
                     ({{ attachments.length }}/{{ MAX_FILES }} used —
                     {{ remainingAttachmentSlots }} remaining)
                   </span>
                 </h3>
-                
+
                 <div class="space-y-2">
-                  <div
-                    v-for="attachment in attachments"
-                    :key="attachment.attachId"
-                    class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
-                  >
+                  <div v-for="attachment in attachments" :key="attachment.attachId"
+                    class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
                     <div class="flex items-center">
-                      <svg
-                        class="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                        />
+                      <svg class="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                       </svg>
                       <div>
-                        <p
-                          class="text-sm font-medium text-gray-900 dark:text-gray-100"
-                        >
+                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {{ attachment.uploadFilename }}
                         </p>
                         <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -1486,21 +1568,16 @@ onBeforeUnmount(() => {
                       <a v-if="isViewableInBrowser(attachment.filetype)"
                         :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
                         target="_blank"
-                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700"
-                      >
+                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700">
                         View
                       </a>
-                      <a v-else
-                        :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
+                      <a v-else :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
                         download
-                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white"
-                      >
+                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white">
                         Download
                       </a>
-                      <button
-                        @click="deleteAttachment(attachment.attachId)"
-                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-800/20 dark:text-red-300 dark:hover:bg-red-700"
-                      >
+                      <button @click="deleteAttachment(attachment.attachId)"
+                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-800/20 dark:text-red-300 dark:hover:bg-red-700">
                         Delete
                       </button>
                     </div>
@@ -1510,32 +1587,22 @@ onBeforeUnmount(() => {
 
               <!-- Add New Attachments -->
               <div v-if="attachments.length < MAX_FILES">
-                <h3
-                  class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-3"
-                >
+                <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Add New Attachments
-                  
+
                 </h3>
 
-                <p
-                  v-if="errors.attachments"
-                  class="mt-1 text-xs text-red-500 dark:text-red-400 border border-red-500 dark:border-red-400 rounded px-2 py-3 mb-3"
-                >
+                <p v-if="errors.attachments"
+                  class="mt-1 text-xs text-red-500 dark:text-red-400 border border-red-500 dark:border-red-400 rounded px-2 py-3 mb-3">
                   {{ errors.attachments }}
                 </p>
 
                 <!-- Multi-select input -->
-                <input
-                  type="file"
-                  multiple
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
-                  @change="handleMultipleFileSelect"
-                  :disabled="
-                    remainingAttachmentSlots <= 0 ||
+                <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
+                  @change="handleMultipleFileSelect" :disabled="remainingAttachmentSlots <= 0 ||
                     totalNewAttachmentsSize >= MAX_TOTAL_SIZE
-                  "
-                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:bg-gray-700 dark:file:bg-gray-600 dark:file:text-gray-200 dark:hover:file:bg-gray-500 mb-3"
-                />
+                    "
+                  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:bg-gray-700 dark:file:bg-gray-600 dark:file:text-gray-200 dark:hover:file:bg-gray-500 mb-3" />
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Select the exact number of files you are allowed to add. You
                   can currently add up to {{ remainingAttachmentSlots }} more
@@ -1545,38 +1612,24 @@ onBeforeUnmount(() => {
 
                 <!-- Selected files list -->
                 <div v-if="newAttachments.length > 0" class="mt-4 space-y-2">
-                  <div
-                    v-for="(attachment, index) in newAttachments"
-                    :key="index"
-                    class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg"
-                  >
+                  <div v-for="(attachment, index) in newAttachments" :key="index"
+                    class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
                     <div class="flex items-center gap-3 min-w-0 me-2">
-                      <span
-                        class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate"
-                        >{{ attachment.file.name }}</span
-                      >
-                      <span
-                        class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap"
-                      >
+                      <span class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{
+                        attachment.file.name
+                        }}</span>
+                      <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                         ({{ (attachment.file.size / 1024 / 1024).toFixed(2) }}
                         MB)
                       </span>
                     </div>
-                    <Button
-                      variant="dark:outline-danger"
-                      size="sm"
-                      @onclick="() => removeNewAttachment(index)"
-                      icon="trash"
-                      icon-position="center"
-                    />
+                    <Button variant="dark:outline-danger" size="sm" @onclick="() => removeNewAttachment(index)"
+                      icon="trash" icon-position="center" />
                   </div>
                 </div>
 
                 <!-- Live usage counter -->
-                <div
-                  v-if="newAttachments.length > 0"
-                  class="mt-2 text-xs text-gray-600 dark:text-gray-400"
-                >
+                <div v-if="newAttachments.length > 0" class="mt-2 text-xs text-gray-600 dark:text-gray-400">
                   {{ totalNewAttachmentsSizeMB }} MB of new files
                   <span class="text-gray-400 dark:text-gray-500">
                     ({{ newAttachments.length }} new •
@@ -1585,13 +1638,8 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div class="flex gap-3 mt-3">
-                  <Button
-                    v-if="newAttachments.length > 0"
-                    variant="primary"
-                    size="sm"
-                    @click="addNewAttachments"
-                    :loading="isSubmitting"
-                  >
+                  <Button v-if="newAttachments.length > 0" variant="primary" size="sm" @click="addNewAttachments"
+                    :loading="isSubmitting">
                     Save Attachments
                   </Button>
                 </div>
@@ -1600,82 +1648,51 @@ onBeforeUnmount(() => {
           </div>
 
           <!-- Right Column -->
-          <div
-            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow px-6 py-6 dark:bg-gray-800"
-          >
+          <div class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow px-6 py-6 dark:bg-gray-800">
             <!-- Approvers Status -->
             <div class="mb-8">
               <div class="border-b flex justify-between mb-3">
-                <h2
-                  class="text-xl font-semibold text-gray-800 mb-2 dark:text-gray-100"
-                >
+                <h2 class="text-xl font-semibold text-gray-800 mb-2 dark:text-gray-100">
                   Approvers Status
                 </h2>
-                
+
               </div>
 
-              <div
-                v-if="approversData && approversData.length > 0"
-                class="space-y-4"
-              >
-                <template
-                  v-for="(approver, index) in groupedApprovers.mainApprovers"
-                  :key="approver.transApproverId"
-                >
-                  <div
-                    class="bg-gray-50 rounded-lg p-3 border border-gray-200 dark:bg-gray-700 dark:border-gray-600"
-                  >
+              <div v-if="approversData && approversData.length > 0" class="space-y-4">
+                <template v-for="(approver, index) in groupedApprovers.mainApprovers" :key="approver.transApproverId">
+                  <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
                     <div class="flex justify-between items-start mb-2">
                       <div class="flex items-start">
                         <span
-                          class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium mr-3 mt-1"
-                        >
+                          class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium mr-3 mt-1">
                           {{ index + 1 }}
                         </span>
 
                         <div>
-                          <p
-                            class="text-sm font-medium text-gray-900 dark:text-gray-100"
-                          >
+                          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {{ approver.approverName }}
-                            <span
-                              v-if="isCurrentUser(approver.employeeId)"
-                              class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded border border-green-800"
-                              >You</span
-                            >
+                            <span v-if="isCurrentUser(approver.employeeId)"
+                              class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded border border-green-800">You</span>
                           </p>
-                          <p
-                            class="text-xs text-gray-500 dark:text-gray-400 mb-1"
-                          >
+                          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
                             {{ approver.approverEmail || "" }}
                           </p>
                           <div class="flex items-center gap-2 mt-1">
-                            <span
-                              v-if="approver.approverRole"
-                              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-600"
-                            >
+                            <span v-if="approver.approverRole"
+                              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-600">
                               {{ approver.approverRole }}
                             </span>
                           </div>
-                          <div
-                            v-if="approver.remarks"
-                            class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3"
-                          >
+                          <div v-if="approver.remarks" class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3">
                             Remark:
                           </div>
                           <div v-if="approver.remarks" class="px-6 pb-2">
-                            <span
-                              class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
-                            >
+                            <span class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                               {{ approver.remarks }}
                             </span>
                           </div>
-                          <div
-                            class="text-xs"
-                            :class="
-                              getApproverStatusTextColor(approver.respond)
-                            "
-                          >
+                          <div class="text-xs" :class="getApproverStatusTextColor(approver.respond)
+                            ">
                             <span v-if="approver.respondDate">
                               Responded on
                               {{ formatDateTime(approver.respondDate).date }} •
@@ -1685,126 +1702,75 @@ onBeforeUnmount(() => {
                         </div>
                       </div>
                       <div class="flex flex-col items-end gap-1">
-                        <span
-                          v-if="approver.respond != 3 && (approver.respond == 1 || approver.respond == 2)"
+                        <span v-if="approver.respond != 3 && (approver.respond == 1 || approver.respond == 2)"
                           class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                          :class="getApproverStatusColor(approver.respond)"
-                        >
+                          :class="getApproverStatusColor(approver.respond)">
                           {{ getApproverStatusDisplay(approver.respond) }}
                         </span>
                         <!-- Decision badge for decided approvers -->
 
                         <!-- Resend button only for current pending approver (and not satisfied by group) -->
-                        <button
-                          v-if="
-                            approver.respond === 0 &&
-                            approver.sort === activeGroupSort &&
-                            !isGroupSatisfied(approver.transApproverId)
-                          "
-                          @click="
-                            resendToMainApprover(approver.transApproverId)
-                          "
-                          :disabled="
-                            isResending === approver.transApproverId ||
+                        <button v-if="
+                          approver.respond === 0 &&
+                          approver.sort === activeGroupSort &&
+                          !isGroupSatisfied(approver.transApproverId)
+                        " @click="
+                          resendToMainApprover(approver.transApproverId)
+                          " :disabled="isResending === approver.transApproverId ||
                             cooldowns[approver.transApproverId] > 0
-                          "
+                            "
                           class="flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
-                          title="Resend notification to approver"
-                        >
-                          <svg
-                            v-if="isResending === approver.transApproverId"
-                            class="animate-spin h-3 w-3 mr-1"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              class="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              stroke-width="4"
-                            ></circle>
-                            <path
-                              class="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
+                          title="Resend notification to approver">
+                          <svg v-if="isResending === approver.transApproverId" class="animate-spin h-3 w-3 mr-1"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
                           </svg>
 
-                          <svg
-                            v-else
-                            class="h-3 w-3 mr-1"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                            />
+                          <svg v-else class="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
-                          <span v-if="cooldowns[approver.transApproverId] > 0"
-                            >Resend ({{
-                              cooldowns[approver.transApproverId]
-                            }}s)</span
-                          >
+                          <span v-if="cooldowns[approver.transApproverId] > 0">Resend ({{
+                            cooldowns[approver.transApproverId]
+                          }}s)</span>
                           <span v-else>Resend</span>
                         </button>
                       </div>
                     </div>
 
-                    <div
-                      v-if="getProxies(approver.transApproverId).length > 0"
-                      class="ml-8"
-                    >
-                      <div
-                        v-for="proxy in getProxies(approver.transApproverId)"
-                        :key="proxy.transApproverId"
-                        class="flex items-start justify-between py-2 border-b border-gray-200 last:border-0"
-                      >
+                    <div v-if="getProxies(approver.transApproverId).length > 0" class="ml-8">
+                      <div v-for="proxy in getProxies(approver.transApproverId)" :key="proxy.transApproverId"
+                        class="flex items-start justify-between py-2 border-b border-gray-200 last:border-0">
                         <div class="flex items-start">
-                          <span
-                            class="w-2 h-2 rounded-full bg-orange-400 mt-1.5"
-                          ></span>
+                          <span class="w-2 h-2 rounded-full bg-orange-400 mt-1.5"></span>
                           <div class="ps-3">
-                            <p
-                              class="text-sm text-gray-700 dark:text-gray-300 mb-1"
-                            >
+                            <p class="text-sm text-gray-700 dark:text-gray-300 mb-1">
                               {{ proxy.approverName }}
-                              <span v-if="isCurrentUser(approver.employeeId)" class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded border-2 border-green-11121w11                                                                                                                                               00">You</span>
+                              <span v-if="isCurrentUser(approver.employeeId)"
+                                class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded border-2 border-green-800">You</span>
                             </p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">
                               {{ proxy.approverEmail || "" }}
                             </p>
                             <span
-                              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 mb-1"
-                            >
+                              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 mb-1">
                               {{ proxy.approverRole }}
                             </span>
-                            <div
-                              v-if="approver.remarks"
-                              class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3"
-                            >
+                            <div v-if="approver.remarks" class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3">
                               Remark:
                             </div>
                             <div v-if="approver.remarks" class="px-6 pb-2">
-                              <span
-                                class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
-                              >
+                              <span class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                                 {{ approver.remarks }}
                               </span>
                             </div>
-                            <div
-                              class="text-xs"
-                              :class="
-                                getApproverStatusTextColor(approver.respond)
-                              "
-                            >
+                            <div class="text-xs" :class="getApproverStatusTextColor(approver.respond)
+                              ">
                               <span v-if="approver.respondDate">
                                 Responded on
                                 {{
@@ -1817,73 +1783,41 @@ onBeforeUnmount(() => {
                           </div>
                         </div>
                         <div class="flex flex-col items-end gap-1">
-                          <span
-                            v-if="approver.respond != 3"
+                          <span v-if="approver.respond != 3"
                             class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                            :class="getApproverStatusColor(proxy.respond)"
-                          >
+                            :class="getApproverStatusColor(proxy.respond)">
                             {{ getApproverStatusDisplay(proxy.respond) }}
                           </span>
                           <!-- Decision badge for decided proxy approvers -->
 
                           <!-- Resend button only for current pending proxy (and not satisfied by group) -->
-                          <button
-                            v-if="
-                              proxy.respond === 0 &&
-                              proxy.sort === activeGroupSort &&
-                              !isGroupSatisfied(approver.transApproverId)
-                            "
-                            @click="
-                              resendToProxyApprover(proxy.transApproverId)
-                            "
-                            :disabled="
-                              isResending === proxy.transApproverId ||
+                          <button v-if="
+                            proxy.respond === 0 &&
+                            proxy.sort === activeGroupSort &&
+                            !isGroupSatisfied(approver.transApproverId)
+                          " @click="
+                            resendToProxyApprover(proxy.transApproverId)
+                            " :disabled="isResending === proxy.transApproverId ||
                               (cooldowns[proxy.transApproverId] ?? 0) > 0
-                            "
+                              "
                             class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50"
-                            title="Resend notification to proxy"
-                          >
-                            <svg
-                              v-if="isResending === proxy.transApproverId"
-                              class="animate-spin h-3 w-3 mr-1"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                class="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                stroke-width="4"
-                              ></circle>
-                              <path
-                                class="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              ></path>
+                            title="Resend notification to proxy">
+                            <svg v-if="isResending === proxy.transApproverId" class="animate-spin h-3 w-3 mr-1"
+                              xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                              </circle>
+                              <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                              </path>
                             </svg>
-                            <svg
-                              v-else
-                              class="h-3 w-3 mr-1"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                              />
+                            <svg v-else class="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none"
+                              viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
-                            <span v-if="cooldowns[proxy.transApproverId] > 0"
-                              >Resend ({{
-                                cooldowns[proxy.transApproverId]
-                              }}s)</span
-                            >
+                            <span v-if="cooldowns[proxy.transApproverId] > 0">Resend ({{
+                              cooldowns[proxy.transApproverId]
+                            }}s)</span>
                             <span v-else>Resend</span>
                           </button>
                         </div>
@@ -1892,44 +1826,92 @@ onBeforeUnmount(() => {
                   </div>
                 </template>
               </div>
-              <div
-                v-else
-                class="text-sm flex items-center justify-center h-24 text-gray-400 dark:text-gray-500"
-              >
-                <span
-                  v-if="exemptionDetails?.status === 'D'"
-                  class="text-black bg-amber-200 p-2 rounded-md"
-                  >Please submit request to send email notifications to
-                  approvers.</span
-                >
-                <span v-else>No approvers assigned yet.</span>
-              </div>
-            </div>
-
-            <!-- Remarks (if any) -->
-            <div v-if="exemptionDetails?.remarks" class="mb-8">
-              <h2
-                class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b"
-              >
-                Remarks
-              </h2>
-              <div
-                class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600"
-              >
-                <p class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-                  {{ exemptionDetails.remarks }}
-                </p>
-              </div>
             </div>
           </div>
         </div>
       </div>
     </main>
   </div>
+
+  <!-- Pending Data Restore Modal -->
+  <Modal v-model:isOpen="showPendingRestoreModal" size="lg" :closeOnOverlayClick="false" :closeOnEsc="false"
+    :showCloseButton="false">
+    <template #header>
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          Unsaved Changes Detected
+        </h3>
+      </div>
+    </template>
+
+    <div v-if="pendingRestoreData && pendingRestoreServerData" class="space-y-6">
+      <!-- Action label -->
+      <div class="p-4 bg-amber-50 dark:bg-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-800">
+        <p class="text-sm text-amber-800 dark:text-amber-200">
+          We detected an unsaved <strong>{{ getActionLabel(pendingRestoreData.action) }}</strong> from a
+          previous session
+          ({{ formatTimestamp(pendingRestoreData.timestamp) }}).
+          Do you want to restore it?
+          <span v-if="pendingRestoreData.attachmentMeta?.length" class="text-amber-600 dark:text-amber-400">
+            ({{ pendingRestoreData.attachmentMeta.length }} attachment(s) must be re-attached.)
+          </span>
+        </p>
+      </div>
+
+      <!-- Comparison Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200 dark:border-gray-700">
+              <th class="text-left p-2 font-medium text-gray-500 dark:text-gray-400">Field</th>
+              <th class="text-left p-2 font-medium text-gray-500 dark:text-gray-400">Current</th>
+              <th class="text-left p-2 font-medium text-gray-500 dark:text-gray-400">Unsaved</th>
+              <th class="text-left p-2 font-medium text-gray-500 dark:text-gray-400">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+            <tr v-for="field in comparisonFields" :key="field.key" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              <td class="p-2 font-medium text-gray-700 dark:text-gray-300">{{ field.label }}</td>
+              <td class="p-2 text-gray-900 dark:text-gray-100">{{ field.serverValue || "—" }}</td>
+              <td class="p-2 text-gray-900 dark:text-gray-100">{{ field.pendingValue || "—" }}</td>
+              <td class="p-2">
+                <span
+                  :class="field.changed
+                    ? 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
+                    : 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'">
+                  {{ field.changed ? "Changed" : "Same" }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Attachment warning -->
+      <div v-if="pendingRestoreData.attachmentMeta?.length"
+        class="p-4 bg-amber-50 dark:bg-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-800">
+        <p class="text-sm text-amber-800 dark:text-amber-200">
+          <strong>Attachments ({{ pendingRestoreData.attachmentMeta.length }}):</strong> The following files
+          were attached in the pending session and must be re-attached:
+        </p>
+        <ul class="mt-2 list-disc list-inside text-xs text-amber-700 dark:text-amber-300 space-y-1">
+          <li v-for="att in pendingRestoreData.attachmentMeta" :key="att.name">
+            {{ att.name }} ({{ (att.size / 1024 / 1024).toFixed(2) }} MB)
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <template #footer>
+      <div class="flex justify-end gap-3">
+        <Button variant="ghost" @click="handleDiscardPending" class="dark:hover:bg-gray-700">
+          Discard
+        </Button>
+        <Button variant="primary" @click="handleRestorePending">
+          Restore Changes
+        </Button>
+      </div>
+    </template>
+  </Modal>
+
 </template>
-
-
-
-
-
-

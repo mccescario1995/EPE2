@@ -41,62 +41,70 @@ function resolveGroupRoute(stage) {
 // menuService.js
 export const useMenuService = () => {
   const menuData = ref([]);
+  let menuFetchPromise = null;
 
   const fetchMenuList = async () => {
-    try {
-      const userStore = useUserStore();
-      const userId = userStore.profile?.userId;
+    if (menuFetchPromise) return menuFetchPromise;
 
-      if (!userId) {
-        console.error(
-          "[menuService] No userId in profile — cannot fetch menu.",
-        );
-        return [];
+    menuFetchPromise = (async () => {
+      try {
+        const userStore = useUserStore();
+        const userId = userStore.profile?.userId;
+
+        if (!userId) {
+          console.error(
+            "[menuService] No userId in profile — cannot fetch menu.",
+          );
+          return [];
+        }
+
+        startLoading();
+        const response = await apiFetch("/api/Account/get-user-menu", {
+          method: "POST",
+          body: JSON.stringify({
+            userid: userId,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          parseJson: true,
+        });
+
+        const data = response;
+        menuData.value = data.map((menuGroup) => ({
+          title: menuGroup.name,
+          isopen: false,
+          icon: menuGroup.icon,
+          route: resolveGroupRoute(menuGroup.stage),
+          isActive: false,
+          isClick: menuGroup.isclick,
+          canAdd: menuGroup.canadd,
+          canEdit: menuGroup.canedit,
+          canDelete: menuGroup.candelete,
+          submenu: menuGroup.pages.map((page) => ({
+            title: page.name,
+            isclick: page.isclick,
+            route: resolvePageRoute(page.stage, menuGroup.name),
+            icon: page.icon,
+            canAdd: page.canadd,
+            canEdit: page.canedit,
+            canDelete: page.candelete,
+          })),
+        }));
+
+        return menuData.value;
+      } catch (error) {
+        console.error("Error fetching menu:", error);
+        alert("Unauthorized!");
+
+        return navigateTo("/");
+      } finally {
+        stopLoading();
+        menuFetchPromise = null;
       }
+    })();
 
-      startLoading();
-      const response = await apiFetch("/api/Account/get-user-menu", {
-        method: "POST",
-        body: JSON.stringify({
-          userid: userId,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        parseJson: true,
-      });
-
-      const data = response;
-      menuData.value = data.map((menuGroup) => ({
-        title: menuGroup.name,
-        isopen: false,
-        icon: menuGroup.icon,
-        route: resolveGroupRoute(menuGroup.stage),
-        isActive: false,
-        isClick: menuGroup.isclick,
-        canAdd: menuGroup.canadd,
-        canEdit: menuGroup.canedit,
-        canDelete: menuGroup.candelete,
-        submenu: menuGroup.pages.map((page) => ({
-          title: page.name,
-          isclick: page.isclick,
-          route: resolvePageRoute(page.stage, menuGroup.name),
-          icon: page.icon,
-          canAdd: page.canadd,
-          canEdit: page.canedit,
-          canDelete: page.candelete,
-        })),
-      }));
-
-      return menuData.value;
-    } catch (error) {
-      console.error("Error fetching menu:", error);
-      alert("Unauthorized!");
-
-      return navigateTo("/");
-    } finally {
-      stopLoading();
-    }
+    return menuFetchPromise;
   };
 
   const getMenuGroupByRoute = (routePattern) => {
@@ -107,8 +115,12 @@ export const useMenuService = () => {
         (page.route || "").toLowerCase(),
       );
       return (
+        lowerPattern.includes(groupRoute) ||
         groupRoute.includes(lowerPattern) ||
-        pageRoutes.some((route) => route.includes(lowerPattern))
+        pageRoutes.some(
+          (route) =>
+            lowerPattern.includes(route) || route.includes(lowerPattern),
+        )
       );
     });
   };
@@ -117,11 +129,16 @@ export const useMenuService = () => {
     const lowerPattern = routePattern.toLowerCase();
     for (const group of menuData.value) {
       const groupRoute = (group.route || "").toLowerCase();
-      if (groupRoute.includes(lowerPattern)) {
+      if (
+        lowerPattern.includes(groupRoute) ||
+        groupRoute.includes(lowerPattern)
+      ) {
         return { type: "group", item: group };
       }
-      const page = (group.submenu || []).find((p) =>
-        (p.route || "").toLowerCase().includes(lowerPattern),
+      const page = (group.submenu || []).find(
+        (p) =>
+          lowerPattern.includes((p.route || "").toLowerCase()) ||
+          (p.route || "").toLowerCase().includes(lowerPattern),
       );
       if (page) {
         return { type: "page", item: page, group };
@@ -161,6 +178,7 @@ export const useMenuService = () => {
     fetchMenuList,
     menuData,
     getMenuGroupByRoute,
+    getMatchingMenuItem,
     canAdd,
     canEdit,
     canDelete,

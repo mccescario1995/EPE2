@@ -75,6 +75,23 @@ export const usePendingTransactionStore = defineStore(
       discardPending(userId: number, route: string) {
         const key = this.getKey(userId, route);
         delete this.snapshots[key];
+        try {
+          const storeKey = "epe2_pending_transaction";
+          const stored = localStorage.getItem(storeKey);
+          if (stored) {
+            const decrypted = decryptString(stored);
+            if (decrypted) {
+              const parsed = JSON.parse(decrypted);
+              if (parsed.snapshots && parsed.snapshots[key]) {
+                delete parsed.snapshots[key];
+                localStorage.setItem(storeKey, encryptString(JSON.stringify(parsed)));
+                console.log(`Discarded pending transaction for user ${userId} and route ${route}`);
+              }
+            }
+          }
+        } catch {
+          // ignore
+        }
       },
     },
 

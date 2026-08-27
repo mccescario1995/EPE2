@@ -53,34 +53,37 @@
       </div>
     </div>
 
-    <!-- Items per page -->
-    <div v-if="props.showlimitfilter" class="flex items-center">
-      <div
-        class="flex items-center bg-white rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-800 px-4 py-2 shadow-sm hover:shadow-md transition-shadow duration-200">
-        <label class="mr-3 text-sm font-medium text-gray-700 whitespace-nowrap dark:text-gray-200">
-          Items per page:
-        </label>
-        <select v-model="limit"
-          class="bg-transparent border-0 text-sm font-medium text-gray-600 focus:outline-none f                                                                                                                                                                                       ocus:text-gray-900 cursor-pointer min-w-[60px] dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600"
-          @change="handleLimitChange">
-          <option v-for="option in props.limitfilter" :value="option" class="py-2 dark:text-gray-200 dark:bg-gray-700">
-            {{ option }}
-          </option>
-        </select>
+    <div >
+      <!-- Items per page -->
+      <div v-if="props.showlimitfilter" class="flex items-center mb-2">
+        <div
+          class="flex items-center bg-white rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-800 px-4 py-2 shadow-sm hover:shadow-md transition-shadow duration-200  w-full">
+          <label class="mr-3 text-sm font-medium text-gray-700 whitespace-nowrap dark:text-gray-200">
+            Items per page:
+          </label>
+          <select v-model="limit"
+            class="bg-transparent border-0 text-sm font-medium text-gray-600 focus:outline-none focus:text-gray-900 cursor-pointer min-w-[60px] dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600  w-full"
+            @change="handleLimitChange">
+            <option v-for="option in props.limitfilter" :value="option"
+              class="py-2 dark:text-gray-200 dark:bg-gray-700 text-center">
+              {{ option }}
+            </option>
+          </select>
+        </div>
       </div>
-    </div>
 
-    <div v-if="props.policyFilterItems?.length" class="flex items-center">
-      <button type="button"
-        class="flex items-center gap-2 bg-white rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-800 px-4 py-2 shadow-sm hover:shadow-md transition-shadow duration-200"
-        @click="openPolicyFilterModal">
-        <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
-          {{ props.policyFilterLabel || 'Policy' }}:
-        </span>
-        <span class="text-sm text-gray-500 dark:text-gray-400">
-          {{ selectedPolicyObjects.length ? `${selectedPolicyObjects.length} selected` : 'All' }}
-        </span>
-      </button>
+      <div v-if="props.policyFilterItems?.length" class="flex items-right">
+        <button type="button"
+          class="flex items-center gap-2 bg-white rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-800 px-4 py-2 shadow-sm hover:shadow-md transition-shadow duration-200  w-full"
+          @click="openPolicyFilterModal">
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
+            {{ props.policyFilterLabel || 'Policy' }}:
+          </span>
+          <span class="text-sm text-gray-500 dark:text-gray-400 flex-1 text-center">
+            {{ selectedPolicyObjects.length ? `${selectedPolicyObjects.length} selected` : 'All' }}
+          </span>
+        </button>
+      </div>
     </div>
 
     <Teleport to="body">
@@ -94,8 +97,7 @@
             <!-- Search Input -->
             <div class="mb-4">
               <div class="relative">
-                <input type="text" ref="policySearchInput"
-                  :value="policySearchTerm"
+                <input type="text" ref="policySearchInput" :value="policySearchTerm"
                   class="block w-full px-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:placeholder-gray-400"
                   placeholder="Search policies..." />
                 <button type="button" @click="updateSearchTerm"
@@ -223,8 +225,7 @@
                 :class="props.tooltipFields?.includes(key) ? 'cursor-pointer' : ''"
                 @click="props.tooltipFields?.includes(key) ? openCellTooltip(rowIndex, key, formatValue(key, row[key])) : undefined" />
               <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col"
-                :class="props.tooltipFields?.includes(key) ? 'cursor-pointer' : ''"
-                :title="formatValue(key, row[key])"
+                :class="props.tooltipFields?.includes(key) ? 'cursor-pointer' : ''" :title="formatValue(key, row[key])"
                 @click="props.tooltipFields?.includes(key) ? openCellTooltip(rowIndex, key, formatValue(key, row[key])) : undefined">
                 <span>{{ getDateTimeParts(key, row[key])?.date }}</span>
                 <span class="text-gray-500  dark:text-gray-400 text-sm">{{
@@ -323,8 +324,7 @@
             :class="props.tooltipFields?.includes(key) ? 'cursor-pointer' : ''"
             @click="props.tooltipFields?.includes(key) ? openCellTooltip(rowIndex, key, formatValue(key, row[key])) : undefined" />
           <div v-else-if="props.dateTimeFields?.includes(key)" class="flex flex-col items-end"
-            :class="props.tooltipFields?.includes(key) ? 'cursor-pointer' : ''"
-            :title="formatValue(key, row[key])"
+            :class="props.tooltipFields?.includes(key) ? 'cursor-pointer' : ''" :title="formatValue(key, row[key])"
             @click="props.tooltipFields?.includes(key) ? openCellTooltip(rowIndex, key, formatValue(key, row[key])) : undefined">
             <span>{{ getDateTimeParts(key, row[key])?.date }}</span>
             <span class="text-gray-500 dark:text-gray-400 text-xs">{{
@@ -391,7 +391,8 @@
   <Teleport to="body">
     <div v-if="expandedCell" class="fixed inset-0 z-50 flex items-center justify-center p-4"
       style="background-color: rgba(0, 0, 0, 0.5)" @click.self="closeCellTooltip" @keydown.escape="closeCellTooltip">
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-lg mx-4 border border-gray-200 dark:border-gray-700">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-lg mx-4 border border-gray-200 dark:border-gray-700">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
             {{ formatHeader(expandedCell.key) }}

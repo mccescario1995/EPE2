@@ -52,12 +52,14 @@ const autoSavePending = () => {
   }
 
   autoSaveTimer.value = setTimeout(() => {
-    pendingStore.saveSnapshot(userId.userId, "/main/exemptions_old/edit", "autoSave", {
-      policyId: getPolicyIdForStorage(),
-      details: formData.value.details,
-      corporate: formData.value.corporate,
-      exemptionId: exemptionId.value,
-    }, newAttachments.value.map((a) => ({ name: a.file.name, size: a.file.size, type: a.file.type })));
+    if (isInitialized.value && hasUnsavedChanges.value) {
+      pendingStore.saveSnapshot(userId.userId, "/main/exemptions_old/edit", "autoSave", {
+        policyId: getPolicyIdForStorage(),
+        details: formData.value.details,
+        corporate: formData.value.corporate,
+        exemptionId: exemptionId.value,
+      }, newAttachments.value.map((a) => ({ name: a.file.name, size: a.file.size, type: a.file.type })));
+    }
   }, AUTO_SAVE_DEBOUNCE_MS);
 };
 
@@ -391,6 +393,7 @@ const handleCancel = () => {
 
 // Handle back (go to view page)
 const handleBack = () => {
+  flushAutoSave();
   router.back();
 };
 
@@ -1067,8 +1070,8 @@ onMounted(async () => {
     return;
   }
 
-  fetchPolicies();
-  fetchExemptionDetails();
+  await fetchPolicies();
+  await fetchExemptionDetails();
 
   const pendingData = pendingStore.checkPending(userId.userId, "/main/exemptions_old/edit");
   if (pendingData) {
@@ -1094,6 +1097,8 @@ onMounted(async () => {
       pendingStore.discardPending(userId.userId, "/main/exemptions_old/edit");
     }
   }
+  isInitialized.value = true;
+  window.addEventListener("beforeunload", flushAutoSave);
 });
 
 const formatDateTime = (date: string | Date | null) => {
@@ -1127,10 +1132,25 @@ const isCurrentUser = (requesterId: number): boolean => {
   return userId?.emplId === requesterId;
 };
 
+const isInitialized = ref(false);
+
+const flushAutoSave = () => {
+  if (!isInitialized.value || !hasUnsavedChanges.value) return;
+  pendingStore.saveSnapshot(userId.userId, "/main/exemptions_old/edit", "autoSave", {
+    policyId: getPolicyIdForStorage(),
+    details: formData.value.details,
+    corporate: formData.value.corporate,
+    exemptionId: exemptionId.value,
+  }, newAttachments.value.map((a) => ({ name: a.file.name, size: a.file.size, type: a.file.type })));
+};
+
 onBeforeUnmount(() => {
+  window.removeEventListener("beforeunload", flushAutoSave);
   if (autoSaveTimer.value) {
     clearTimeout(autoSaveTimer.value);
+    autoSaveTimer.value = null;
   }
+  flushAutoSave();
 });
 </script>
 

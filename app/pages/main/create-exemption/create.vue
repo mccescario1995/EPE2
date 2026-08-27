@@ -856,9 +856,11 @@ onMounted(async () => {
 
   await fetchPolicies();
   const pendingData = pendingStore.checkPending(userId.userId, "/main/create-exemption/create");
+  
   if (pendingData) {
     
     const restored = confirm(`We detected an unsaved ${pendingData.action === "saveDraft" ? "draft" : pendingData.action === "create" ? "submission" : "changes"} from a previous session. Do you want to restore it? (Attachments must be re-attached.)`);
+    
     if (restored && pendingData.data) {
       const pendingPolicyId = pendingData.data.policyid;
       if (pendingPolicyId != null) {
@@ -996,9 +998,9 @@ onBeforeUnmount(() => {
                   <ul class="text-xs text-amber-700 dark:text-amber-300 mt-1 ml-4 list-disc space-y-0.5">
                     <li v-for="name in reSelectAttachmentWarning.fileNames" :key="name">{{ name }}</li>
                   </ul>
-                  <p class="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                  <!-- <p class="text-xs text-amber-600 dark:text-amber-400 mt-2">
                     The banner will disappear once you re-attach all files.
-                  </p>
+                  </p> -->
                 </div>
                 <button @click="reSelectAttachmentWarning = null" class="text-amber-500 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 flex-shrink-0 ml-2" title="Dismiss">
                   <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
