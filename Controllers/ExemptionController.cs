@@ -2145,17 +2145,23 @@ namespace EPEAPI.Controllers
                     // Get the current approver's sort value
                     var currentSort = currentApprover.Sort;
 
-                    // Next approvers are those whose Sort is greater than current, and are still pending
-                    var nextApprovers = updatedApprovers
-                        .Where(a => a.Respond == 0)
+                    // Find the next sort group where ALL members are still pending.
+                    // Groups that already have any response (including requester auto-approval)
+                    // are already satisfied and should be skipped.
+                    var nextGroupSort = updatedApprovers
+                        .Where(a => (a.Sort ?? 0) > (currentSort ?? 0))
                         .GroupBy(a => a.Sort ?? 0)
-                        .Where(g => g.Key > (currentSort ?? 0))
+                        .Where(g => g.All(a => a.Respond == 0))
                         .OrderBy(g => g.Key)
                         .FirstOrDefault()
-                        ?.ToList();
+                        ?.Key;
 
-                    if (nextApprovers != null && nextApprovers.Any())
+                    if (nextGroupSort.HasValue)
                     {
+                        var nextApprovers = updatedApprovers
+                            .Where(a => a.Sort == nextGroupSort.Value && a.Respond == 0)
+                            .OrderBy(a => a.Linesequence)
+                            .ToList();
                         // More approvers ahead � keep status as Pending
                         await _context
                             .EpeTransactionheaders.Where(h =>
