@@ -178,30 +178,30 @@ const actions = computed(() => {
     },
   );
 
-  if (canEdit.value) {
-    list.push({
-      label: IconEdit,
-      tooltip: "Edit Request",
-      handler: editProduct,
-      iconClass: "!text-blue-500 dark:text-blue-400",
-      buttonClass:
-        "hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900",
-      visible: (row) => row.canApprove != true,
-      disabled: (row) => row.status === "P" || row.status === "C", // Disable for Pending or Completed
-    });
-  }
-  if (canDelete.value) {
-    list.push({
-      label: IconDelete,
-      tooltip: "Delete Request",
-      handler: confirmDelete,
-      iconClass: "text-red-500 dark:text-red-400",
-      buttonClass:
-        "hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900",
-      visible: (row) => row.canApprove !== true && row.hasApproverResponded !== true,
-      disabled: (row) => row.status === "P" || row.status === "C", // Disable for Pending or Completed
-    });
-  }
+  // if (canEdit.value) {
+  //   list.push({
+  //     label: IconEdit,
+  //     tooltip: "Edit Request",
+  //     handler: editProduct,
+  //     iconClass: "!text-blue-500 dark:text-blue-400",
+  //     buttonClass:
+  //       "hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900",
+  //     visible: (row) => row.canApprove != true,
+  //     disabled: (row) => row.status === "P" || row.status === "C", // Disable for Pending or Completed
+  //   });
+  // }
+  // if (canDelete.value) {
+  //   list.push({
+  //     label: IconDelete,
+  //     tooltip: "Delete Request",
+  //     handler: confirmDelete,
+  //     iconClass: "text-red-500 dark:text-red-400",
+  //     buttonClass:
+  //       "hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900",
+  //     visible: (row) => row.canApprove !== true && row.hasApproverResponded !== true,
+  //     disabled: (row) => row.status === "P" || row.status === "C", // Disable for Pending or Completed
+  //   });
+  // }
 
   return list;
 });

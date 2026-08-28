@@ -1116,6 +1116,25 @@ const closePendingRestoreModal = () => {
   pendingRestoreServerData.value = null;
 };
 
+const expandedCell = ref<{ source: "server" | "pending"; key: string; value: string } | null>(null);
+
+function openCellTooltip(source: "server" | "pending", key: string, value: string) {
+  expandedCell.value = { source, key, value };
+}
+
+function closeCellTooltip() {
+  expandedCell.value = null;
+}
+
+const getCellTooltipTitle = (key: string): string => {
+  const titles: Record<string, string> = {
+    policyId: "Policy",
+    details: "Details",
+    corporate: "Corporate",
+  };
+  return titles[key] || key;
+};
+
 const getActionLabel = (action: string): string => {
   return action === "saveDraft" ? "draft" : action === "create" ? "submission" : action === "autoSave" ? "changes" : action;
 };
@@ -2013,25 +2032,41 @@ onBeforeUnmount(() => {
 
       <!-- Comparison Table -->
       <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full text-sm table-fixed">
           <thead>
             <tr class="border-b border-gray-200 dark:border-gray-700">
-              <th class="text-left p-2 font-medium text-gray-500 dark:text-gray-400">Field</th>
-              <th class="text-left p-2 font-medium text-gray-500 dark:text-gray-400">Current</th>
-              <th class="text-left p-2 font-medium text-gray-500 dark:text-gray-400">Unsaved</th>
-              <th class="text-left p-2 font-medium text-gray-500 dark:text-gray-400">Status</th>
+              <th class="text-left p-1.5 font-medium text-gray-500 dark:text-gray-400 w-1/4">Field</th>
+              <th class="text-left p-1.5 font-medium text-gray-500 dark:text-gray-400 w-1/4">Current</th>
+              <th class="text-left p-1.5 font-medium text-gray-500 dark:text-gray-400 w-1/4">Unsaved</th>
+              <th class="text-left p-1.5 font-medium text-gray-500 dark:text-gray-400 w-1/4">Status</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
             <tr v-for="field in comparisonFields" :key="field.key" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-              <td class="p-2 font-medium text-gray-700 dark:text-gray-300">{{ field.label }}</td>
-              <td class="p-2 text-gray-900 dark:text-gray-100">{{ field.serverValue || "—" }}</td>
-              <td class="p-2 text-gray-900 dark:text-gray-100">{{ field.pendingValue || "—" }}</td>
-              <td class="p-2">
+              <td class="p-1.5 font-medium text-gray-700 dark:text-gray-300 truncate">{{ field.label }}</td>
+              <td class="p-1.5 text-gray-900 dark:text-gray-100">
+                <span
+                  class="block truncate max-w-none cursor-pointer"
+                  :title="field.serverValue || '—'"
+                  @click="openCellTooltip('server', field.key, field.serverValue || '—')"
+                >
+                  {{ field.serverValue || "—" }}
+                </span>
+              </td>
+              <td class="p-1.5 text-gray-900 dark:text-gray-100">
+                <span
+                  class="block truncate max-w-none cursor-pointer"
+                  :title="field.pendingValue || '—'"
+                  @click="openCellTooltip('pending', field.key, field.pendingValue || '—')"
+                >
+                  {{ field.pendingValue || "—" }}
+                </span>
+              </td>
+              <td class="p-1.5">
                 <span
                   :class="field.changed
-                    ? 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
-                    : 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'">
+                    ? 'inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
+                    : 'inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'">
                   {{ field.changed ? "Changed" : "Same" }}
                 </span>
               </td>
@@ -2102,4 +2137,33 @@ onBeforeUnmount(() => {
       </div>
     </main>
   </div>
+
+  <Teleport to="body">
+    <div
+      v-if="expandedCell"
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      style="background-color: rgba(0, 0, 0, 0.5)"
+      @click.self="closeCellTooltip"
+      @keydown.escape="closeCellTooltip"
+    >
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-lg mx-4 border border-gray-200 dark:border-gray-700"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+            {{ getCellTooltipTitle(expandedCell.key) }}
+          </h3>
+          <button
+            @click="closeCellTooltip"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl leading-none"
+          >
+            &times;
+          </button>
+        </div>
+        <p class="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap break-words">
+          {{ expandedCell.value }}
+        </p>
+      </div>
+    </div>
+  </Teleport>
 </template>

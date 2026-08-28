@@ -222,20 +222,18 @@ const actions = computed(() => {
       iconClass: "!text-blue-500 dark:text-blue-400",
       buttonClass:
         "hover:bg-blue-100 dark:hover:bg-blue-100 hover:text-blue-600 dark:hover:text-blue-900",
-      visible: (row) => row.canApprove != true,
-      disabled: (row) => row.status === "P" || row.status === "C", // Disable for Pending or Completed
+      visible: (row) => row.canApprove != true && row.hasApproverResponded != true && row.status != "P" && row.status != "C",  
     });
   }
   if (canDelete.value) {
-    list.push({
+    list.push({                                                                                                                                                                 
       label: IconDelete,
       tooltip: "Delete Request",
       handler: confirmDelete,
       iconClass: "text-red-500 dark:text-red-400",
       buttonClass:
         "hover:bg-red-50 dark:hover:bg-red-100 hover:text-red-100 dark:hover:text-white-900",
-      visible: (row) => row.canApprove !== true && row.hasApproverResponded !== true && row.status != "C",
-      disabled: (row) => row.status === "P" || row.status === "C", // Disable for Pending or Completed
+      visible: (row) => row.canApprove != true && row.hasApproverResponded != true && row.status != "P" && row.status != "C",
     });
   }
 

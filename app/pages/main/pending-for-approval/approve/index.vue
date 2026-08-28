@@ -79,7 +79,8 @@ const fetchExemptionDetails = async () => {
           message: "You are not authorized to approve this request",
           duration: 5000,
         });
-        router.back() || router.push('/main/pending-for-approval'); // Fallback route
+        // router.back() || router.push('/main/pending-for-approval'); // Fallback route
+        router.back()
         return;
       }
 
@@ -539,13 +540,13 @@ const handleBackClick = () => {
     router.push('/main/pending-for-approval'); // Fallback route
   }
 };
-
+let historylength = 0;
 // Fetch on mount
 onMounted(async () => {
   await fetchCurrentUser();
   await fetchExemptionDetails();
 
-  const historylength = window.history.length;
+  historylength = window.history.length;
 });
 </script>
 
