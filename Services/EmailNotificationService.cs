@@ -80,7 +80,6 @@ public class EmailNotificationService
                                 <p><strong>Transaction #:</strong> <span style='color:#2f75b5;'>{requestNumber}</span></p>
                                 <p><strong>Requested By:</strong> {requestorName}</p>
                                 <p><strong>Details:</strong> {requestDetails}</p>
-                                <p><strong>Expires:</strong> 72 hours from receipt</p>
                               </td></tr>
 
                             <tr><td height='25'></td></tr>
