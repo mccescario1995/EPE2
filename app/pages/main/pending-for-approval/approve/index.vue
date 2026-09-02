@@ -525,7 +525,6 @@ const groupedApprovers = computed(() => {
 
 // Handle back navigation with fallback
 const handleBack = () => {
-  console.log("Back button clicked. History length:", window.history.length);
   if (window.history.length < 1) {
     router.back();
   } else {

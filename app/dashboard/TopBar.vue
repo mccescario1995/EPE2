@@ -27,12 +27,12 @@
               <ThemeToggle />
             </div>
             <!-- Notification Bell -->
-            <div class="mr-4 relative">
+            <!-- <div class="mr-4 relative">
               <button type="button" @click="toggleNotificationDropdown"
                 class="flex items-center border rounded-full p-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 id="notification-button" aria-expanded="false" aria-haspopup="true" aria-label="Notifications">
                 <BellIcon :unreadCount="notificationStore.unreadCount" />
-                <!-- Badge for unread count -->
+                Badge for unread count
                 <span v-if="notificationStore.unreadCount > 0"
                   class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center text-xs font-bold text-white bg-red-500 rounded-full">
                   {{
@@ -43,7 +43,7 @@
                 </span>
               </button>
 
-              <!-- Notification Dropdown -->
+              Notification Dropdown
               <transition enter-active-class="transition ease-out duration-100"
                 enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100"
                 leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100"
@@ -77,7 +77,6 @@
                           'bg-gray-300': notification.isRead,
                           'cursor-pointer': true,
                           'hover:bg-gray-200': true,
-                          // 'hover:text-gray-700': true,
                           'border-b': true,
                         }" @click="markAsReadAndNavigate(notification)">
                           <div class="flex items-start space-x-3">
@@ -105,7 +104,7 @@
                   </div>
                 </div>
               </transition>
-            </div>
+            </div> -->
 
             <!-- User dropdown -->
             <button type="button" @click="toggleDropdown"

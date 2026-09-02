@@ -5,6 +5,8 @@ definePageMeta({
 
 import ManageApprovers from "~/components/ManageApprovers.vue";
 import { usePendingTransactionStore } from "~/stores/usePendingTransactionStore";
+import Modal from "~/components/Modal.vue";
+import Button from "~/components/Button.vue";
 
 const userStore = useUserStore();
 const userId = userStore.profile;
@@ -34,6 +36,7 @@ const checkingShortname = ref(false);
 const autoSaveTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 const AUTO_SAVE_DEBOUNCE_MS = 1500;
 const isInitialized = ref(false);
+const isDiscarded = ref(false);
 
 const hasUnsavedChanges = computed(() => {
   return !!(
@@ -44,18 +47,25 @@ const hasUnsavedChanges = computed(() => {
   );
 });
 
+const getPendingApprovers = () => {
+  if (!createManageApproversRef.value?.getPendingApprovers) return [];
+  return createManageApproversRef.value.getPendingApprovers();
+};
+
 const autoSavePending = () => {
   if (autoSaveTimer.value) {
     clearTimeout(autoSaveTimer.value);
   }
 
   autoSaveTimer.value = setTimeout(() => {
+    if (isDiscarded.value) return;
     if (isInitialized.value && hasUnsavedChanges.value) {
       pendingStore.saveSnapshot(policyIdRef.value, "/maintenance/policies/create", "autoSave", {
         shortname: createForm.shortname,
         description: createForm.description,
         status: createForm.status,
         managerApprover: createForm.managerApprover,
+        approvers: getPendingApprovers(),
       });
     }
   }, AUTO_SAVE_DEBOUNCE_MS);
@@ -150,6 +160,7 @@ const submitCreateForm = async () => {
       description: createForm.description,
       status: createForm.status,
       managerApprover: createForm.managerApprover,
+      approvers: getPendingApprovers(),
     });
 
     const response: any = await apiFetch("/api/Maintenance/policy/create", {
@@ -188,6 +199,7 @@ const submitCreateForm = async () => {
       createForm.managerApprover = "";
       createdPolicyId.value = null;
       createApproverCount.value = 0;
+      isDiscarded.value = true;
 
       showToast({
         title: "Policy Created",
@@ -210,11 +222,21 @@ const submitCreateForm = async () => {
 };
 
 const cancelCreate = () => {
+  isDiscarded.value = true;
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
+    autoSaveTimer.value = null;
+  }
   pendingStore.discardPending(policyIdRef.value, "/maintenance/policies/create");
+  createForm.description = "";
+  createForm.shortname = "";
+  createForm.status = "A";
+  createForm.managerApprover = "";
   navigateTo("/maintenance/policies");
 };
 
 const flushAutoSave = () => {
+  if (isDiscarded.value) return;
   if (autoSaveTimer.value) {
     clearTimeout(autoSaveTimer.value);
   }
@@ -224,6 +246,7 @@ const flushAutoSave = () => {
       description: createForm.description,
       status: createForm.status,
       managerApprover: createForm.managerApprover,
+      approvers: getPendingApprovers(),
     });
   }
 };
@@ -239,18 +262,70 @@ const statusItems = [
   }
 ]
 
+// Pending data restore modal state
+const showPendingRestoreModal = ref(false);
+const pendingRestoreData = ref<{
+  action: string;
+  data: Record<string, any>;
+  attachmentMeta: { name: string; size: number; type: string }[];
+  timestamp: string;
+} | null>(null);
+
+const handleRestorePending = () => {
+  if (!pendingRestoreData.value?.data) return;
+  const data = pendingRestoreData.value.data;
+  createForm.shortname = data.shortname ?? "";
+  createForm.description = data.description ?? "";
+  createForm.status = data.status ?? "A";
+  createForm.managerApprover = data.managerApprover ?? "";
+  if (Array.isArray(data.approvers) && createManageApproversRef.value?.loadApprovers) {
+    createManageApproversRef.value.loadApprovers(data.approvers);
+  }
+  isDiscarded.value = true;
+  pendingStore.discardPending(policyIdRef.value, "/maintenance/policies/create");
+  closePendingRestoreModal();
+  nextTick(() => { isDiscarded.value = false; });
+};
+
+const handleDiscardPending = () => {
+  pendingStore.discardPending(policyIdRef.value, "/maintenance/policies/create");
+  closePendingRestoreModal();
+};
+
+const closePendingRestoreModal = () => {
+  showPendingRestoreModal.value = false;
+  pendingRestoreData.value = null;
+};
+
+const getActionLabel = (action: string): string => {
+  return action === "createPolicy"
+    ? "policy"
+    : action === "autoSave"
+      ? "changes"
+      : action;
+};
+
+const formatTimestamp = (timestamp: string): string => {
+  const date = new Date(timestamp);
+  return date.toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const statusLabel = (status: string): string => {
+  return status === "A" ? "Active" : status === "I" ? "Inactive" : status || "—";
+};
+
 onMounted(async () => {
   const pendingData = pendingStore.checkPending(policyIdRef.value, "/maintenance/policies/create");
   if (pendingData) {
-    const restored = confirm("We detected an unsaved policy from a previous session. Do you want to restore it?");
-    if (restored && pendingData.data) {
-      createForm.shortname = pendingData.data.shortname ?? "";
-      createForm.description = pendingData.data.description ?? "";
-      createForm.status = pendingData.data.status ?? "A";
-      createForm.managerApprover = pendingData.data.managerApprover ?? "";
-    } else {
-      pendingStore.discardPending(policyIdRef.value, "/maintenance/policies/create");
-    }
+    pendingRestoreData.value = pendingData;
+    showPendingRestoreModal.value = true;
   }
 
   isInitialized.value = true;
@@ -361,5 +436,76 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </main>
+
+    <!-- Pending Data Restore Modal -->
+    <Modal v-model:isOpen="showPendingRestoreModal" size="lg" :closeOnOverlayClick="false" :closeOnEsc="false"
+      :showCloseButton="false">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Unsaved Changes Detected
+          </h3>
+        </div>
+      </template>
+
+      <div v-if="pendingRestoreData" class="space-y-6">
+        <div class="p-4 bg-amber-50 dark:bg-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-800">
+          <p class="text-sm text-amber-800 dark:text-amber-200">
+            We detected an unsaved <strong>{{ getActionLabel(pendingRestoreData.action) }}</strong> from a
+            previous session
+            ({{ formatTimestamp(pendingRestoreData.timestamp) }}).
+            Do you want to restore it?
+          </p>
+        </div>
+
+        <div class="space-y-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Unsaved Data to Restore</h4>
+
+          <dl class="space-y-3">
+            <div>
+              <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Policy Name</dt>
+              <dd class="text-sm text-gray-900 dark:text-gray-100">
+                {{ pendingRestoreData.data.shortname || '—' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Description</dt>
+              <dd class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
+                {{ pendingRestoreData.data.description || '—' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</dt>
+              <dd class="text-sm text-gray-900 dark:text-gray-100">
+                {{ statusLabel(pendingRestoreData.data.status) }}
+              </dd>
+            </div>
+            <div v-if="pendingRestoreData.data.managerApprover">
+              <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Manager Approver</dt>
+              <dd class="text-sm text-gray-900 dark:text-gray-100">
+                {{ pendingRestoreData.data.managerApprover }}
+              </dd>
+            </div>
+            <div v-if="Array.isArray(pendingRestoreData.data.approvers) && pendingRestoreData.data.approvers.length">
+              <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Approvers</dt>
+              <dd class="text-sm text-gray-900 dark:text-gray-100">
+                {{ pendingRestoreData.data.approvers.length }} approver(s) configured
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <Button variant="ghost" @click="handleDiscardPending" class="dark:hover:bg-gray-700">
+            Discard
+          </Button>
+          <Button variant="primary" @click="handleRestorePending">
+            Restore Changes
+          </Button>
+        </div>
+      </template>
+    </Modal>
   </div>
 </template>

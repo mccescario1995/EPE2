@@ -53,7 +53,7 @@
       </div>
     </div>
 
-    <div >
+    <div>
       <!-- Items per page -->
       <div v-if="props.showlimitfilter" class="flex items-center mb-2">
         <div
@@ -380,9 +380,7 @@
     </div>
 
     <!-- Empty state -->
-    <div v-if="!paginatedData.length">
-      class="text-center py-12 text-gray-400 dark:text-gray-500"
-      >
+    <div v-if="!paginatedData.length" class="text-center py-12 text-gray-400 dark:text-gray-500">
       No data available
     </div>
   </div>

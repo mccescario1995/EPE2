@@ -770,7 +770,7 @@ watch(
   { deep: true },
 );
 
-defineExpose({ saveOrder, createApprovers, getPendingApprovers });
+defineExpose({ saveOrder, createApprovers, getPendingApprovers, loadApprovers });
 
 // ─── Get Pending Approvers (for create mode) ───────────────────────────────────
 function getPendingApprovers() {
@@ -783,6 +783,35 @@ function getPendingApprovers() {
     sort: a.sort,
     linesequence: a.linesequence,
   }));
+}
+
+// ─── Load Approvers (for restore from pending snapshot) ───────────────────────
+function loadApprovers(approvers: Array<{
+  approverid: string | null;
+  approvername: string | null;
+  approveremail: string | null;
+  approvertype: string | null;
+  sort: number | null;
+  linesequence: number | null;
+}>) {
+  if (!Array.isArray(approvers) || approvers.length === 0) {
+    rawApprovers.value = [];
+    groups.value = [];
+    return;
+  }
+  rawApprovers.value = approvers.map((a) => ({
+    id: Date.now() + Math.floor(Math.random() * 1000),
+    policyid: props.policy?.policyid ?? "new",
+    approverid: a.approverid ?? null,
+    approvername: a.approvername ?? null,
+    approveremail: a.approveremail ?? null,
+    approvertype: a.approvertype ?? null,
+    sort: a.sort ?? 1,
+    linesequence: a.linesequence ?? 1,
+    status: "A",
+    isdelete: 0,
+  }));
+  groups.value = buildGroups(rawApprovers.value);
 }
 
 // ─── Create Approvers (for create mode) ───────────────────────────────────────

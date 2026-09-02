@@ -401,7 +401,8 @@ const hasUnsavedChanges = computed(() => {
     currentPolicyId !== originalData.value.policyId ||
     currentCorporate !== originalData.value.corporate ||
     formData.value.transactionNumber !== originalData.value.transactionNumber ||
-    formData.value.details?.trim() !== (originalData.value.details || "").trim()
+    formData.value.details?.trim() !== (originalData.value.details || "").trim() ||
+    newAttachments.value.length > 0
   );
 });
 

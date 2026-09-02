@@ -639,11 +639,12 @@ const handleSaveDraft = async () => {
     console.log("Attachment response transaction ID:", transactionId);
 
     if (attachmentResponse && response) {
+      const previousKey = transactionIdRef.value;
       draftId.value = transactionId.toString();
       console.log("Draft ID:", draftId.value);
       isDraft.value = true;
 
-      pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/create");
+      pendingStore.discardPending(previousKey, "/main/create-exemption/create");
 
       showToast({
         type: "success",
