@@ -50,10 +50,10 @@
         class="transition-transform duration-300 group-hover:scale-110"
         :class="
           iconPosition === 'right'
-            ? 'order-2 ml-2'
+            ? 'order-2 mx-auto md:ml-2'
             : iconPosition === 'center'
               ? 'mx-auto'
-              : 'mr-2'
+              : 'mx-auto md:mr-2'
         "
       >
         <component
