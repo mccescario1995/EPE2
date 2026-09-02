@@ -35,6 +35,7 @@ const props = withDefaults(
     debounceTime?: number;
     disabled?: boolean;
     objectOutput?: boolean;
+    searchable?: boolean;
     class?: string;
   }>(),
   {
@@ -52,8 +53,9 @@ const props = withDefaults(
     debounceTime: 300,
     disabled: false,
     objectOutput: true,
+    searchable: true,
     class: "",
-  }
+  },
 );
 
 const emit = defineEmits(["update:modelValue", "item-added"]);
@@ -388,7 +390,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
       :style="{ 'max-height': maxHeight }"
     > -->
       <!-- Search Input -->
-      <div class="p-2 border-b border-gray-200 dark:border-0 sticky top-0 bg-white z-10 dark:bg-gray-800">
+      <div v-if="searchable" class="p-2 border-b border-gray-200 dark:border-0 sticky top-0 bg-white z-10 dark:bg-gray-800">
         <input type="text" v-model="searchQuery" :placeholder="searchPlaceholder"
           class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-gray-700 dark:bg-gray-100"
           @click.stop />
