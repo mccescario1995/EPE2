@@ -15,13 +15,14 @@
 
         <!-- Content -->
         <div class="relative flex flex-col items-center space-y-6">
-          <client-only>
+          <!-- <client-only>
             <AnimationLoading
               src="bluetruck.json"
               :loop="true"
               :autoplay="true"
             />
-          </client-only>
+          </client-only> -->
+          
           <!-- Modern spinner -->
           <div class="relative">
             <!-- Outer ring -->

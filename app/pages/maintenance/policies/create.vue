@@ -353,14 +353,16 @@ onBeforeUnmount(() => {
           </h1>
         </div>
         <div class="flex justify-end gap-2 pt-2">
-          <Button variant="ghost" @click="cancelCreate" :disabled="createLoading"
-            class="dark:hover:bg-gray-700 dark:text-gray-200">
-            Cancel
-          </Button>
+
           <Button variant="primary" type="submit" form="create-policy-form"
-            :disabled="createLoading || !isCreateFormValid">
-            {{ createLoading ? "Creating..." : "Create Policy" }}
+            :disabled="createLoading || !isCreateFormValid" icon="save">
+            <p class="hidden sm:inline-block">
+
+              {{ createLoading ? 'Creating...' : 'Create Policy' }}
+            </p>
+
           </Button>
+
         </div>
       </div>
     </header>
@@ -403,20 +405,18 @@ onBeforeUnmount(() => {
 
               <Dropdown v-model="createForm.status" :initial-items="statusItems" :object-output="false">
                 <template #selected="{ item }">
-                  <span class="inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium"
-                   :class="item === 'A'
-                      ? 'bg-green-100 text-green-800 border border-green-200'
-                      : 'bg-red-100 text-red-800 border border-red-200'
+                  <span class="inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium" :class="item === 'A'
+                    ? 'bg-green-100 text-green-800 border border-green-200'
+                    : 'bg-red-100 text-red-800 border border-red-200'
                     ">
                     {{ item === 'A' ? 'Active' : 'Inactive' }}
                   </span>
                 </template>
 
                 <template #option="{ item }">
-                  <span class="inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium"
-                   :class="item.id === 'A'
-                      ? 'bg-green-100 text-green-800 border border-green-200'
-                      : 'bg-red-100 text-red-800 border border-red-200'
+                  <span class="inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium" :class="item.id === 'A'
+                    ? 'bg-green-100 text-green-800 border border-green-200'
+                    : 'bg-red-100 text-red-800 border border-red-200'
                     ">
                     {{ item.label }}
                   </span>

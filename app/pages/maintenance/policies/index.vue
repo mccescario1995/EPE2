@@ -142,9 +142,7 @@ const deleteRequestPolicy = async () => {
           </h1>
         </div>
 
-        <Button variant="primary" size="md" icon="add" iconPosition="left" @onclick="handleCreatePolicy">
-          Create Policy
-        </Button>
+        <Button variant="primary" size="md" icon="add" iconPosition="left" @onclick="handleCreatePolicy" label ="Create Policy" />
       </div>
     </header>
     <main class="max-w-full mx-auto py-6 sm:px-6">

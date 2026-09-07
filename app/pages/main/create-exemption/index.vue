@@ -232,7 +232,9 @@ onMounted(async () => {
           iconPosition="left"
           @onclick="handleCreate"
         >
+        <p class="hidden sm:inline-block">
           Create Request
+        </p>
         </Button>
       </div>
     </header>

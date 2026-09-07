@@ -180,7 +180,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
           <label class="text-sm text-gray-600 dark:text-gray-300">Period:</label>
 
           <!-- Mobile: Custom Dropdown -->
-          <div class="sm:hidden w-32">
+          <div class="sm:hidden w-[80%] absolute right-2">
             <Dropdown
               :model-value="selectedPeriodItem"
               :initial-items="periodDropdownItems"
@@ -283,7 +283,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
         </div>
 
         <!-- Charts row 1 -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-3">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-3 ">
           <!-- Approval Rates Over Time -->
           <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-3 sm:p-5">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
@@ -313,6 +313,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
                   v-for="count in periodOptions.find(
                     (p) => p.value === periodType,
                   )?.counts || []"
+                  class="w-full text-sm text-gray-700 dark:text-gray-200"
                   :key="count"
                   :value="count"
                 >

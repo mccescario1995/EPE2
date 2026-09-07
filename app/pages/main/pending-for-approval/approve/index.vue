@@ -554,9 +554,9 @@ onMounted(async () => {
     <header class="bg-white dark:bg-gray-800 shadow">
       <div class="max-w-full mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <div class="flex items-center">
-          <Button size="lg" icon="left_arrow" iconPosition="center" customClass="rounded-full"
+          <Button size="lg" icon="left_arrow" variant="outline-primary" iconPosition="center" customClass="rounded-full"
             @onclick="handleBackClick" />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-100">Approve Request {{ historylength }}</h1>
+          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-100">Approve Request</h1>
         </div>
       </div>
     </header>

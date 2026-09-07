@@ -1373,18 +1373,18 @@ onBeforeUnmount(() => {
 <template>
   <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900">
     <header class="bg-white dark:bg-gray-800 shadow">
-      <div class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+      <div class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between sm:flex-row sm:justify-between sm:items-center gap-3">
         <div class="flex items-center">
           <!-- v-if="row.requesterId === userId.emplId && exemptionDetails.status !== 'C'" -->
           <Button variant="ghost-primary" size="lg" icon="left_arrow" iconPosition="center" customClass="rounded-full"
             @onclick="handleBack" />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-100">
+          <h1 class="text-xl sm:text-2xl ps-2 sm:ps-5 font-bold text-gray-900 dark:text-gray-100">
             {{
               exemptionDetails?.status === "D" ? "Edit Draft" : "Edit Request"
             }}
           </h1>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
           <!-- <Button
             variant="outline-primary"
             size="md"
@@ -1393,14 +1393,10 @@ onBeforeUnmount(() => {
           >
             Cancel
           </Button> -->
-          <template v-if="exemptionDetails?.status === 'D'">
-            <Button v-if="canEdit" variant="outline-info" size="md" @onclick="handleUpdateDraft"
-              :loading="isSubmitting">
-              Update Draft
-            </Button>
-            <Button v-if="canEdit" variant="primary" size="md" @onclick="handleSubmitDraft" :loading="isSubmitting">
-              Submit Request
-            </Button>
+          <template v-if="exemptionDetails?.status === 'D'" class="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <Button v-if="canEdit" variant="outline-info" size="md" icon="edit" iconPosition="left" @onclick="handleUpdateDraft"
+              :loading="isSubmitting" label="Update Draft"/>
+            <Button v-if="canEdit" variant="primary" size="md" icon="right_arrow" iconPosition="right" @onclick="handleSubmitDraft" :loading="isSubmitting" label ="Submit Draft"/>
           </template>
           <template v-else>
             <Button v-if="canEdit" variant="primary" size="md" icon="save" iconPosition="left" @onclick="handleSubmit"
@@ -1447,13 +1443,13 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </div>
-        <div class="grid grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
           <!-- Left Column -->
-          <div class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+          <div class="lg:col-span-2 bg-white rounded-lg shadow p-4 sm:p-6 dark:bg-gray-800">
             <!-- Transaction Info -->
-            <div class="mb-8">
-              <div class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b">
-                <div class="flex justify-between items-center">
+            <div class="mb-6 sm:mb-8">
+              <div class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100 mb-3 sm:mb-4 pb-2 border-b">
+                <div class="flex sm:flex-row justify-between sm:items-center gap-2">
                   <h2 class="dark:text-gray-100">Request Information</h2>
                   <div v-if="exemptionDetails">
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" :class="{
@@ -1470,12 +1466,12 @@ onBeforeUnmount(() => {
                   </div>
                 </div>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     Transaction Number
                   </label>
-                  <p class="text-gray-900 dark:text-gray-100">
+                  <p class="text-sm sm:text-base text-gray-900 dark:text-gray-100">
                     {{ formData.transactionNumber || "N/A" }}
                   </p>
                 </div>
@@ -1483,7 +1479,7 @@ onBeforeUnmount(() => {
                   <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                     Requestor Name
                   </label>
-                  <p class="text-gray-900 dark:text-gray-100">
+                  <p class="text-sm sm:text-base text-gray-900 dark:text-gray-100">
                     {{ formData.requestorName || "N/A" }}
                   </p>
                 </div>
@@ -1491,7 +1487,7 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- Request Details -->
-            <div class="mb-8">
+            <div class="mb-6 sm:mb-8">
               <div class="space-y-6">
                 <div class="grid grid-cols-1 gap-6">
                   <!-- md:grid-cols-2 -->
@@ -1519,14 +1515,14 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- Attachments -->
-            <div class="mb-8">
+            <div class="mb-6 sm:mb-8">
               <h2 class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b dark:text-gray-100">
                 Attachments
               </h2>
 
               <!-- Re-select Attachments Banner -->
               <div v-if="reSelectAttachmentWarning"
-                class="mt-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/30 dark:border-amber-800">
+                class="mt-2 mb-3 p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/30 dark:border-amber-800">
                 <div class="flex items-start gap-3">
                   <svg class="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="currentColor"
                     viewBox="0 0 20 20">
@@ -1570,18 +1566,18 @@ onBeforeUnmount(() => {
 
                 <div class="space-y-2">
                   <div v-for="attachment in attachments" :key="attachment.attachId"
-                    class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                    <div class="flex items-center">
-                      <svg class="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3" fill="none" viewBox="0 0 24 24"
+                    class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 gap-2">
+                    <div class="flex items-center min-w-0">
+                      <svg class="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                       </svg>
-                      <div>
-                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <div class="min-w-0">
+                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                           {{ attachment.uploadFilename }}
                         </p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
                           {{ attachment.filetype }} •
                           {{
                             new Date(attachment.createdate).toLocaleDateString()
@@ -1589,7 +1585,7 @@ onBeforeUnmount(() => {
                         </p>
                       </div>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-shrink-0">
                       <a v-if="isViewableInBrowser(attachment.filetype)"
                         :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
                         target="_blank"

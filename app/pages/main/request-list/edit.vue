@@ -1302,7 +1302,7 @@ onBeforeUnmount(() => {
   <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900">
     <header class="bg-white dark:bg-gray-800 shadow">
       <div
-        class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
+        class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between sm:flex-row sm:justify-between sm:items-center gap-3"
       >
         <div class="flex items-center">
           <!-- v-if="row.requesterId === userId.emplId && exemptionDetails.status !== 'C'" -->
@@ -1314,21 +1314,21 @@ onBeforeUnmount(() => {
             customClass="rounded-full"
             @onclick="handleBack"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-100">
+          <h1 class="text-xl sm:text-2xl ps-2 sm:ps-5 font-bold text-gray-900 dark:text-gray-100">
             {{
               exemptionDetails?.status === "D" ? "Edit Draft" : "Edit Request"
             }}
           </h1>
         </div>
-        <div class="flex items-center gap-3">
-          <Button
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <!-- <Button
             variant="outline-primary"
             size="md"
             @onclick="handleBack"
             :disabled="isSubmitting"
           >
             Cancel
-          </Button>
+          </Button> -->
           <template v-if="exemptionDetails?.status === 'D'">
             <Button
               v-if="canEdit"
@@ -1360,7 +1360,10 @@ onBeforeUnmount(() => {
               :loading="isSubmitting"
               :disabled="newAttachments.length > 0"
             >
+            <p class="hidden sm:inline-block">
+
               Save Changes
+            </p>
             </Button>
           </template>
         </div>
@@ -1424,17 +1427,17 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </div>
-        <div class="grid grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
           <!-- Left Column -->
           <div
-            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow p-6 dark:bg-gray-800"
+            class="lg:col-span-2 bg-white rounded-lg shadow p-4 sm:p-6 dark:bg-gray-800"
           >
             <!-- Transaction Info -->
-            <div class="mb-8">
+            <div class="mb-6 sm:mb-8">
               <div
-                class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b"
+                class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100 mb-3 sm:mb-4 pb-2 border-b"
               >
-                <div class="flex justify-between items-center">
+                <div class="flex sm:flex-row justify-between sm:items-center gap-2">
                   <h2 class="dark:text-gray-100">Request Information</h2>
                   <div v-if="exemptionDetails">
                     <span
@@ -1454,7 +1457,7 @@ onBeforeUnmount(() => {
                   </div>
                 </div>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label
                     class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
@@ -1479,7 +1482,7 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- Request Details -->
-            <div class="mb-8">
+            <div class="mb-6 sm:mb-8">
               <div class="space-y-6">
                 <div class="grid grid-cols-1 gap-6">
                   <!-- md:grid-cols-2 -->
@@ -1527,7 +1530,7 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- Attachments -->
-            <div class="mb-8">
+            <div class="mb-6 sm:mb-8">
               <h2
                 class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b dark:text-gray-100"
               >
@@ -1576,7 +1579,7 @@ onBeforeUnmount(() => {
                   <div
                     v-for="attachment in attachments"
                     :key="attachment.attachId"
-                    class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+                    class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 gap-2"
                   >
                     <div class="flex items-center">
                       <svg
@@ -1594,7 +1597,7 @@ onBeforeUnmount(() => {
                       </svg>
                       <div>
                         <p
-                          class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                          class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate"
                         >
                           {{ attachment.uploadFilename }}
                         </p>
@@ -1606,27 +1609,29 @@ onBeforeUnmount(() => {
                         </p>
                       </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                      <a v-if="isViewableInBrowser(attachment.filetype)"
-                        :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
-                        target="_blank"
-                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700"
-                      >
-                        View
-                      </a>
-                      <a v-else
-                        :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
-                        download
-                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white"
-                      >
-                        Download
-                      </a>
-                      <button
-                        @click="deleteAttachment(attachment.attachId)"
-                        class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-800/20 dark:text-red-300 dark:hover:bg-red-700"
-                      >
-                        Delete
-                      </button>
+                    <div class="flex-shrink-0">
+                      <div class="flex items-center gap-2">
+                        <a v-if="isViewableInBrowser(attachment.filetype)"
+                          :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
+                          target="_blank"
+                          class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-800 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-700"
+                        >
+                          View
+                        </a>
+                        <a v-else
+                          :href="`${$config.public.apiBase}/uploads/attachments/${attachment.newfilename}`"
+                          download
+                          class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-800 dark:text-green-300 dark:hover:bg-green-700 dark:hover:text-white"
+                        >
+                          Download
+                        </a>
+                        <button
+                          @click="deleteAttachment(attachment.attachId)"
+                          class="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-800/20 dark:text-red-300 dark:hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1730,13 +1735,13 @@ onBeforeUnmount(() => {
 
           <!-- Right Column -->
           <div
-            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow px-6 py-6 dark:bg-gray-800"
+            class="sm:col-span-full lg:col-span-2 bg-white rounded-lg shadow px-4 sm:px-6 py-4 sm:py-6 dark:bg-gray-800"
           >
             <!-- Approvers Status -->
-            <div class="mb-8">
-              <div class="border-b flex justify-between mb-3">
+            <div class="mb-6 sm:mb-8">
+              <div class="border-b flex justify-between">
                 <h2
-                  class="text-xl font-semibold text-gray-800 mb-2 dark:text-gray-100"
+                  class="text-lg sm:text-xl font-semibold text-gray-800 mb-2 dark:text-gray-100"
                 >
                   Approvers Status
                 </h2>
@@ -1773,7 +1778,7 @@ onBeforeUnmount(() => {
                   <div
                     class="bg-gray-50 rounded-lg p-3 border border-gray-200 dark:bg-gray-700 dark:border-gray-600"
                   >
-                    <div class="flex justify-between items-start mb-2">
+                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
                       <div class="flex items-start">
                         <span
                           class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium mr-3 mt-1"
@@ -1781,7 +1786,7 @@ onBeforeUnmount(() => {
                           {{ index + 1 }}
                         </span>
 
-                        <div>
+                      <div class="min-w-0">
                           <p
                             class="text-sm font-medium text-gray-900 dark:text-gray-100"
                           >
@@ -2151,14 +2156,14 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- Remarks (if any) -->
-            <div v-if="exemptionDetails?.remarks" class="mb-8">
+            <div v-if="exemptionDetails?.remarks" class="mb-6 sm:mb-8">
               <h2
                 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b"
               >
                 Remarks
               </h2>
               <div
-                class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600"
+                class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-600"
               >
                 <p class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                   {{ exemptionDetails.remarks }}

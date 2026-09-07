@@ -23,6 +23,8 @@ watch(route, () => {
 });
 </script>
 <template>
+  <ConnectionStatus position="bottom-left" :recovered-hold-ms="2500" target="epe/ping.txt"  />
+ 
   <div class="font-medium">
     <div class="flex items-start">
       <Overlay />
