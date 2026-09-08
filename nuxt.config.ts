@@ -37,11 +37,11 @@ export default defineNuxtConfig({
 app: {
     /* head: {
       link: [
-        { rel: "icon", type: "image/x-icon", href: "/tbs/favicon.ico" }, 
+        { rel: "icon", type: "image/x-icon", href: "/epe2/favicon.ico" }, 
         // Optional: for better browser support
-        { rel: "shortcut icon", href: "/tbs/favicon.ico" },
+        { rel: "shortcut icon", href: "/epe2/favicon.ico" },
       ],
-      title: "TBS",
+      title: "EPE2",
     }, */
     baseURL: "/epe2dev/",
   },
