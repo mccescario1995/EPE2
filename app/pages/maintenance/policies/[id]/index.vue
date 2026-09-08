@@ -119,9 +119,8 @@ onMounted(async () => {
     class="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-gray-200 overflow-auto"
   >
     <header class="bg-white dark:bg-gray-800 shadow">
-      <div
-        class="me-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
-      >
+      <div class="py-4 px-4 sm:px-6 lg:px-8 flex sm:flex-row justify-between items-center gap-3">
+
         <div class="flex items-center">
           <Button
             variant="ghost-primary"
@@ -132,7 +131,7 @@ onMounted(async () => {
             class="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             @onclick="goBack"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-200">
+          <h1 class="text-xl sm:text-2xl ps-2 sm:ps-5 font-bold text-gray-900 dark:text-gray-200">
             View Policy
           </h1>
         </div>
@@ -149,9 +148,9 @@ onMounted(async () => {
 
       <template v-else-if="policy">
         <div
-          class="grid grid-cols-2 gap-6 bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700"
+          class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-700"
         >
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="col-span-full">
               <div>
                 <label

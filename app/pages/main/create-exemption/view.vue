@@ -462,7 +462,7 @@ const currentUserPendingAction = computed((): boolean => {
                     class="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700">
                     <p class="text-sm sm:text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                       <!-- {{ exemptionDetails.details || "No details provided" }} -->
-                      {{ policyValue?.label }}
+                      {{ exemptionDetails.details }}
                     </p>
                   </div>
                 </div>

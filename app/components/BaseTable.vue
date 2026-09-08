@@ -168,9 +168,17 @@
 
   <!-- Table -->
   <div class="hidden md:block" :class="[
-    'overflow-hidden rounded-2xl border border-gray-200 shadow-lg bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200',
+    'overflow-hidden rounded-2xl border border-gray-200 shadow-lg bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 relative',
     tableClass,
   ]">
+    <div v-if="loading"
+      class="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl">
+      <div class="flex flex-col items-center space-y-4">
+        <div class="w-12 h-12 border-4 border-gray-200 border-t-indigo-500 rounded-full animate-spin dark:border-gray-600 dark:border-t-indigo-400"></div>
+        <span class="text-sm text-gray-600 dark:text-gray-300">Loading...</span>
+      </div>
+    </div>
+
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-100 dark:*:divide-gray-700">
         <!-- Table Headers -->
@@ -414,7 +422,6 @@
 
 <script setup lang="ts">
 import { format, isValid, parseISO } from "date-fns";
-import { startLoading, stopLoading } from "~/stores/globalvar";
 import * as XLSX from "xlsx";
 
 type TableAction = {
@@ -687,6 +694,7 @@ const setFilterDates = (start: string, end: string) => {
 defineExpose({
   refresh,
   setFilterDates,
+  loading: readonly(loading),
 });
 
 function openExportModal() {
@@ -1234,9 +1242,6 @@ const fetchTable = async () => {
 
   loading.value = true;
   try {
-    startLoading();
-
-    // Build active column + dynamic filters
     const activeFilters: Record<string, string> = {};
     Object.entries(columnFilters).forEach(([key, val]) => {
       if (val) activeFilters[key] = val;
@@ -1266,7 +1271,6 @@ const fetchTable = async () => {
     console.error("Error fetching data:", e);
   } finally {
     loading.value = false;
-    stopLoading();
   }
 };
 

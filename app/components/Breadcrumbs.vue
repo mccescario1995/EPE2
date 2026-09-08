@@ -6,7 +6,7 @@
       <!-- Home icon with enhanced hover state -->
       <li class="inline-flex items-center group">
         <NuxtLink
-          to="/main/dashboard/"
+          to="/main/dashboard"
           class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-blue-600 transition-all duration-300 hover:scale-105 dark:text-gray-400 dark:hover:text-blue-500"
         >
           <div class="relative">

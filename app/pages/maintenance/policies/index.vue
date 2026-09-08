@@ -142,7 +142,9 @@ const deleteRequestPolicy = async () => {
           </h1>
         </div>
 
-        <Button variant="primary" size="md" icon="add" iconPosition="left" @onclick="handleCreatePolicy" label ="Create Policy" />
+        <Button variant="primary" size="md" icon="add" iconPosition="left" @onclick="handleCreatePolicy" >
+          <span class="hidden sm:inline-block">Create Policy</span>
+        </Button>
       </div>
     </header>
     <main class="max-w-full mx-auto py-6 sm:px-6">
@@ -176,7 +178,7 @@ const deleteRequestPolicy = async () => {
           }" :field-colors="{
             status: {
               A: 'bg-green-100 text-green-800 border border-green-900',
-              I: 'bg-red-50 text-red-800 border-red-900',
+              I: 'bg-red-50 text-red-800 border border-red-900',
             },
           }" :date-time-fields="['createddate']" :actions="[
             {

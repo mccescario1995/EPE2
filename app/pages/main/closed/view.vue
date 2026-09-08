@@ -354,7 +354,7 @@ const currentUserPendingAction = computed((): boolean => {
             View Request
           </h1>
         </div>
-        <div class="flex items-center gap-2 sm:gap-3">
+        <!-- <div class="flex items-center gap-2 sm:gap-3">
           <Button v-if="
             canEdit &&
             (exemptionDetails?.status === 'D' ||
@@ -371,7 +371,7 @@ const currentUserPendingAction = computed((): boolean => {
               Respond
             </p>
           </Button>
-        </div>
+        </div> -->
       </div>
     </header>
 

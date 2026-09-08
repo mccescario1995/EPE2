@@ -1301,9 +1301,8 @@ onBeforeUnmount(() => {
 <template>
   <div class="min-h-[50vh] bg-gray-50 overflow-auto h-100vh dark:bg-gray-900">
     <header class="bg-white dark:bg-gray-800 shadow">
-      <div
-        class="max-w-full py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center"
-      >
+      <div class="py-4 px-4 sm:px-6 lg:px-8 flex sm:flex-row justify-between items-center gap-3">
+
         <div class="flex items-center">
           <!-- v-if="row.requesterId === userId.emplId && exemptionDetails.status !== 'C'" -->
           <Button
@@ -1314,7 +1313,7 @@ onBeforeUnmount(() => {
             customClass="rounded-full"
             @onclick="handleBack"
           />
-          <h1 class="text-2xl ps-5 font-bold text-gray-900 dark:text-gray-100">
+          <h1 class="text-xl sm:text-2xl ps-2 sm:ps-5 font-bold text-gray-900 dark:text-gray-100">
             {{
               exemptionDetails?.status === "D" ? "Edit Draft" : "Edit Request"
             }}
@@ -1424,10 +1423,10 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </div>
-        <div class="grid grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
           <!-- Left Column -->
           <div
-            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow p-6 dark:bg-gray-800"
+            class="lg:col-span-2 bg-white rounded-lg shadow p-4 sm:p-6 dark:bg-gray-800"
           >
             <!-- Transaction Info -->
             <div class="mb-8">
@@ -1730,7 +1729,7 @@ onBeforeUnmount(() => {
 
           <!-- Right Column -->
           <div
-            class="sm:col-span-full md:col-span-2 bg-white rounded-lg shadow px-6 py-6 dark:bg-gray-800"
+            class="lg:col-span-2 bg-white rounded-lg shadow px-4 py-4 sm:px-6 sm:py-6 dark:bg-gray-800"
           >
             <!-- Approvers Status -->
             <div class="mb-8">

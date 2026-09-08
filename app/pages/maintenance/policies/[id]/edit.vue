@@ -407,7 +407,7 @@ const statusItems = [
         <div class="flex gap-2 pt-2">
 
           <Button variant="primary" type="submit" form="edit-policy-form"
-            :disabled="editSubmitting || editLoading || !isEditFormValid" icon="add" icon-position="left">
+            :disabled="editSubmitting || editLoading || !isEditFormValid" icon="save" icon-position="left">
             <p class="hidden sm:inline-block">
               {{ editSubmitting ? 'Updating...' : 'Update Policy' }}
             </p>

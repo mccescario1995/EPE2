@@ -85,6 +85,7 @@ const transactionIdRef = computed(() => {
 // Auto-save debounce timer
 const autoSaveTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 const AUTO_SAVE_DEBOUNCE_MS = 1500;
+const isDiscarded = ref(false);
 
 const getPolicyIdForStorage = () => {
   const policyId = formData.value.policyid;
@@ -121,6 +122,7 @@ const autoSavePending = () => {
   }
 
   autoSaveTimer.value = setTimeout(() => {
+    if (isDiscarded.value) return;
     if (!isInitialized.value) return;
     const policyId = getPolicyIdForStorage();
     const corporateId = getCorporateIdForStorage();
@@ -145,6 +147,7 @@ const autoSavePending = () => {
 };
 
 const flushAutoSave = () => {
+  if (isDiscarded.value) return;
   if (!isInitialized.value) return;
   const policyId = getPolicyIdForStorage();
   const corporateId = getCorporateIdForStorage();
@@ -644,6 +647,11 @@ const handleSaveDraft = async () => {
       console.log("Draft ID:", draftId.value);
       isDraft.value = true;
 
+      isDiscarded.value = true;
+      if (autoSaveTimer.value) {
+        clearTimeout(autoSaveTimer.value);
+        autoSaveTimer.value = null;
+      }
       pendingStore.discardPending(previousKey, "/main/create-exemption/create");
 
       showToast({
@@ -754,8 +762,13 @@ const handleSubmit = async () => {
         duration: 5000,
       });
 
-      router.push("/main/create-exemption");
+      isDiscarded.value = true;
+      if (autoSaveTimer.value) {
+        clearTimeout(autoSaveTimer.value);
+        autoSaveTimer.value = null;
+      }
       pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/create");
+      router.push("/main/create-exemption");
     } else {
       throw new Error(response.message || "Failed to create request");
     }
@@ -775,6 +788,11 @@ const handleSubmit = async () => {
 
 // Handle cancel
 const handleCancel = () => {
+  isDiscarded.value = true;
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
+    autoSaveTimer.value = null;
+  }
   pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/create");
   router.back();
 };

@@ -62,6 +62,7 @@ const autoSavePending = () => {
   }
 
   autoSaveTimer.value = setTimeout(() => {
+    if (isDiscarded.value) return;
     if (isInitialized.value && hasUnsavedChanges.value) {
       pendingStore.saveSnapshot(transactionIdRef.value, "/main/create-exemption/edit", "autoSave", {
         policyId: getPolicyIdForStorage(),
@@ -408,7 +409,11 @@ const hasUnsavedChanges = computed(() => {
 
 // Handle back (go to view page)
 const handleBack = () => {
-  // flushAutoSave();
+  isDiscarded.value = true;
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
+    autoSaveTimer.value = null;
+  }
   pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/edit");
   router.back();
 };
@@ -494,13 +499,17 @@ const handleRestorePending = () => {
     );
     reSelectAttachmentWarning.value = { fileNames: names, fileCount: pendingRestoreData.value.attachmentMeta.length };
   }
+  isDiscarded.value = true;
   pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/edit");
   closePendingRestoreModal();
+  nextTick(() => { isDiscarded.value = false; });
 };
 
 const handleDiscardPending = () => {
+  isDiscarded.value = true;
   pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/edit");
   closePendingRestoreModal();
+  nextTick(() => { isDiscarded.value = false; });
 };
 
 const closePendingRestoreModal = () => {
@@ -613,11 +622,13 @@ const handleSubmit = async () => {
         message: "Exemption request updated successfully!",
         duration: 5000,
       });
-      // Redirect to exemptions view page after success
-      // router.push(`/main/exemptions/view?id=${exemptionId.value}`);
-      // router.back();
-      router.push("/main/create-exemption");
+      isDiscarded.value = true;
+      if (autoSaveTimer.value) {
+        clearTimeout(autoSaveTimer.value);
+        autoSaveTimer.value = null;
+      }
       pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/edit");
+      router.push("/main/create-exemption");
     } else {
       showToast({
         type: "error",
@@ -677,9 +688,13 @@ const handleSubmitDraft = async () => {
         message: "Draft submitted successfully!",
         duration: 5000,
       });
-      // Redirect to exemptions list after success
-      router.push("/main/create-exemption");
+      isDiscarded.value = true;
+      if (autoSaveTimer.value) {
+        clearTimeout(autoSaveTimer.value);
+        autoSaveTimer.value = null;
+      }
       pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/edit");
+      router.push("/main/create-exemption");
     } else {
       showToast({
         type: "error",
@@ -701,19 +716,24 @@ const handleSubmitDraft = async () => {
   }
 };
 
-// Submit form
+// Submit draft
 const handleUpdateDraft = async () => {
   if (!validateForm()) return;
 
   isSubmitting.value = true;
   try {
-    const payload = {
-      transactionNumber: formData.value.transactionNumber,
-      policyid: getPolicyId(),
-      corporate: formData.value.corporate || null,
-      details: formData.value.details,
-      modifiedby: userId.userId,
-    };
+    const formDataToSend = new FormData();
+    const policyId = getPolicyId();
+    if (policyId != null) {
+      formDataToSend.append("policyid", String(policyId));
+    }
+    formDataToSend.append("details", formData.value.details ?? "");
+    formDataToSend.append("modifiedby", String(userId.userId));
+    formDataToSend.append("requestorid", userId.emplId);
+
+    newAttachments.value.forEach((attachment) => {
+      formDataToSend.append("files", attachment.file);
+    });
 
     pendingStore.saveSnapshot(transactionIdRef.value, "/main/create-exemption/edit", "updateDraft", {
       policyId: formData.value.policyId,
@@ -730,10 +750,8 @@ const handleUpdateDraft = async () => {
       `/api/exemption/update-draft/${exemptionId.value}`,
       {
         method: "POST",
-        body: JSON.stringify(payload),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        body: formDataToSend,
+        parseJson: true,
       },
     );
 
@@ -744,9 +762,13 @@ const handleUpdateDraft = async () => {
         message: "Draft updated successfully!",
         duration: 5000,
       });
-      // Redirect to exemptions view page after success
-      router.push(`/main/create-exemption/view?id=${exemptionId.value}`);
+      isDiscarded.value = true;
+      if (autoSaveTimer.value) {
+        clearTimeout(autoSaveTimer.value);
+        autoSaveTimer.value = null;
+      }
       pendingStore.discardPending(transactionIdRef.value, "/main/create-exemption/edit");
+      router.push(`/main/create-exemption/view?id=${exemptionId.value}`);
     } else {
       showToast({
         type: "error",
@@ -1349,8 +1371,10 @@ const isCurrentUser = (requesterId: number): boolean => {
 };
 
 const isInitialized = ref(false);
+const isDiscarded = ref(false);
 
 const flushAutoSave = () => {
+  if (isDiscarded.value) return;
   if (!isInitialized.value || !hasUnsavedChanges.value) return;
   pendingStore.saveSnapshot(transactionIdRef.value, "/main/create-exemption/edit", "autoSave", {
     policyId: getPolicyIdForStorage(),
@@ -1395,8 +1419,17 @@ onBeforeUnmount(() => {
           </Button> -->
           <template v-if="exemptionDetails?.status === 'D'" class="flex items-center gap-2 sm:gap-3 flex-wrap">
             <Button v-if="canEdit" variant="outline-info" size="md" icon="edit" iconPosition="left" @onclick="handleUpdateDraft"
-              :loading="isSubmitting" label="Update Draft"/>
-            <Button v-if="canEdit" variant="primary" size="md" icon="right_arrow" iconPosition="right" @onclick="handleSubmitDraft" :loading="isSubmitting" label ="Submit Draft"/>
+              :loading="isSubmitting" >
+              <p class="hidden sm:inline-block">
+                Update Draft
+              </p>
+            </Button>
+            <Button v-if="canEdit" variant="primary" size="md" icon="right_arrow" iconPosition="right" @onclick="handleSubmitDraft" :loading="isSubmitting" >
+              <p class="hidden sm:inline-block">
+                Submit Draft
+              </p>
+              
+            </Button>
           </template>
           <template v-else>
             <Button v-if="canEdit" variant="primary" size="md" icon="save" iconPosition="left" @onclick="handleSubmit"

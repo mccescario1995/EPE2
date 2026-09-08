@@ -42,7 +42,7 @@ watch(route, () => {
             <ClientOnly>
               <slot />
             </ClientOnly>
-            <LoadingIndicator />
+            <!-- <LoadingIndicator /> -->
             <!-- Moved inside the slot wrapper -->
             <Footer class="hidden md:block" />
           </div>
