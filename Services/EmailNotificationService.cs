@@ -24,7 +24,7 @@ public class EmailNotificationService
 
     }
 
-    private async Task CreateWebNotificationAsync(int userId, string title, string message, string type = "info", string? relatedUrl = null)
+    public async Task CreateWebNotificationAsync(int userId, string title, string message, string type = "info", string? relatedUrl = null)
     {
         try
         {
@@ -799,6 +799,77 @@ public class EmailNotificationService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send proxy approver reminder to {Email}", toEmail);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Sends an escalation notification to the configured escalation contact
+    /// </summary>
+    public async Task SendEscalationEmailAsync(
+        string toEmail,
+        string requestNumber,
+        string requestorName,
+        string requestDetails,
+        string approverName,
+        string approverEmail,
+        int hoursPending)
+    {
+        try
+        {
+            var emailBody = $@"
+            <html>
+            <body style='margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;'>
+              <table width='100%' cellpadding='0' cellspacing='0' style='background:#f5f5f5;'>
+                <tr><td align='center'>
+                  <table width='600' cellpadding='0' cellspacing='0'
+                    style='background:#fff;margin:20px auto;padding:30px;max-width:600px;'>
+
+                    <tr><td style='padding-bottom:20px;'>Dear Ma'am/Sir,</td></tr>
+
+                    <tr><td style='padding-bottom:15px;'>
+                      This exemption request has exceeded the escalation threshold and requires your attention.
+                    </td></tr>
+
+                    <tr><td style='padding:15px;background:#fef2f2;border-left:5px solid #dc2626;margin-bottom:20px;'>
+                      <p><strong>Transaction #:</strong> <span style='color:#dc2626;'>{requestNumber}</span></p>
+                      <p><strong>Requested By:</strong> {requestorName}</p>
+                      <p><strong>Details:</strong> {requestDetails}</p>
+                      <p><strong>Pending Approver:</strong> {approverName}</p>
+                      <p><strong>Approver Email:</strong> {approverEmail}</p>
+                      <p><strong>Hours Pending:</strong> {hoursPending}</p>
+                    </td></tr>
+
+                    <tr><td height='20'></td></tr>
+                    <tr><td style='font-size:12px;color:#6b7280;'>
+                      The approver has not responded within the configured escalation window.
+                    </td></tr>
+
+                    <tr><td height='30'></td></tr>
+                    <tr><td style='font-family:Courier New;font-size:12px;color:#7f8c8d;'>
+                      --<br>Thank you,<br><br>M.I.R.A.<br><i>FSC - Information Technology</i>
+                    </td></tr>
+                  </table>
+                </td></tr>
+              </table>
+            </body>
+            </html>";
+
+            var requestBody = new
+            {
+                senderDisplayName = "epe.noreply@fastgroup.biz",
+                recipient = toEmail,
+                bccrecipient = "mcccescario@fast.com.ph",
+                mailSubject = $"[Escalation] Approval Required - {requestNumber}",
+                mailBody = emailBody,
+                createdBy = "EPE System"
+            };
+
+            await SendEmailAsync(requestBody);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send escalation email to {Email}", toEmail);
             throw;
         }
     }

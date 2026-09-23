@@ -1,3 +1,4 @@
+using EPEAPI.Dto;
 using EPEAPI.Models;
 using EPEAPI.Services;
 using EPEAPI.TokenAuthentication;
@@ -17,6 +18,9 @@ builder.Services.AddDbContext<EpeDbContext>(options =>
 
 builder.Services.Configure<UrlBaseSettings>(
     builder.Configuration.GetSection("UrlBase"));
+
+builder.Services.Configure<ReminderEscalationSettings>(
+    builder.Configuration.GetSection("ReminderEscalation"));
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -73,6 +77,9 @@ builder.Services.AddScoped<EmailNotificationService>();
 
 // File Upload Service
 builder.Services.AddScoped<FileUploadService>();
+
+// Reminder & Escalation Background Service
+builder.Services.AddHostedService<ReminderEscalationService>();
 
 var app = builder.Build();
 
