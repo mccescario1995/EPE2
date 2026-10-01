@@ -35,6 +35,8 @@ const formData = ref({
   details: "" as string | null,
 });
 
+const detailsText = computed(() => stripHtml(formData.value.details));
+
 // Exemption details (for status, audit trail, etc.)
 const exemptionDetails = ref<any>(null);
 const approversData = ref<any[]>([]);
@@ -378,7 +380,7 @@ const validateForm = () => {
     isValid = false;
   }
 
-  if (!formData.value.details) {
+  if (!detailsText.value) {
     errors.value.details = "Please enter details";
     isValid = false;
   }
@@ -400,7 +402,7 @@ const hasUnsavedChanges = computed(() => {
     currentPolicyId !== originalData.value.policyId ||
     currentCorporate !== originalData.value.corporate ||
     formData.value.transactionNumber !== originalData.value.transactionNumber ||
-    formData.value.details?.trim() !== (originalData.value.details || "").trim()
+    detailsText.value !== stripHtml(originalData.value.details)
   );
 });
 
@@ -1196,7 +1198,7 @@ const comparisonFields = computed(() => {
 
   const fields = [
     { key: "policyId", label: "Policy", serverValue: server.policyId, pendingValue: pending.policyId },
-    { key: "details", label: "Details", serverValue: server.details, pendingValue: pending.details },
+    { key: "details", label: "Details", serverValue: stripHtml(server.details), pendingValue: stripHtml(pending.details) },
   ];
 
   return fields.map(field => ({
@@ -1509,16 +1511,13 @@ onBeforeUnmount(() => {
                     >
                       Details <span class="text-red-500">*</span>
                     </label>
-                    <BaseInput
+                    <TipTapEditor
                       v-model="formData.details"
-                      type="textarea"
-                      isTextarea
-                      :rowCount="5"
                       placeholder="Explain the reason for your exemption request..."
                       :errorMessage="errors.details"
+                      :rowCount="6"
                       :maxCharCount="5000"
                       :minCharCount="10"
-                      class="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                     />
                   </div>
                 </div>

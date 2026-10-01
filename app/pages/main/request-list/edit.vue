@@ -35,6 +35,8 @@ const formData = ref({
   details: "" as string | null,
 });
 
+const detailsText = computed(() => stripHtml(formData.value.details));
+
 // Exemption details (for status, audit trail, etc.)
 const exemptionDetails = ref<any>(null);
 const approversData = ref<any[]>([]);
@@ -378,7 +380,7 @@ const validateForm = () => {
     isValid = false;
   }
 
-  if (!formData.value.details) {
+  if (!detailsText.value) {
     errors.value.details = "Please enter details";
     isValid = false;
   }
@@ -400,7 +402,7 @@ const hasUnsavedChanges = computed(() => {
     currentPolicyId !== originalData.value.policyId ||
     currentCorporate !== originalData.value.corporate ||
     formData.value.transactionNumber !== originalData.value.transactionNumber ||
-    formData.value.details?.trim() !== (originalData.value.details || "").trim()
+    detailsText.value !== stripHtml(originalData.value.details)
   );
 });
 
@@ -1196,7 +1198,7 @@ const comparisonFields = computed(() => {
 
   const fields = [
     { key: "policyId", label: "Policy", serverValue: server.policyId, pendingValue: pending.policyId },
-    { key: "details", label: "Details", serverValue: server.details, pendingValue: pending.details },
+    { key: "details", label: "Details", serverValue: stripHtml(server.details), pendingValue: stripHtml(pending.details) },
   ];
 
   return fields.map(field => ({
@@ -1513,16 +1515,13 @@ onBeforeUnmount(() => {
                     >
                       Details <span class="text-red-500">*</span>
                     </label>
-                    <BaseInput
+                    <TipTapEditor
                       v-model="formData.details"
-                      type="textarea"
-                      isTextarea
-                      :rowCount="5"
                       placeholder="Explain the reason for your exemption request..."
                       :errorMessage="errors.details"
+                      :rowCount="6"
                       :maxCharCount="5000"
                       :minCharCount="10"
-                      class="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                     />
                   </div>
                 </div>
@@ -1790,7 +1789,7 @@ onBeforeUnmount(() => {
                           <p
                             class="text-sm font-medium text-gray-900 dark:text-gray-100"
                           >
-                            {{ approver.approverName }}
+                            {{ approver.approverName }}              
                             <span
                               v-if="isCurrentUser(approver.employeeId)"
                               class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded border border-green-800"
@@ -1929,7 +1928,7 @@ onBeforeUnmount(() => {
                               class="text-sm text-gray-700 dark:text-gray-300 mb-1"
                             >
                               {{ proxy.approverName }}
-                              <span v-if="isCurrentUser(approver.employeeId)" class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded border-2 border-green-11121w11                                                                                                                                               00">You</span>
+                              <span v-if="isCurrentUser(proxy.employeeId)" class="text-xs text-green-500 bg-green-100 px-2 py-1 rounded border-2 border-green-11121w11                                                                                                                                               00">You</span>
                             </p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">
                               {{ proxy.approverEmail || "" }}
@@ -1940,38 +1939,38 @@ onBeforeUnmount(() => {
                               {{ proxy.approverRole }}
                             </span>
                             <div
-                              v-if="approver.remarks"
+                              v-if="proxy.remarks"
                               class="text-sm bg-gray-50 dark:bg-gray-700 rounded-lg px-3"
                             >
                               Remark:
                             </div>
-                            <div v-if="approver.remarks" class="px-6 pb-2">
+                            <div v-if="proxy.remarks" class="px-6 pb-2">
                               <span
                                 class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
                               >
-                                {{ approver.remarks }}
+                                {{ proxy.remarks }}
                               </span>
                             </div>
                             <div
                               class="text-xs"
                               :class="
-                                getApproverStatusTextColor(approver.respond)
+                                getApproverStatusTextColor(proxy.respond)
                               "
                             >
-                              <span v-if="approver.respondDate">
+                              <span v-if="proxy.respondDate">
                                 Responded on
                                 {{
-                                  formatDateTime(approver.respondDate).date
+                                  formatDateTime(proxy.respondDate).date
                                 }}
                                 •
-                                {{ formatDateTime(approver.respondDate).time }}
+                                {{ formatDateTime(proxy.respondDate).time }}
                               </span>
                             </div>
                           </div>
                         </div>
                         <div class="flex flex-col items-end gap-1">
                           <span
-                            v-if="approver.respond != 3"
+                            v-if="proxy.respond != 3"
                             class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
                             :class="getApproverStatusColor(proxy.respond)"
                           >

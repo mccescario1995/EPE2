@@ -442,7 +442,7 @@ const props = defineProps<{
   headerLabels?: Record<string, string>;
   hiddenFields?: string[];
   tableData?: Array<Record<string, any>> | null;
-  actions: TableAction[];
+  actions?: TableAction[];
   tableClass?: string;
   fieldMappings?: Record<string, Record<any, string>>;
   badgeFields?: string[];

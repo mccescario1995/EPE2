@@ -295,10 +295,10 @@ const getFinalDecisionDisplay = (decision: string) => {
 
 const getApproverStatusDisplay = (respond: number) => {
   const statusMap: Record<number, string> = {
-    0: "Open",
+    0: "Pending",
     1: "Approved",
     2: "Disapproved",
-    3: "Pending",
+    3: "Open",
   };
   return statusMap[respond] ?? "Pending";
 };
@@ -438,10 +438,11 @@ onMounted(async () => {
                 <label
                   class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
                 >
-                  Transaction Number
+                  Transaction KLog Number
                 </label>
                 <p class="text-gray-900 dark:text-gray-100">
                   {{ exemptionDetails.id || "N/A" }}
+                  
                 </p>
               </div>
               <div>
@@ -647,6 +648,21 @@ onMounted(async () => {
                   </div>
                 </div>
 
+                <div class="grid grid-cols-1 gap-6">
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
+                    >
+                      Policy Description
+                    </label>
+                    <p class="text-gray-900 dark:text-gray-100">
+                      {{
+                        policyValue?.label || "N/A"
+                      }}
+                    </p>
+                  </div>
+                </div>
+
                 <div>
                   <label
                     class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
@@ -656,12 +672,10 @@ onMounted(async () => {
                   <div
                     class="bg-gray-50 rounded-lg p-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700"
                   >
-                    <p
-                      class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
-                    >
-                      <!-- {{ transactionHeaderDetails.details || "No details provided" }} -->
-                        {{ policyValue?.label }}
-                    </p>
+                    <TipTapEditor
+                      :modelValue="transactionHeaderDetails.details" readonly
+                      placeholder="No details provided"
+                    />
                   </div>
                 </div>
               </div>
@@ -782,16 +796,7 @@ onMounted(async () => {
                 Creation Log
               </h2>
               <div class="space-y-4">
-                <div>
-                  <label
-                    class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
-                  >
-                    Created By
-                  </label>
-                  <p class="text-gray-900 dark:text-gray-100">
-                    {{ transactionHeaderDetails?.createdBy || "N/A" }}
-                  </p>
-                </div>
+                 
                 <div>
                   <label
                     class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
@@ -879,11 +884,11 @@ onMounted(async () => {
           </div>
 
           <div class="mt-4">
-            <base-table
+            <BaseTable
               :table-data="approversTableData"
               :header="[
-                'approver',
                 'approverRole',
+                'approver',
                 'respondStatus',
                 'respondDate',
                 'remarks',

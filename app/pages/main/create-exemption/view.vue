@@ -454,16 +454,27 @@ const currentUserPendingAction = computed((): boolean => {
                   </div>
                 </div>
 
+                <div class="grid grid-cols-1 gap-4 sm:gap-6">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Policy Description
+                    </label>
+                    <p class="text-gray-900 dark:text-gray-100 text-sm sm:text-base">
+                      {{
+                        policyValue?.label || "N/A"
+                      }}
+                    </p>
+                  </div>
+                </div>       
+
                 <div>
                   <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Details
+                    Additional Comment/Detailed Info
                   </label>
                   <div
                     class="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700">
-                    <p class="text-sm sm:text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-                      <!-- {{ exemptionDetails.details || "No details provided" }} -->
-                      {{ exemptionDetails.details }}
-                    </p>
+                    <TipTapEditor :modelValue="exemptionDetails.details" readonly
+                      placeholder="No details provided" />
                   </div>
                 </div>
               </div>

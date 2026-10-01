@@ -636,9 +636,8 @@ onMounted(async () => {
                     Details
                   </label>
                   <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-                    <p class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-                      {{ exemptionData.details || "No details provided" }}
-                    </p>
+                    <TipTapEditor :modelValue="exemptionData.details" readonly
+                      placeholder="No details provided" />
                   </div>
                 </div>
               </div>

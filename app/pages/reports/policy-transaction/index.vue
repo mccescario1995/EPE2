@@ -130,6 +130,7 @@ onMounted(async () => {
             :pagination="true" :per-page="5" :show-search="true" :showlimitfilter="true"
             :limitfilter="[5, 10, 20, 30, 40, 50]" 
             :filterable-columns="['transactionType']" :header="[
+            'id',
             'transactionNumber',
             'policyName',
             'transactionType',

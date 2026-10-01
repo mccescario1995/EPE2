@@ -447,23 +447,35 @@ const currentUserPendingAction = computed((): boolean => {
                     </label>
                     <p class="text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                       {{
-                        policyValue?.label ||
                         exemptionDetails.policyName ||
+                        policyValue?.label ||
                         "N/A"
                       }}
                     </p>
                   </div>
                 </div>
 
+                <div class="grid grid-cols-1 gap-4 sm:gap-6">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Policy Description
+                    </label>
+                    <p class="text-gray-900 dark:text-gray-100 text-sm sm:text-base">
+                      {{
+                        policyValue?.label || "N/A"
+                      }}
+                    </p>
+                  </div>
+                </div>                                                                                                                    
+
                 <div>
                   <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Details
+                    Additional Comment/Detailed Info
                   </label>
                   <div
-                    class="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700">
-                    <p class="text-gray-900 dark:text-gray-100 text-sm sm:text-base whitespace-pre-wrap">
-                      {{ exemptionDetails.details || "No details provided" }}
-                    </p>
+                    class="bg-gray-50 rounded-lg sm:p-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700">
+                    <TipTapEditor :modelValue="exemptionDetails.details" readonly
+                      placeholder="No details provided" />
                   </div>
                 </div>
               </div>

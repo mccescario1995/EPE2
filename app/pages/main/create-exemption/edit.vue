@@ -2,7 +2,6 @@
 import { usePendingTransactionStore } from "~/stores/usePendingTransactionStore";
 import { useMenuService } from "~/services/menuService";
 import Modal from "~/components/Modal.vue";
-import BaseInput from "~/components/BaseInput.vue";
 import Dropdown from "~/components/Dropdown.vue";
 import Button from "~/components/Button.vue";
 const { fetchMenuList, canEdit: checkCanEdit, canDelete: checkCanDelete } = useMenuService();
@@ -39,6 +38,8 @@ const formData = ref({
   corporate: "" as string | null,
   details: "" as string | null,
 });
+
+const detailsText = computed(() => stripHtml(formData.value.details));
 
 // Exemption details (for status, audit trail, etc.)
 const exemptionDetails = ref<any>(null);
@@ -379,7 +380,7 @@ const validateForm = () => {
     isValid = false;
   }
 
-  if (!formData.value.details) {
+  if (!detailsText.value) {
     errors.value.details = "Please enter details";
     isValid = false;
   }
@@ -402,7 +403,7 @@ const hasUnsavedChanges = computed(() => {
     currentPolicyId !== originalData.value.policyId ||
     currentCorporate !== originalData.value.corporate ||
     formData.value.transactionNumber !== originalData.value.transactionNumber ||
-    formData.value.details?.trim() !== (originalData.value.details || "").trim() ||
+    detailsText.value !== stripHtml(originalData.value.details) ||
     newAttachments.value.length > 0
   );
 });
@@ -568,7 +569,7 @@ const comparisonFields = computed(() => {
 
   const fields = [
     { key: "policyId", label: "Policy", serverValue: pendingPolicyName.value, pendingValue: serverPolicyName.value },
-    { key: "details", label: "Details", serverValue: server.details, pendingValue: pending.details },
+    { key: "details", label: "Details", serverValue: stripHtml(server.details), pendingValue: stripHtml(pending.details) },
   ];
 
   return fields.map(field => ({
@@ -1538,10 +1539,10 @@ onBeforeUnmount(() => {
                     <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                       Details <span class="text-red-500">*</span>
                     </label>
-                    <BaseInput v-model="formData.details" type="textarea" isTextarea :rowCount="5"
-                      placeholder="Explain the reason for your exemption request..." :errorMessage="errors.details"
-                      :maxCharCount="5000" :minCharCount="10"
-                      class="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                    <TipTapEditor v-model="formData.details"
+                      placeholder="Explain the reason for your exemption request..."
+                      :errorMessage="errors.details" :rowCount="6"
+                      :maxCharCount="5000" :minCharCount="10" />
                   </div>
                 </div>
               </div>

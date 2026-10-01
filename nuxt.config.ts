@@ -13,7 +13,10 @@ export default defineNuxtConfig({
   nitro: {
     preset: "static",
   },
-  modules: ["@pinia/nuxt", "nuxt-charts"],
+  modules: ["@pinia/nuxt", "nuxt-charts", "nuxt-tiptap-editor"],
+  tiptap: {
+    prefix: 'Tiptap', // component prefix
+  },                                                                                                                                                                                            
   css: ["~/assets/css/main.css"],
   plugins: ["~/plugins/pinia-persisted-state.ts",
     "~/plugins/theme.client.ts"

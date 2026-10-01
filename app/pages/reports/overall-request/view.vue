@@ -537,16 +537,15 @@ const currentUserPendingAction = computed((): boolean => {
                   <label
                     class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1"
                   >
-                    Details
+                    Additional Comment/Detailed Info
                   </label>
                   <div
                     class="bg-gray-50 rounded-lg p-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700"
                   >
-                    <p
-                      class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap"
-                    >
-                      {{ exemptionDetails.details || "No details provided" }}
-                    </p>
+                    <TipTapEditor
+                      :modelValue="exemptionDetails.details" readonly
+                      placeholder="No details provided"
+                    />
                   </div>
                 </div>
               </div>

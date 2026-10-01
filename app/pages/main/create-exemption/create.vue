@@ -18,6 +18,8 @@ const formData = ref({
   // referenceType: "",
 });
 
+const detailsText = computed(() => stripHtml(formData.value.details));
+
 // Add newAttachments (from edit.vue)
 
 const reSelectAttachmentWarning = ref<{ fileNames: string[]; fileCount: number } | null>(null);
@@ -109,7 +111,7 @@ const hasUnsavedChanges = computed(() => {
   const corporateId = getCorporateIdForStorage();
   return !!(
     policyId ||
-    formData.value.details?.trim() ||
+    detailsText.value ||
     corporateId ||
     newAttachments.value.length ||
     draftId.value
@@ -128,7 +130,7 @@ const autoSavePending = () => {
     const corporateId = getCorporateIdForStorage();
     const hasChanges = !!(
       policyId ||
-      formData.value.details?.trim() ||
+      detailsText.value ||
       corporateId ||
       newAttachments.value.length ||
       draftId.value
@@ -153,7 +155,7 @@ const flushAutoSave = () => {
   const corporateId = getCorporateIdForStorage();
   const hasChanges = !!(
     policyId ||
-    formData.value.details?.trim() ||
+    detailsText.value ||
     corporateId ||
     newAttachments.value.length ||
     draftId.value
@@ -472,7 +474,7 @@ const validateForm = (forDraft = false) => {
     isValid = false;
   }
 
-  if (!formData.value.details || formData.value.details.trim().length < 10) {
+  if (detailsText.value.length < 10) {
     errors.value.details = "Please provide details (minimum 10 characters).";
     isValid = false;
   }
@@ -514,8 +516,7 @@ const validateForm = (forDraft = false) => {
 const isFormValid = computed(() => {
   return (
     !!formData.value.policyid &&
-    !!formData.value.details &&
-    formData.value.details.trim().length >= 10 &&
+    detailsText.value.length >= 10 &&
     newAttachments.value.length > 0 &&
     newAttachments.value.length <= MAX_FILES &&
     totalNewAttachmentsSize.value <= MAX_TOTAL_SIZE &&
@@ -527,8 +528,7 @@ const isFormValid = computed(() => {
 const isDraftValid = computed(() => {
   return (
     !!formData.value.policyid &&
-    !!formData.value.details &&
-    formData.value.details.trim().length >= 10 &&
+    detailsText.value.length >= 10 &&
     newAttachments.value.length > 0 &&
     newAttachments.value.length <= MAX_FILES &&
     totalNewAttachmentsSize.value <= MAX_TOTAL_SIZE &&
@@ -665,7 +665,7 @@ const handleSaveDraft = async () => {
 
 
       router.push("/main/create-exemption");
-      
+
     } else {
       showToast({
         type: "error",
@@ -993,24 +993,24 @@ const formatTimestamp = (timestamp: string): string => {
   });
 };
 
-const policyDisplay  = (policyId: any) => {
-    if (!policyId) return "—";
-    const id = typeof policyId === "object" ? policyId.id : policyId;
-    const option = policyOptions.value.find((p) => p.id === id);
-    return option ? option.label : `Policy ${id}`;
-  };
+const policyDisplay = (policyId: any) => {
+  if (!policyId) return "—";
+  const id = typeof policyId === "object" ? policyId.id : policyId;
+  const option = policyOptions.value.find((p) => p.id === id);
+  return option ? option.label : `Policy ${id}`;
+};
 
 const comparisonFields = computed(() => {
   if (!pendingRestoreData.value?.data || !pendingRestoreServerData.value) return [];
 
   const pending = pendingRestoreData.value.data;
   const server = pendingRestoreServerData.value;
-  
+
   const policyLabel = pending.policyId ? policyOptions.value.find((p) => p.id === pending.policyId)?.label || `Policy ${pending.policyId}` : "—";
 
   const fields = [
     { key: "policyid", label: "Policy To Override", serverValue: policyDisplay(server.policyid), pendingValue: policyDisplay(pending.policyid) },
-    { key: "details", label: "Details", serverValue: server.details, pendingValue: pending.details },
+    { key: "details", label: "Details", serverValue: stripHtml(server.details), pendingValue: stripHtml(pending.details) },
   ];
 
   return fields.map(field => ({
@@ -1038,7 +1038,7 @@ onMounted(async () => {
 
   await fetchPolicies();
   const pendingData = pendingStore.checkPending(transactionIdRef.value, "/main/create-exemption/create");
-  
+
 
   if (pendingData) {
     pendingRestoreData.value = pendingData;
@@ -1093,10 +1093,10 @@ onBeforeUnmount(() => {
               Additional Comment/Detailed Info
               <span class="text-red-500">*</span>
             </label>
-            <BaseInput v-model="formData.details" type="text" isTextarea :rowCount="5"
-              placeholder="Explain the reason for your exemption request..." :error="errors.details"
-              :maxCharCount="5000" :minCharCount="10"
-              class="mt-1 block w-full focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" />
+            <TipTapEditor v-model="formData.details"
+              placeholder="Explain the reason for your exemption request..."
+              :errorMessage="errors.details" :rowCount="6"
+              :maxCharCount="5000" :minCharCount="10" class="mt-1" />
           </div>
 
           <!-- Attachments -->
@@ -1380,7 +1380,7 @@ onBeforeUnmount(() => {
           <div>
             <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Details</dt>
             <dd class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-              {{ pendingRestoreData.data.details || '—' }}
+              {{ stripHtml(pendingRestoreData.data.details) || '—' }}
             </dd>
           </div>
 

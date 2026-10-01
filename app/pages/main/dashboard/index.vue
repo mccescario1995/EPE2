@@ -463,7 +463,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
               :style="`width:${summary.overallApprovalRate}%`"
             ></div>
             <div
-              class="h-3 sm:h-4 bg-red-400 dark:bg-red-300 transition-all"
+              class="h-3 sm:h-4 bg-red-500 transition-all"
               :style="`width:${
                 summary.totalRequests > 0
                   ? (
@@ -474,7 +474,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
               }%`"
             ></div>
             <div
-              class="h-3 sm:h-4 rounded-r-full bg-amber-300 dark:bg-amber-200 flex-1 transition-all"
+              class="h-3 sm:h-4 rounded-r-full bg-amber-500 flex-1 transition-all"
             ></div>
           </div>
           <div class="flex flex-wrap gap-3 sm:gap-6 text-xs text-gray-600 dark:text-gray-300 mt-2">
