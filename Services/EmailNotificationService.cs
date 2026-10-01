@@ -422,7 +422,7 @@ public class EmailNotificationService
                                         </td>
                                     </tr>
 
-                                    <tr>cd..
+                                    <tr> 
                                         <td style='padding-top:10px; font-size:12px;'>
                                             If the button doesn't work,
                                             <a href='{trackUrl}' style='color:#2f75b5;'>click here</a>.

@@ -52,7 +52,7 @@ public class ReminderEscalationService : BackgroundService
         var now = DateTime.UtcNow.AddHours(8);
 
         var openTransactionIds = await context.EpeTransactionheaders
-            .Where(h => h.Status == "O" && h.Isdelete == 0)
+            .Where(h => h.Status == "O" || h.Status == "P" && h.Isdelete == 0)
             .Select(h => h.Transactionid)
             .ToListAsync(ct);
 
@@ -72,7 +72,7 @@ public class ReminderEscalationService : BackgroundService
             try
             {
                 await ProcessApproverAsync(context, emailService, approver, now);
-            }
+            }       
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing approver {ApproverId} for transaction {TransactionId}",

@@ -177,12 +177,13 @@ namespace EPEAPI.Controllers
                 // 2) Base query: pending, not deleted, AND
                 //    (user is the requester OR user is a pending approver)
                 var query = _context.EpeVTransactionHeaders.Where(u =>
-                    u.IsDelete == 0
-                    && u.FinalDecision != "Draft" || u.FinalDecision == "Approved" || u.FinalDecision == "Disapproved"
-                    && (
-                        u.RequesterId == currentUserEmplId
-                        || approvableTransactionIds.Contains(u.TransactionId)
-                    )
+                    u.IsDelete == 0 && u.FinalDecision != "Draft"
+                    || u.FinalDecision == "Approved"
+                    || u.FinalDecision == "Disapproved"
+                        && (
+                            u.RequesterId == currentUserEmplId
+                            || approvableTransactionIds.Contains(u.TransactionId)
+                        )
                 );
 
                 var searchTerm = request.Search ?? search;
@@ -1146,7 +1147,9 @@ namespace EPEAPI.Controllers
                             Isdelete = 0,
 
                             Createddate = DateTime.UtcNow.AddHours(8),
-                            Responddate = isRequester ? DateTime.UtcNow.AddHours(8) : (DateTime?)null,
+                            Responddate = isRequester
+                                ? DateTime.UtcNow.AddHours(8)
+                                : (DateTime?)null,
                         }
                     );
                 }
@@ -1646,7 +1649,9 @@ namespace EPEAPI.Controllers
                             Isdelete = 0,
 
                             Createddate = DateTime.UtcNow.AddHours(8),
-                            Responddate = isRequester ? DateTime.UtcNow.AddHours(8) : (DateTime?)null,
+                            Responddate = isRequester
+                                ? DateTime.UtcNow.AddHours(8)
+                                : (DateTime?)null,
                         }
                     );
                 }
@@ -3606,7 +3611,24 @@ namespace EPEAPI.Controllers
         {
             try
             {
-                var log = await _context.EpeTransactionlogs.FirstOrDefaultAsync(l => l.Id == id);
+                var log = await _context.EpeTransactionlogs
+                        .Where(l => l.Id == id)
+                        .Select(l => new
+                        {
+                            Id = l.Id,
+                            TransactionId = l.TransactionId,                           
+                            PolicyId = l.PolicyId,
+                            TransactionType  = l.TransactionType,
+                            PreviousStatus = l.PreviousStatus,
+                            NewStatus = l.NewStatus,
+                            Remarks = l.Remarks,
+                            PerformedAt = l.PerformedAt,
+                            PerformedBy = _context
+                                .CoreVUsers.Where(e => e.UserId == l.PerformedBy)
+                                .Select(e => e.Employeename2)
+                                .FirstOrDefault(),
+                        })                    
+                        .FirstOrDefaultAsync();
 
                 if (log == null)
                 {
@@ -3629,6 +3651,26 @@ namespace EPEAPI.Controllers
                 var logs = await _context
                     .EpeTransactionlogs.Where(l => l.TransactionId == transactionId)
                     .OrderByDescending(l => l.PerformedAt)
+                    .Select(l => new
+                    {
+                        Id = l.Id,
+                        TransactionId = l.TransactionId,
+                        TransactionNumber = _context
+                            .EpeVTransactionHeaders
+                            .Where(h => h.TransactionId == l.TransactionId)
+                            .Select(h => h.TransactionNumber)
+                            .FirstOrDefault(),
+                        PolicyId = l.PolicyId,
+                        TransactionType  = l.TransactionType,
+                        PreviousStatus = l.PreviousStatus,
+                        NewStatus = l.NewStatus,
+                        Remarks = l.Remarks,
+                        PerformedAt = l.PerformedAt,
+                        PerformedBy = _context
+                            .CoreVUsers.Where(e => e.UserId == l.PerformedBy)
+                            .Select(e => e.Employeename2)
+                            .FirstOrDefault(),
+                    })
                     .ToListAsync();
 
                 return Ok(new { success = true, items = logs });
@@ -3665,17 +3707,18 @@ namespace EPEAPI.Controllers
         //    }
         //}
 
-        public class TransactionLogRequest
-        {
-            public long TransactionId { get; set; }
-            public int PolicyId { get; set; }
-            public string? TransactionType { get; set; }
-            public int? PreviousStatus { get; set; }
-            public int? NewStatus { get; set; }
-            public int PerformedBy { get; set; }
-            public string? Remarks { get; set; }
-            public string? Reason { get; set; }
-            public string? Metadata { get; set; }
-        }
+        // public class TransactionLogRequest
+        // {
+        //     public long TransactionId { get; set; }
+        //     public int PolicyId { get; set; }
+        //     public string? TransactionNumber { get; set; }
+        //     public string? TransactionType { get; set; }
+        //     public int? PreviousStatus { get; set; }
+        //     public int? NewStatus { get; set; }
+        //     public int PerformedBy { get; set; }
+        //     public string? Remarks { get; set; }
+        //     public string? Reason { get; set; }
+        //     public string? Metadata { get; set; }
+        // }
     }
 }
