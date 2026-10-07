@@ -1,25 +1,14 @@
 <template>
   <!-- Flyout panel that grows upward from the button -->
   <Transition name="scale-fade" appear>
-    <div
-      v-if="isOpen"
-      class="absolute bottom-full bg-white dark:bg-gray-800 rounded-t-lg shadow-lg transform-origin"
-      @keydown.esc="handleClose"
-      @click.self="handleClose"
-    >
+    <div v-if="isOpen" class="absolute bottom-full bg-white dark:bg-gray-800 rounded-t-lg shadow-lg transform-origin"
+      @keydown.esc="handleClose" @click.self="handleClose">
       <!-- Header -->
       <div class="flex items-center justify-between p-4 border-b dark:border-gray-700">
         <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
           Activity & Questions
         </h2>
-        <Button
-          variant="ghost"
-          size="sm"
-          icon="close"
-          iconPosition="center"
-          @click="handleClose"
-          title="Close"
-        />
+        <Button variant="ghost" size="sm" icon="close" iconPosition="center" @click="handleClose" title="Close" />
       </div>
 
       <!-- Content -->
@@ -50,7 +39,8 @@
             <div class="flex items-start space-x-3">
               <!-- Avatar -->
               <div class="flex-shrink-0">
-                <div class="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
+                <div
+                  class="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
                   {{ comment.employeeName.charAt(0) }}
                 </div>
               </div>
@@ -61,7 +51,8 @@
                   <div>
                     <p class="font-medium text-gray-900 dark:text-gray-100">
                       {{ comment.employeeName }}
-                      <span v-if="comment.isCurrentUser" class="ml-1 text-xs text-green-500 bg-green-100 px-1.5 py-0.5 rounded">You</span>
+                      <span v-if="comment.isCurrentUser"
+                        class="ml-1 text-xs text-green-500 bg-green-100 px-1.5 py-0.5 rounded">You</span>
                     </p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">
                       {{ new Date(comment.createdAt).toLocaleString() }}
@@ -71,40 +62,21 @@
                   <!-- Comment Actions -->
                   <div class="flex items-center space-x-2">
                     <template v-if="comment.canEdit">
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        icon="edit"
-                        iconPosition="center"
-                        @click="startEdit(comment.id)"
-                        title="Edit"
-                        :disabled="editingId !== null && editingId !== comment.id"
-                      />
+                      <Button variant="ghost" size="xs" icon="edit" iconPosition="center" @click="startEdit(comment.id)"
+                        title="Edit" :disabled="editingId !== null && editingId !== comment.id" />
                     </template>
 
                     <template v-if="comment.canDelete">
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        icon="trash"
-                        iconPosition="center"
-                        @click="confirmDelete(comment.id)"
-                        title="Delete"
-                        :disabled="deletingId === comment.id"
-                      />
+                      <Button variant="ghost" size="xs" icon="trash" iconPosition="center"
+                        @click="confirmDelete(comment.id)" title="Delete" :disabled="deletingId === comment.id" />
                     </template>
 
-                    <template v-if="comment.type === 'Question' && !comment.isResolved && (comment.isCurrentUserAnApprover || comment.isRequester)">
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        icon="check"
-                        iconPosition="center"
+                    <template
+                      v-if="comment.type === 'Question' && !comment.isResolved && (comment.isCurrentUserAnApprover || comment.isRequester)">
+                      <Button variant="ghost" size="xs" icon="check" iconPosition="center"
                         :class="[{ 'text-green-600': !comment.isResolved, 'text-gray-400': comment.isResolved }]"
-                        @click="resolveQuestion(comment.id)"
-                        title="Mark as resolved"
-                        :disabled="resolvingId === comment.id"
-                      />
+                        @click="resolveQuestion(comment.id)" title="Mark as resolved"
+                        :disabled="resolvingId === comment.id" />
                     </template>
                   </div>
                 </div>
@@ -114,11 +86,13 @@
                 </p>
 
                 <!-- Replies -->
-                <div v-if="comment.replies.length > 0" class="mt-3 pl-4 border-l-2 border-gray-200 dark:border-gray-600">
+                <div v-if="comment.replies.length > 0"
+                  class="mt-3 pl-4 border-l-2 border-gray-200 dark:border-gray-600">
                   <div v-for="(reply, replyIndex) in comment.replies" :key="reply.id" class="mt-2">
                     <div class="flex items-start space-x-2">
                       <div class="flex-shrink-0">
-                        <div class="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-medium">
+                        <div
+                          class="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs font-medium">
                           {{ reply.employeeName.charAt(0) }}
                         </div>
                       </div>
@@ -127,7 +101,8 @@
                           <div>
                             <p class="font-medium text-gray-900 dark:text-gray-100">
                               {{ reply.employeeName }}
-                              <span v-if="reply.isCurrentUser" class="ml-1 text-xs text-green-500 bg-green-100 px-1.5 py-0.5 rounded">You</span>
+                              <span v-if="reply.isCurrentUser"
+                                class="ml-1 text-xs text-green-500 bg-green-100 px-1.5 py-0.5 rounded">You</span>
                             </p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">
                               {{ new Date(reply.createdAt).toLocaleString() }}
@@ -136,27 +111,14 @@
 
                           <div class="flex items-center space-x-1">
                             <template v-if="reply.canEdit">
-                              <Button
-                                variant="ghost"
-                                size="xs"
-                                icon="edit"
-                                iconPosition="center"
-                                @clock="startEdit(reply.id)"
-                                title="Edit"
-                                :disabled="editingId !== null && editingId !== reply.id"
-                              />
+                              <Button variant="ghost" size="xs" icon="edit" iconPosition="center"
+                                @clock="startEdit(reply.id)" title="Edit"
+                                :disabled="editingId !== null && editingId !== reply.id" />
                             </template>
 
                             <template v-if="reply.canDelete">
-                              <Button
-                                variant="ghost"
-                                size="xs"
-                                icon="trash"
-                                iconPosition="center"
-                                @click="confirmDelete(reply.id)"
-                                title="Delete"
-                                :disabled="deletingId === reply.id"
-                              />
+                              <Button variant="ghost" size="xs" icon="trash" iconPosition="center"
+                                @click="confirmDelete(reply.id)" title="Delete" :disabled="deletingId === reply.id" />
                             </template>
                           </div>
                         </div>
@@ -172,58 +134,88 @@
             </div>
 
             <!-- Divider (except for last item) -->
-            <div v-if="index < threadedComments.length - 1" class="border-t border-gray-200 dark:border-gray-600 my-4"></div>
+            <div v-if="index < threadedComments.length - 1" class="border-t border-gray-200 dark:border-gray-600 my-4">
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Comment Input -->
-      <div class="border-t border-gray-200 dark:border-gray-600 pt-4">
-        <div class="flex items-center space-x-3 p-4">
-          <!-- Input Type Selector -->
+      <!-- <div class="border-t border-gray-200 dark:border-gray-600 pt-4"> -->
+      <!-- <div class="flex items-center space-x-3 p-4">
+          Input Type Selector
           <div class="flex items-center space-x-2 text-sm">
             <label class="cursor-select text-gray-600 dark:text-gray-300">
-              <input
-                type="radio"
-                value="Comment"
-                v-model="commentType"
-                class="form-radio h-4 w-4 text-indigo-600"
-              >
+              <input type="radio" value="Comment" v-model="commentType" class="form-radio h-4 w-4 text-blue-600">
               Comment
             </label>
             <label class="cursor-select text-gray-600 dark:text-gray-300">
-              <input
-                type="radio"
-                value="Question"
-                v-model="commentType"
-                class="form-radio h-4 w-4 text-indigo-600"
-              >
+              <input type="radio" value="Question" v-model="commentType" class="form-radio h-4 w-4 text-blue-600">
               Question
             </label>
           </div>
 
-          <!-- Text Input -->
-          <div class="flex-1">
-            <textarea
-              v-model="commentMessage"
-              placeholder="Write a comment or ask a question..."
-              class="w-full p-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+          Text Input
+          <div class="flex w-full">
+            <textarea v-model="commentMessage" placeholder="Write a comment or ask a question..."
+              class="w-full p-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               :rows="commentMessage.length > 0 ? Math.min(Math.ceil(commentMessage.length / 50), 4) : 3"
-              @input="autoResize"
-            ></textarea>
+              @input="autoResize"></textarea>
           </div>
 
-          <!-- Send Button -->
+          Send Button
           <div class="flex-shrink-0">
-            <Button
-              variant="primary"
-              size="sm"
-              :loading="sending"
-              icon="paper_plane"
-              iconPosition="left"
-              @click="sendComment"
-              :disabled="!commentMessage.trim() || sending"
-            >
+            <Button variant="primary" size="sm" :loading="sending" icon="paper_plane" iconPosition="left"
+              @click="sendComment" :disabled="!commentMessage.trim() || sending">
+              Send
+            </Button>
+          </div>
+        </div> -->
+      <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+          <!-- Input Type Selector -->
+          <div class="mb-3 flex items-center gap-2">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              Post as
+            </span>
+
+            <div class="flex items-center gap-1 rounded-lg bg-gray-200/70 p-1 dark:bg-gray-700">
+              <label class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-sm transition" :class="commentType === 'Comment'
+                ? 'bg-white font-medium text-blue-600 shadow-sm dark:bg-gray-600 dark:text-blue-300'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+                ">
+                <input type="radio" value="Comment" v-model="commentType" class="sr-only">
+                <span>Comment</span>
+              </label>
+
+              <label class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-sm transition" :class="commentType === 'Question'
+                ? 'bg-white font-medium text-blue-600 shadow-sm dark:bg-gray-600 dark:text-blue-300'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+                ">
+                <input type="radio" value="Question" v-model="commentType" class="sr-only">
+                <span>Question</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Text Input -->
+          <div class="relative">
+            <textarea v-model="commentMessage" placeholder="Write a comment or ask a question..."
+              class="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-400 dark:focus:ring-blue-400/20"
+              :rows="commentMessage.length > 0 ? Math.min(Math.ceil(commentMessage.length / 50), 4) : 3"
+              @input="autoResize"></textarea>
+          </div>
+
+          <!-- Bottom Actions -->
+          <div class="mt-3 flex items-center justify-between">
+            <!-- Character / Type Info -->
+            <span class="text-xs text-gray-400 dark:text-gray-500">
+              {{ commentType === 'Question' ? 'Ask a question' : 'Leave a comment' }}
+            </span>
+
+            <!-- Send Button -->
+            <Button variant="primary" size="sm" :loading="sending" icon="right_arrow" iconPosition="right"
+              @click="sendComment" :disabled="!commentMessage.trim() || sending">
               Send
             </Button>
           </div>
@@ -305,8 +297,8 @@ const handleClose = () => {
 const startEdit = (commentId: number) => {
   editingId.value = commentId
   // Find the comment and set the message
-  const comment = threadedComments.value.find(c => c.id === commentId) || 
-                  threadedComments.value.flatMap(c => [c, ...c.replies]).find(r => r.id === commentId)
+  const comment = threadedComments.value.find(c => c.id === commentId) ||
+    threadedComments.value.flatMap(c => [c, ...c.replies]).find(r => r.id === commentId)
   if (comment) {
     commentMessage.value = comment.message
     // Focus the textarea after a short delay
@@ -402,22 +394,27 @@ onBeforeUnmount(() => {
 .scale-fade-leave-active {
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
+
 .scale-fade-enter-from {
   transform: scaleY(0);
   opacity: 0;
 }
+
 .scale-fade-enter-to {
   transform: scaleY(1);
   opacity: 1;
 }
+
 .scale-fade-leave-from {
   transform: scaleY(1);
   opacity: 1;
 }
+
 .scale-fade-leave-to {
   transform: scaleY(0);
   opacity: 0;
 }
+
 .transform-origin {
   transform-origin: bottom;
 }

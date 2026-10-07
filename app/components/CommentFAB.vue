@@ -2,21 +2,21 @@
   <!-- Container fixed to bottom-right of viewport -->
   <div class="fixed bottom-6 right-6 z-[9999]">
     <!-- Floating Action Button -->
-    <Button                   
+    <Button
       variant="primary"
-      iconSize="large"
+      size="5xl"
       icon="chat"
       iconPosition="center"
-      class="bg-blue-500 w-60 h-30 mr-5 flex items-center justify-center rounded-full shadow-lg ring-2 ring-blue-600 hover:bg-blue-600"
+      class="bg-blue-500 w-15 h-15 mr-5 flex items-center justify-center rounded-full shadow-lg ring-2 ring-blue-600 hover:bg-blue-600"
       @click="toggleFlyout"
       :aria-label="`${unresolvedCount > 0 ? 'Unresolved questions: ' + unresolvedCount : 'Open activity feed'}`"
     >
-        <!-- v-if="unresolvedCount > 0" -->
+      <template v-if="unresolvedCount > 0">
         <!-- Badge -->
-        <div class="absolute -top-3 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white ring-2 ring-white dark:ring-gray-800">
-          <!-- {{ unresolvedCount }} -->
-            1
+        <div class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white ring-2 ring-white dark:ring-gray-800">
+          {{ unresolvedCount }}
         </div>
+      </template>
     </Button>
 
     <!-- Comment Flyout (appears above the button) -->
@@ -25,7 +25,7 @@
       :transactionId="transactionId"
       @update:isOpen="flyoutOpen = $event"
       @close="flyoutOpen = false"
-      class="absolute bottom-full right-0 w-100 z-[10000] mr-5  border border-gray-300 dark:border-gray-700 rounded-t-lg shadow-lg"
+      class="absolute bottom-full right-0 w-100 mr-5 transform-origin"
     />
   </div>
 </template>

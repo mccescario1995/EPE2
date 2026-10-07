@@ -174,6 +174,15 @@ const iconSizeClasses = {
   md: "w-4 h-4",
   lg: "w-5 h-5",
   xl: "w-6 h-6",
+  "2xl": "w-7 h-7", // Added 2xl size for larger icons
+  "3xl": "w-8 h-8", // Added 3xl size for even larger icons
+  "4xl": "w-9 h-9", // Added 4xl size for even larger icons
+  "5xl": "w-10 h-10", // Added 5xl size for even larger icons
+  "6xl": "w-11 h-11", // Added 6xl size for even larger icons
+  "7xl": "w-12 h-12", // Added 7xl size for even larger icons
+  "8xl": "w-14 h-14", // Added 8xl size for even larger icons
+  "9xl": "w-16 h-16", // Added 9xl size for even larger icons
+  "10xl": "w-20 h-20" // Added 10xl size for even larger icons
 };
 
 const variantClasses = {
