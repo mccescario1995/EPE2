@@ -49,7 +49,7 @@ const baseURL = import.meta.env.PROD
     const headers = new Headers(init.headers);
 
     if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
+      headers.set("Token", `${token}`);
     }
 
     // Optional but recommended

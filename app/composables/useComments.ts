@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { apiFetch } from './useApiFetch'
 import { showToast } from '~/stores/globalvar'
+import { useUserStore } from '~/stores/useUserStore'
 
 interface Comment {
   id: number
@@ -36,6 +37,8 @@ export const useComments = () => {
   const loading = ref<boolean>(false)
   const unresolvedCount = ref<number>(0)
   const transactionId = ref<number | null>(null)
+  const userStore = useUserStore()
+  const userId = userStore.profile
 
   const fetchComments = async (txId: number, params?: {
     type?: string
@@ -57,7 +60,10 @@ export const useComments = () => {
 
       const response = await apiFetch<CommentListResponse>(
         `/api/transactioncomment/transaction/${txId}?${queryParams.toString()}`,
-        { parseJson: true }
+        {
+          method: "GET",
+          parseJson: true
+        }
       )
 
       if (response.success) {
@@ -94,8 +100,9 @@ export const useComments = () => {
         `/api/transactioncomment/transaction/${txId}`,
         {
           method: 'POST',
-          body: JSON.stringify({ message, type, parentCommentId }),
+          body: JSON.stringify({ message, type, parentCommentId, UserId: userId?.userId }),
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           parseJson: true
         }
       )
@@ -163,11 +170,12 @@ export const useComments = () => {
 
     try {
       const response = await apiFetch<any>(
-        `/api/transactioncomment/${commentId}`,
+        `/api/transactioncomment/${commentId}/update`,
         {
-          method: 'PATCH',
-          body: JSON.stringify({ message }),
+          method: 'POST',
+          body: JSON.stringify({ message, UserId: userId?.userId }),
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           parseJson: true
         }
       )
@@ -213,8 +221,8 @@ export const useComments = () => {
 
     try {
       const response = await apiFetch<any>(
-        `/api/transactioncomment/${commentId}`,
-        { method: 'DELETE', parseJson: true }
+        `/api/transactioncomment/${commentId}/delete`,
+        { method: 'POST', credentials: 'include', parseJson: true }
       )
 
       if (response.success) {
@@ -252,7 +260,7 @@ export const useComments = () => {
     try {
       const response = await apiFetch<any>(
         `/api/transactioncomment/${commentId}/resolve`,
-        { method: 'POST', parseJson: true }
+        { method: 'POST', credentials: 'include', parseJson: true }
       )
 
       if (response.success) {
