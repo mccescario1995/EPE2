@@ -686,5 +686,8 @@ const currentUserPendingAction = computed((): boolean => {
         </Button>
       </div>
     </main>
+    
+    <!-- Comment FAB -->
+    <CommentFAB v-if="exemptionDetails?.transactionId" :transactionId="exemptionDetails.transactionId" />
   </div>
 </template>

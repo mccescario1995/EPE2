@@ -1985,32 +1985,35 @@ onBeforeUnmount(() => {
     </template>
   </Modal>
 
-  <Teleport to="body">
-    <div
-      v-if="expandedCell"
-      class="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      style="background-color: rgba(0, 0, 0, 0.5)"
-      @click.self="closeCellTooltip"
-      @keydown.escape="closeCellTooltip"
-    >
-      <div
-        class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-lg mx-4 border border-gray-200 dark:border-gray-700"
-      >
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            {{ getCellTooltipTitle(expandedCell.key) }}
-          </h3>
-          <button
-            @click="closeCellTooltip"
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl leading-none"
-          >
-            &times;
-          </button>
-        </div>
-        <p class="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap break-words">
-          {{ expandedCell.value }}
-        </p>
-      </div>
-    </div>
-  </Teleport>
-</template>
+   <Teleport to="body">
+     <div
+       v-if="expandedCell"
+       class="fixed inset-0 z-[60] flex items-center justify-center p-4"
+       style="background-color: rgba(0, 0, 0, 0.5)"
+       @click.self="closeCellTooltip"
+       @keydown.escape="closeCellTooltip"
+     >
+       <div
+         class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-lg mx-4 border border-gray-200 dark:border-gray-700"
+       >
+         <div class="flex justify-between items-center mb-4">
+           <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+             {{ getCellTooltipTitle(expandedCell.key) }}
+           </h3>
+           <button
+             @click="closeCellTooltip"
+             class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl leading-none"
+           >
+             &times;
+           </button>
+         </div>
+         <p class="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap break-words">
+           {{ expandedCell.value }}
+         </p>
+       </div>
+     </div>
+   </Teleport>
+   
+   <!-- Comment FAB -->
+   <CommentFAB v-if="exemptionDetails?.transactionId" :transactionId="exemptionDetails.transactionId" />
+ </template>
