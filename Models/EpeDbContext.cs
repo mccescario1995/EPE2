@@ -49,6 +49,8 @@ public partial class EpeDbContext : DbContext
 
     public virtual DbSet<EpeTransactionlog> EpeTransactionlogs { get; set; }
 
+    public virtual DbSet<EpeTransactionComment> EpeTransactionComments { get; set; }
+
     public virtual DbSet<Token> Tokens { get; set; }
     public virtual DbSet<EpeNotification> EpeNotifications { get; set; }
     public virtual DbSet<EpeEmailApprovalToken> EpeEmailApprovalTokens { get; set; }
@@ -1088,6 +1090,44 @@ public partial class EpeDbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("macaddress");
+        });
+
+        modelBuilder.Entity<EpeTransactionComment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.ToTable("epe_transactioncomment");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.TransactionId).HasColumnName("transactionid");
+            entity.Property(e => e.UserId).HasColumnName("userid");
+            entity.Property(e => e.EmployeeId)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("employeeid");
+            entity.Property(e => e.Message)
+                .IsUnicode(false)
+                .HasColumnName("message");
+            entity.Property(e => e.Type)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("Comment")
+                .HasColumnName("type");
+            entity.Property(e => e.ParentCommentId).HasColumnName("parentcommentid");
+            entity.Property(e => e.IsResolved).HasColumnName("isresolved");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("createdat");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("updatedat");
+            entity.Property(e => e.Metadata)
+                .IsUnicode(false)
+                .HasColumnName("metadata");
+
+            entity.HasIndex(e => e.TransactionId).HasDatabaseName("IX_epe_transactioncomment_transactionid");
+            entity.HasIndex(e => e.ParentCommentId).HasDatabaseName("IX_epe_transactioncomment_parentcommentid");
         });
 
         OnModelCreatingPartial(modelBuilder);
