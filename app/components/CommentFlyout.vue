@@ -1,10 +1,14 @@
 <template>
   <Transition name="slide-up" appear>
-    <div v-if="isOpen" class="fixed bottom-20 right-11 z-[9999] w-full max-w-md" @keydown.esc="handleClose">
-
-      <!-- Flyout Panel -->
-      <div
-        class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-[90vh] max-h-175">
+     <div v-if="isOpen" :style="{ bottom: '80px', right: '35px' }" :class="{ 'resize-active': isResizingVertically }" class="fixed z-[9999]" @keydown.esc="handleClose">
+       <div :style="{ height: height }"
+         class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-w-md"
+         ref="flyoutPanel">
+        
+         <!-- Top Resize Handle -->
+         <div class="absolute top-0 left-0 right-0 h-2 bg-gray-200 dark:bg-gray-700/50 cursor-ns-resize w-10 item-center mx-auto rounded-b-lg z-10"
+              @mousedown="startVerticalResize"
+         ></div>
 
         <!-- Header -->
         <div
@@ -31,14 +35,14 @@
         <div class="flex-1 overflow-y-auto p-4 space-y-4" ref="commentsContainer">
 
           <!-- Closed Transaction Banner -->
-          <div v-if="transactionStatus.value === 'C'"
-            class="mb-4 p-3 bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 rounded-lg">
+          <div v-if="transactionStatus === 'C'"
+            class="mb-4 p-3 bg-red-50 dark:bg-red-900/50 border sticky top-0 border-red-200 dark:border-red-800 rounded-lg">
             <div class="flex items-center gap-2 text-sm">
               <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-              <span>This request is closed. No further comments allowed.</span>
+              <span>This request is closed. No further comments/questions allowed.</span>
             </div>
           </div>
 
@@ -98,7 +102,7 @@
               <!-- Resolved banner for questions -->
               <div v-if="comment.type === 'Question' && comment.isResolved"
                 class="mt-1 px-2 py-0.5 text-xs text-center py-3 border-b-2 font-bold bg-green-50 text-green-600 dark:text-green-50 dark:bg-green-900/20 ">
-                This question has been resolved
+                This question has been resolved.
               </div>
             </div>
           </div>
@@ -172,6 +176,12 @@ const replyingToId = ref<number | null>(null)
 const inlineReplyMessage = ref<string>('')
 const commentsContainer = ref<HTMLElement | null>(null)
 
+// Resize functionality
+const height = ref<string>('50vh')
+const isResizingVertically = ref(false)
+let resizeStartY = 0
+let resizeStartHeight = 0
+
 // Composables
 const { fetchComments, addComment, updateComment, deleteComment, resolveQuestion, threadedComments, getUnresolvedQuestionsCount, transactionStatus } = useComments()
 const userStore = useUserStore()
@@ -180,7 +190,7 @@ const unresolvedCount = computed(() => getUnresolvedQuestionsCount.value)
 
 // Check if comments should be disabled (unresolved questions exist or transaction is closed)
 const commentsDisabled = computed(() => {
-  return unresolvedCount.value > 0 && transactionStatus.value === 'C'
+  return unresolvedCount.value > 0 || transactionStatus.value === 'C'
 })
 
 // Computed helpers for resolve button
@@ -307,7 +317,72 @@ const autoResize = () => {
   }
 }
 
+const startVerticalResize = (e: MouseEvent) => {
+  e.preventDefault()
+  isResizingVertically.value = true
+  resizeStartY = e.clientY
+  resizeStartHeight = parseFloat(height.value)
+  
+  // Add window listeners
+  window.addEventListener('mousemove', onVerticalMouseMove)
+  window.addEventListener('mouseup', onVerticalMouseUp)
+}
+
+const onVerticalMouseMove = (e: MouseEvent) => {
+  if (!isResizingVertically.value) return
+  
+  // Calculate deltaY (change in Y position)
+  const dy = e.clientY - resizeStartY
+  
+  // Calculate new height (moving top down increases height, moving top up decreases height)
+  // let newHeight = resizeStartHeight + dy
+  let newHeight = resizeStartHeight - dy
+  
+  // Apply constraints (min/max in pixels)
+  const minHeight = 400
+  const maxHeight = window.innerHeight * 0.8 // 80vh
+  
+  newHeight = Math.max(minHeight, Math.min(newHeight, maxHeight))
+  
+  // Update refs (will trigger reactive update)
+  height.value = `${newHeight}px`
+}
+
+const onVerticalMouseUp = () => {
+  if (!isResizingVertically.value) return
+  isResizingVertically.value = false
+  window.removeEventListener('mousemove', onVerticalMouseMove)
+  window.removeEventListener('mouseup', onVerticalMouseUp)
+  
+  // Optional: Save to localStorage
+  try {
+    localStorage.setItem(
+      `commentFlyoutSize_${props.transactionId}`, 
+      JSON.stringify({ height: height.value })
+    )
+  } catch (e) {
+    console.warn('Failed to save flyout height:', e)
+  }
+}
+
 onBeforeUnmount(() => { })
+
+// Load saved size on mount
+onMounted(() => {
+  try {
+    const saved = localStorage.getItem(`commentFlyoutSize_${props.transactionId}`)
+    if (saved) {
+      const { height: savedHeight } = JSON.parse(saved)
+      // Basic validation - check if it's a valid CSS value
+      if (savedHeight && 
+          (savedHeight.endsWith('px') || savedHeight.endsWith('vh') || savedHeight.endsWith('%'))) {
+        height.value = savedHeight
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load flyout height:', e)
+  }
+})
 </script>
 
 <style scoped>
@@ -360,5 +435,13 @@ onBeforeUnmount(() => { })
 
 .dark .flex-1::-webkit-scrollbar-thumb:hover {
   background: #64748b;
+}
+
+.resize-active {
+  transition: none !important;
+}
+
+.resize-active {
+  transition: none !important;
 }
 </style>
