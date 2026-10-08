@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CommentFAB from '@/components/CommentFAB.vue'
 const router = useRouter();
 const route = useRoute();
 const { showToast } = useToast();
@@ -848,4 +849,6 @@ onMounted(async () => {
       </div>
     </main>
   </div>
+  <!-- Comment FAB for transaction discussion -->
+  <CommentFAB :transactionId="exemptionId" :requester-id="exemptionData?.requesterId" :approvers="approversData.map(a => a.employeeId || a.EmployeeId || a.id)" />
 </template>

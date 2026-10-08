@@ -688,6 +688,6 @@ const currentUserPendingAction = computed((): boolean => {
     </main>
     
     <!-- Comment FAB -->
-    <CommentFAB v-if="exemptionDetails?.transactionId" :transactionId="exemptionDetails.transactionId" />
+    <CommentFAB v-if="exemptionDetails?.transactionId" :transactionId="exemptionDetails.transactionId" :requester-id="exemptionDetails.requesterId" :approvers="approversData.map(a => a.employeeId || a.employee_id || a.id)" />
   </div>
 </template>

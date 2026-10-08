@@ -127,7 +127,8 @@ const props = defineProps({
   size: {
     type: String,
     default: "md",
-    validator: (value) => ["xs", "sm", "md", "lg", "xl"].includes(value),
+    validator: (value) =>
+      ["xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "8xl", "9xl", "10xl"].includes(value),
   },
   icon: {
     type: [String, Object, Function],
@@ -166,6 +167,15 @@ const sizeClasses = {
   md: "px-5 py-2.5 text-sm gap-2",
   lg: "px-6 py-3 text-base gap-2.5",
   xl: "px-8 py-4 text-lg gap-3",
+  "2xl": "px-10 py-5 text-xl gap-3.5",
+  "3xl": "px-12 py-6 text-2xl gap-4",
+  "4xl": "px-14 py-7 text-3xl gap-4.5",
+  "5xl": "px-16 py-8 text-4xl gap-5",
+  "6xl": "px-18 py-9 text-5xl gap-5.5",
+  "7xl": "px-20 py-10 text-6xl gap-6",
+  "8xl": "px-22 py-11 text-7xl gap-6.5",
+  "9xl": "px-24 py-12 text-8xl gap-7",
+  "10xl": "px-28 py-14 text-9xl gap-8",
 };
 
 const iconSizeClasses = {
@@ -262,6 +272,7 @@ const getIconComponent = (iconName) => {
     user_approver: "UserApproverIcon", // Added UserApproverIcon mapping
     close: "CloseIcon", // Added CloseIcon mapping
     chat: "ChatIcon", // Added ChatIcon mapping
+    reply: "ReplyIcon", // Added ReplyIcon mapping
   };
   return icons[iconName] || null;
 };
@@ -277,8 +288,9 @@ const iconComponents = {
   EditIcon: defineAsyncComponent(() => import("./icon/Edit.vue")), // Added EditIcon component
   ViewIcon: defineAsyncComponent(() => import("./icon/View.vue")), // Added ViewIcon component
   SaveIcon: defineAsyncComponent(() => import("./icon/Save.vue")), // Added SaveIcon component
-  CloseIcon: defineAsyncComponent(() => import("./icon/Close.vue")),
-  ChatIcon: defineAsyncComponent(() => import("./icon/Chat.vue")),
+  CloseIcon: defineAsyncComponent(() => import("./icon/Close.vue")), // Added CloseIcon component
+  ChatIcon: defineAsyncComponent(() => import("./icon/Chat.vue")), // Added ChatIcon component
+  ReplyIcon: defineAsyncComponent(() => import("./icon/Reply.vue")), // Added ReplyIcon component
   UserApproverIcon: defineAsyncComponent(
     () => import("./icon/UserApprover.vue"),
   ), // Added UserApproverIcon component

@@ -30,12 +30,14 @@ interface CommentListResponse {
   page: number
   pageSize: number
   unresolvedCount: number
+  transactionStatus: string
 }
 
 export const useComments = () => {
   const comments = ref<Comment[]>([])
   const loading = ref<boolean>(false)
   const unresolvedCount = ref<number>(0)
+  const transactionStatus = ref<string>('O')
   const transactionId = ref<number | null>(null)
   const userStore = useUserStore()
   const userId = userStore.profile
@@ -57,6 +59,8 @@ export const useComments = () => {
       if (params?.unresolvedOnly !== undefined) queryParams.append('unresolvedOnly', String(params.unresolvedOnly))
       if (params?.page) queryParams.append('page', String(params.page))
       if (params?.pageSize) queryParams.append('pageSize', String(params.pageSize))
+      // Pass current user ID so backend can compute IsCurrentUser
+      if (userId?.userId) queryParams.append('userId', String(userId.userId))
 
       const response = await apiFetch<CommentListResponse>(
         `/api/transactioncomment/transaction/${txId}?${queryParams.toString()}`,
@@ -66,10 +70,13 @@ export const useComments = () => {
         }
       )
 
-      if (response.success) {
-        comments.value = response.items
-        unresolvedCount.value = response.unresolvedCount
-      } else {
+      console.log('Fetched comments response:', response)
+
+       if (response) {
+         comments.value = response.items
+         unresolvedCount.value = response.unresolvedCount
+         transactionStatus.value = response.transactionStatus
+       } else {
         showToast({
           title: 'Error',
           message: 'Failed to load comments',
@@ -260,7 +267,13 @@ export const useComments = () => {
     try {
       const response = await apiFetch<any>(
         `/api/transactioncomment/${commentId}/resolve`,
-        { method: 'POST', credentials: 'include', parseJson: true }
+        {
+          method: 'POST',
+          body: JSON.stringify({ UserId: userId?.userId }),
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          parseJson: true
+        }
       )
 
       if (response.success) {
@@ -306,42 +319,26 @@ export const useComments = () => {
   const getUnresolvedQuestionsCount = computed(() => unresolvedCount.value)
 
   // Get comments grouped by top-level comments (with replies nested)
+  // API already returns nested replies, so just filter top-level and sort
   const threadedComments = computed(() => {
-    const topLevelComments = comments.value.filter(c => c.parentCommentId === null)
-    const commentMap = new Map<number, Comment>()
-    
-    // First, add all comments to the map
-    comments.value.forEach(comment => {
-      commentMap.set(comment.id, { ...comment, replies: [] })
-    })
-    
-    // Then, build the reply tree
-    comments.value.forEach(comment => {
-      if (comment.parentCommentId !== null) {
-        const parent = commentMap.get(comment.parentCommentId)
-        if (parent) {
-          parent.replies.push(commentMap.get(comment.id)!)
-        }
-      }
-    })
-    
-    // Return top-level comments sorted by creation date (newest first)
-    return Array.from(commentMap.values())
+    console.log('Computing threaded comments from', comments.value)
+    return comments.value
       .filter(comment => comment.parentCommentId === null)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
   })
 
-  return {
-    comments,
-    loading,
-    unresolvedCount,
-    transactionId,
-    fetchComments,
-    addComment,
-    updateComment,
-    deleteComment,
-    resolveQuestion,
-    getUnresolvedQuestionsCount,
-    threadedComments
-  }
+   return {
+     comments,
+     loading,
+     unresolvedCount,
+     transactionStatus,
+     transactionId,
+     fetchComments,
+     addComment,
+     updateComment,
+     deleteComment,
+     resolveQuestion,
+     getUnresolvedQuestionsCount,
+     threadedComments
+   }
 }

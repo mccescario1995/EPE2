@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useMenuService } from "~/services/menuService";
+import CommentFAB from '@/components/CommentFAB.vue'
 const { fetchMenuList, canEdit: checkCanEdit, canDelete: checkCanDelete } = useMenuService();
 const router = useRouter();
 const route = useRoute();
@@ -666,4 +667,6 @@ const currentUserPendingAction = computed((): boolean => {
       </div>
     </main>
   </div>
+  <!-- Comment FAB for transaction discussion -->
+  <CommentFAB :transactionId="exemptionId" :requester-id="exemptionDetails?.requesterId" :approvers="approversData.map(a => a.employeeId || a.employee_id || a.id)" />
 </template>
