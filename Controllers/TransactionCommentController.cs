@@ -22,7 +22,8 @@ public class TransactionCommentController : ControllerBase
     [HttpGet("transaction/{transactionId}")]
     public async Task<IActionResult> GetComments(
         long transactionId,
-        [FromQuery] CommentQueryParams query)
+        [FromQuery] CommentQueryParams query,
+        [FromQuery] int userId = 0)
     {
         try
         {
@@ -45,25 +46,39 @@ public class TransactionCommentController : ControllerBase
 
             var page = query.Page > 0 ? query.Page : 1;
             var pageSize = query.PageSize > 0 ? query.PageSize : 20;
+            var nowPh = DateTime.UtcNow.AddHours(8);
+
+            // Get transaction for status
+            var transaction = await _context.EpeTransactionheaders
+                .FirstOrDefaultAsync(t => t.Transactionid == transactionId);
 
             var comments = await baseQuery
-                .OrderByDescending(c => c.CreatedAt)
+                .OrderBy(c => c.CreatedAt) // Oldest first (chat style)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(c => new CommentResponse
+                .Select(c => new
+                {
+                    Comment = c,
+                    User = _context.CoreVUsers
+                        .Where(u => u.UserId == c.UserId)
+                        .Select(u => new { u.Employeename, u.Emailaddress })
+                        .FirstOrDefault()
+                })
+                .ToListAsync();
+
+            var commentResponses = new List<CommentResponse>();
+            foreach (var item in comments)
+            {
+                var c = item.Comment;
+                var user = item.User;
+                var response = new CommentResponse
                 {
                     Id = c.Id,
                     TransactionId = c.TransactionId,
                     UserId = c.UserId,
                     EmployeeId = c.EmployeeId,
-                    EmployeeName = _context.CoreVUsers
-                        .Where(u => u.UserId == c.UserId)
-                        .Select(u => u.Employeename)
-                        .FirstOrDefault() ?? "Unknown",
-                    EmployeeEmail = _context.CoreVUsers
-                        .Where(u => u.UserId == c.UserId)
-                        .Select(u => u.Emailaddress)
-                        .FirstOrDefault() ?? "",
+                    EmployeeName = user?.Employeename ?? "Unknown",
+                    EmployeeEmail = user?.Emailaddress ?? "",
                     Message = c.Message,
                     Type = c.Type,
                     ParentCommentId = c.ParentCommentId,
@@ -71,10 +86,10 @@ public class TransactionCommentController : ControllerBase
                     CreatedAt = c.CreatedAt,
                     UpdatedAt = c.UpdatedAt,
                     Metadata = c.Metadata,
-                    IsCurrentUser = false, // Will be set client-side if needed
-                    CanEdit = false, // Will be set client-side if needed
-                    CanDelete = false, // Will be set client-side if needed
-                    Replies = _context.EpeTransactionComments
+                    IsCurrentUser = c.UserId == userId,
+                    CanEdit = c.UserId == userId && c.UpdatedAt == null && c.CreatedAt > nowPh.AddMinutes(-15),
+                    CanDelete = c.UserId == userId,
+                    Replies = await _context.EpeTransactionComments
                         .Where(r => r.ParentCommentId == c.Id)
                         .OrderBy(r => r.CreatedAt)
                         .Select(r => new CommentResponse
@@ -98,23 +113,25 @@ public class TransactionCommentController : ControllerBase
                             CreatedAt = r.CreatedAt,
                             UpdatedAt = r.UpdatedAt,
                             Metadata = r.Metadata,
-                            IsCurrentUser = false,
-                            CanEdit = false,
-                            CanDelete = false,
+                            IsCurrentUser = r.UserId == userId,
+                            CanEdit = r.UserId == userId && r.UpdatedAt == null && r.CreatedAt > nowPh.AddMinutes(-15),
+                            CanDelete = r.UserId == userId,
                             Replies = new List<CommentResponse>()
                         })
-                        .ToList()
-                })
-                .ToListAsync();
+                        .ToListAsync()
+                };
+                commentResponses.Add(response);
+            }
 
-            return Ok(new CommentListResponse
+             return Ok(new CommentListResponse
             {
                 Success = true,
-                Items = comments,
+                Items = commentResponses,
                 TotalCount = totalCount,
                 Page = page,
                 PageSize = pageSize,
-                UnresolvedCount = unresolvedCount
+                UnresolvedCount = unresolvedCount,
+                TransactionStatus = transaction != null ? transaction.Status : "O"
             });
         }
         catch (Exception ex)
@@ -170,11 +187,16 @@ public class TransactionCommentController : ControllerBase
                 }
             }
 
+            var employeeId = await _context.CoreVUsers
+                .Where(u => u.UserId == request.UserId)
+                .Select(u => u.EmplId)
+                .FirstOrDefaultAsync();
+
             var comment = new EpeTransactionComment
             {
                 TransactionId = transactionId,
                 UserId = request.UserId,
-                EmployeeId = "", // Will be filled in BuildCommentResponse or we could fetch it here
+                EmployeeId = employeeId,
                 Message = request.Message,
                 Type = request.Type,
                 ParentCommentId = request.ParentCommentId,
@@ -379,6 +401,8 @@ public class TransactionCommentController : ControllerBase
             .Select(u => new { u.Employeename, u.Emailaddress })
             .FirstOrDefaultAsync();
 
+        var nowPh = DateTime.UtcNow.AddHours(8);
+
         return new CommentResponse
         {
             Id = comment.Id,
@@ -395,7 +419,7 @@ public class TransactionCommentController : ControllerBase
             UpdatedAt = comment.UpdatedAt,
             Metadata = comment.Metadata,
             IsCurrentUser = comment.UserId == userId,
-            CanEdit = comment.UserId == userId && comment.UpdatedAt == null && comment.CreatedAt > DateTime.Now.AddMinutes(-15),
+            CanEdit = comment.UserId == userId && comment.UpdatedAt == null && comment.CreatedAt > nowPh.AddMinutes(-15),
             CanDelete = comment.UserId == userId,
             Replies = new List<CommentResponse>()
         };

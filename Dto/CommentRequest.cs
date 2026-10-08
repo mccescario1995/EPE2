@@ -1,5 +1,7 @@
 namespace EPEAPI.Dto;
 
+using System.Text.Json.Serialization;
+
 public class CreateCommentRequest
 {
     public string Message { get; set; } = null!;
@@ -13,7 +15,7 @@ public class CreateCommentRequest
 
 public class UpdateCommentRequest
 {
-    public string Message { get; set; } = null!;
+    public string? Message { get; set; } = null!;
 
     public int UserId { get; set; }
 }
@@ -63,6 +65,7 @@ public class CommentResponse
 
     public bool CanDelete { get; set; }
 
+    [JsonPropertyName("replies")]
     public List<CommentResponse> Replies { get; set; } = new();
 }
 
@@ -78,5 +81,9 @@ public class CommentListResponse
 
     public int PageSize { get; set; }
 
-    public int UnresolvedCount { get; set; }
-}
+        public int UnresolvedCount { get; set; }
+        
+        // Transaction status (O=Open, P=Pending, C=Closed, D=Draft)
+        [JsonPropertyName("transactionStatus")]
+        public string TransactionStatus { get; set; } = "O";
+    }
