@@ -3,7 +3,7 @@
   <CommentFlyout v-model:isOpen="flyoutOpen" :transactionId="transactionId" :requesterId="requesterId" :approvers="approvers" :transactionStatus="transactionStatus" @close="flyoutOpen = false" />
 
   <!-- Floating Action Button -->
-  <div class="fixed bottom-3 right-10 z-[9999]">
+  <div class="fixed bottom-3 right-10 z-[9999] hidden sm:block">
     <Button variant="primary" size="2xl" icon="chat" iconPosition="center"
       class="bg-blue-500 w-14 h-14 flex items-center justify-center rounded-full shadow-lg ring-2 ring-blue-600 hover:bg-blue-600"
       @click="toggleFlyout"
