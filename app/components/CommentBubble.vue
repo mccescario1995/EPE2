@@ -1,9 +1,9 @@
 <template>
   <div class="flex items-start gap-2" :class="isCurrentUser ? 'flex-row-reverse' : ''">
     <!-- Avatar -->
-    <div class="flex-shrink-0 mt-0.5">
+    <div class="flex-shrink-0 mt-0.5 mx-1">
       <div :class="[
-        'rounded-full flex items-center justify-center font-medium',
+        'rounded-full flex items-center justify-center font-medium ',
         isCurrentUser ? 'w-8 h-8 bg-blue-100 text-blue-600 text-sm' : 'w-8 h-8 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-sm',
         isReply && !isCurrentUser ? 'w-7 h-7 text-xs' : ''
       ]">
@@ -17,15 +17,15 @@
       <!-- Header with name, badge, time -->
       <div class="flex items-center gap-1.5 mb-1" :class="isCurrentUser ? 'flex-row-reverse' : ''">
         <div class="flex items-center gap-1.5" :class="isCurrentUser ? 'flex-row-reverse' : ''">
-          <span class="font-medium text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">
+          <span class="font-medium text-sm whitespace-nowrap" :class="comment.type === 'Question' || comment.type === 'Reply' ? 'dark:text-gray-950' : 'dark:text-light-100' ">
             {{ comment.employeeName }}
             <span v-if="isCurrentUser && !isReply"
-              class="ml-1.5 text-[10px] font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">You</span>
+              class="ml-1.5 text-[10px] font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full" :class="comment.type === 'Question' ? 'border dark:border-green-600 dark:text-green-600' : 'dark:bg-green-900/30 dark:text-green-300' ">You</span>
           </span>
 
           <!-- Type Badge -->
           <span v-if="comment.type === 'Question'"
-            class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+            class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-600  dark:text-amber-800">
             Question
           </span>
           <span v-else-if="comment.type === 'Comment'"
@@ -33,7 +33,7 @@
             Comment
           </span>
           <span v-else-if="comment.type === 'Reply'"
-            class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+            class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-50 text-purple-700 dark:bg-purple-200 dark:text-purple-600">
             Reply
           </span>
         </div>
@@ -46,7 +46,7 @@
         'relative px-4 py-2 rounded-2xl max-w-full break-words whitespace-pre-line text-sm leading-relaxed',
         isCurrentUser 
           ? 'bg-blue-600 text-white rounded-tr-sm' 
-          : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-tl-sm',
+          : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-50 rounded-tl-sm',
         isReply && !isCurrentUser ? 'bg-gray-100/80 dark:bg-gray-700/80' : ''
       ]">
         {{ comment.message }}
@@ -60,9 +60,9 @@
             class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" title="Edit" />
         </div>
       </div>
+
+
       <!-- Timestamp -->
-
-
       <time class="text-[9px] text-gray-400 dark:text-gray-500 whitespace-nowrap flex items-center"
         :class="isCurrentUser ? 'flex-row-reverse mr-2' : 'ml-2'" :title="formatFullDate(comment.createdAt)">
         {{ formatTime(comment.createdAt) }}
@@ -99,7 +99,7 @@
       </div>
       
       <!-- Actions row (Reply, Resolve) -->
-      <div v-if="(showReplyBtn || showResolveBtn) &&!isResolved" class="flex items-center gap-1 mt-1.5"
+      <div v-if="(showReplyBtn || showResolveBtn) && !isResolved" class="flex items-center gap-1 mt-1.5"
         :class="isCurrentUser ? 'flex-row-reverse' : ''">
         <Button v-if="showReplyBtn" variant="ghost" size="xs" icon="reply" iconPosition="center"
           @click="$emit('reply', comment.id)" :class="[

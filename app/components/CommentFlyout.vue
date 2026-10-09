@@ -1,6 +1,6 @@
 <template>
   <Transition name="slide-up" appear>
-     <div v-if="isOpen" :style="{ bottom: '80px', right: '35px' }" :class="{ 'resize-active': isResizingVertically }" class="fixed z-[9999]" @keydown.esc="handleClose">
+     <div v-if="isOpen" :style="{  bottom: '80px', right: '35px' }" :class="{ 'resize-active': isResizingVertically }" class="fixed z-[9999]" @keydown.esc="handleClose">
        <div :style="{ height: height }"
          class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-w-md"
          ref="flyoutPanel">
@@ -78,7 +78,7 @@
 
           <!-- Comments List -->
           <div v-else-if="!loading" class="space-y-4">
-            <div v-for="(comment, index) in threadedComments" :key="comment.id" class="space-y-2">
+            <div v-for="(comment, index) in threadedComments" :key="comment.id" class="space-y-2  pt-4" :class="comment.type === 'Question' ? 'bg-yellow-50 rounded' : ''">
 
               <!-- Main Comment/Question -->
               <CommentBubble :comment="comment" :is-current-user="comment.isCurrentUser"
@@ -89,9 +89,9 @@
                 @reply="startReply" @resolve="resolveQuestion" @edit="startEdit" @send-inline-reply="sendInlineReply"
                 @cancel-inline-reply="cancelInlineReply" />
 
-              <!-- Replies to this comment -->
-              <div v-if="comment.replies.length > 0" class=" space-y-2  border-gray-100 dark:border-gray-700 pl-2"
-                :class="isCurrentUser ? 'ml-10 border-l-3' : 'mr-14 pr-2 border-r-3'">
+               <!-- Replies to this comment -->
+               <div v-if="comment.replies.length > 0" class=" space-y-2  border-gray-100 dark:border-gray-700 pl-2"
+                 :class="comment.isCurrentUser ? 'ml-10 border-l-3' : 'mr-14 pr-2 border-r-3'">
                 <div v-for="(reply, replyIndex) in comment.replies" :key="reply.id">
                   <CommentBubble :comment="reply" :is-current-user="reply.isCurrentUser" :is-reply="true"
                     :show-reply-btn="false" :is-requester="isRequester(reply)" :is-approver="isApprover(reply)"
@@ -101,7 +101,7 @@
 
               <!-- Resolved banner for questions -->
               <div v-if="comment.type === 'Question' && comment.isResolved"
-                class="mt-1 px-2 py-0.5 text-xs text-center py-3 border-b-2 font-bold bg-green-50 text-green-600 dark:text-green-50 dark:bg-green-900/20 ">
+                class="mt-1 mb-5 px-2 py-0.5 text-xs text-center py-3 border-b-2 font-bold bg-green-50 text-green-600 dark:text-green-60 dark:bg-green-200 ">
                 This question has been resolved.
               </div>
             </div>
@@ -116,9 +116,12 @@
             <div class="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               <label v-for="type in ['Comment', 'Question']" :key="type"
                 class="flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 text-sm transition-colors"
-                :class="commentType === type ? 'bg-white text-blue-600 shadow-sm dark:bg-gray-600 dark:text-blue-400' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'">
+                :class="commentType === type ? 'bg-white text-blue-600 shadow-sm dark:bg-gray-600 dark:text-blue-400' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'"
+                :disabled="commentsDisabled">
                 <input type="radio" :value="type" v-model="commentType" class="sr-only" :disabled="commentsDisabled">
-                <span>{{ type }}</span>
+                <span 
+                :class="commentsDisabled ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed' :'' "
+                >{{ type }}</span>
               </label>
             </div>
           </div>
@@ -130,7 +133,7 @@
               :rows="commentMessage.length > 0 ? Math.min(Math.ceil(commentMessage.length / 50), 4) : 2"
               @input="autoResize" @keydown.enter.exact.prevent="!commentsDisabled && sendComment"
               @keydown.enter.shift="autoResize" :disabled="commentsDisabled"
-              :placeholder="commentsDisabled ? (unresolvedCount.value > 0 ? 'Cannot comment while there are unresolved questions' : 'This request is closed') : (commentType === 'Question' ? 'Ask a question...' : 'Write a comment...')"></textarea>
+              :placeholder="commentsDisabled ? (getUnresolvedQuestionsCount > 0 ? 'Cannot comment while there are unresolved questions' : 'This request is closed') : (commentType === 'Question' ? 'Ask a question...' : 'Write a comment...')"></textarea>
           </div>
 
           <!-- Send Button -->
@@ -138,7 +141,7 @@
             <Button variant="primary" size="sm" :loading="sending" icon="right_arrow" iconPosition="right"
               @click="!commentsDisabled && sendComment"
               :disabled="commentsDisabled || !commentMessage.trim() || sending">
-              Send
+              Send                                                                                                                                                                                                                                                                      
             </Button>
           </div>
         </div>
@@ -190,7 +193,9 @@ const unresolvedCount = computed(() => getUnresolvedQuestionsCount.value)
 
 // Check if comments should be disabled (unresolved questions exist or transaction is closed)
 const commentsDisabled = computed(() => {
-  return unresolvedCount.value > 0 || transactionStatus.value === 'C'
+  console.log('unresolvedCount.value:', unresolvedCount.value, 'transactionStatus.value:', transactionStatus.value)
+  // return transactionStatus.value === 'C'
+  return getUnresolvedQuestionsCount.value > 0 || transactionStatus.value === 'C'
 })
 
 // Computed helpers for resolve button
@@ -335,7 +340,7 @@ const onVerticalMouseMove = (e: MouseEvent) => {
   const dy = e.clientY - resizeStartY
   
   // Calculate new height (moving top down increases height, moving top up decreases height)
-  // let newHeight = resizeStartHeight + dy
+  // let newHeight = resizeStartHeight - dy
   let newHeight = resizeStartHeight - dy
   
   // Apply constraints (min/max in pixels)
@@ -435,10 +440,6 @@ onMounted(() => {
 
 .dark .flex-1::-webkit-scrollbar-thumb:hover {
   background: #64748b;
-}
-
-.resize-active {
-  transition: none !important;
 }
 
 .resize-active {

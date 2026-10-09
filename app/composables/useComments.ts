@@ -70,8 +70,6 @@ export const useComments = () => {
         }
       )
 
-      console.log('Fetched comments response:', response)
-
        if (response) {
          comments.value = response.items
          unresolvedCount.value = response.unresolvedCount
@@ -114,51 +112,23 @@ export const useComments = () => {
         }
       )
 
-      if (response.success) {
-        // Optimistically update the comments list
-        const newComment: Comment = {
-          id: response.comment.id,
-          transactionId: response.comment.transactionId,
-          userId: response.comment.userId,
-          employeeId: response.comment.employeeId,
-          employeeName: response.comment.employeeName,
-          employeeEmail: response.comment.employeeEmail,
-          message: response.comment.message,
-          type: response.comment.type,
-          parentCommentId: response.comment.parentCommentId,
-          isResolved: response.comment.isResolved,
-          createdAt: response.comment.createdAt,
-          updatedAt: response.comment.updatedAt,
-          metadata: response.comment.metadata,
-          isCurrentUser: response.comment.isCurrentUser,
-          canEdit: response.comment.canEdit,
-          canDelete: response.comment.canDelete,
-          replies: response.comment.replies || []
-        }
-
-        // Insert at the beginning of the list (most recent first)
-        comments.value.unshift(newComment)
-        
-        // Update unresolved count if this is a question
-        if (type === 'Question' && !response.comment.isResolved) {
-          unresolvedCount.value++
-        }
-
-        showToast({
-          title: 'Success',
-          message: 'Comment added successfully',
-          type: 'success'
-        })
-
-        return newComment
-      } else {
-        showToast({
-          title: 'Error',
-          message: 'Failed to add comment',
-          type: 'error'
-        })
-        return null
-      }
+       if (response.success) {
+         // Refresh comments from server to ensure we have the latest state
+         await fetchComments(txId)
+         showToast({
+           title: 'Success',
+           message: 'Comment added successfully',
+           type: 'success'
+         })
+         return response.comment
+       } else {
+         showToast({
+           title: 'Error',
+           message: 'Failed to add comment',
+           type: 'error'
+         })
+         return null
+       }
     } catch (error: any) {
       showToast({
         title: 'Error',
@@ -321,7 +291,6 @@ export const useComments = () => {
   // Get comments grouped by top-level comments (with replies nested)
   // API already returns nested replies, so just filter top-level and sort
   const threadedComments = computed(() => {
-    console.log('Computing threaded comments from', comments.value)
     return comments.value
       .filter(comment => comment.parentCommentId === null)
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
