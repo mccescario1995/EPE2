@@ -274,7 +274,7 @@ watch([periodType, periodCount], () => fetchAnalytics());
             </p>
           </div>
           <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-3 sm:p-4">
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Pending decisions</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Pending responses</p>
             <p class="text-xl sm:text-2xl font-semibold text-amber-600 dark:text-amber-400">
               {{ summary.totalPending }}
             </p>

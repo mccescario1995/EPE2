@@ -998,8 +998,9 @@ onMounted(() => {
               >
               <div class="uppercase">{{ element.name }}</div>
               <button
-                class="ml-auto text-red-500 hover:text-red-700 transition-colors"
+                class="ml-auto text-red-500 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete approver"
+                :disabled="element.children.length > 0"
                 @click="confirmDelete(element.approver)"
               >
                 <svg
@@ -1543,8 +1544,9 @@ onMounted(() => {
                 </div>
 
                 <button
-                  class="ml-auto text-red-500 hover:text-red-600 dark:text-red-400 transition-colors"
+                  class="ml-auto text-red-500 hover:text-red-600 dark:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Delete approver"
+                  :disabled="element.children.length > 0"
                   @click="confirmDelete(element.approver)"
                 >
                   <svg

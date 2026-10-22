@@ -284,9 +284,6 @@ const getApproverStatusTextColor = (respond: number) => {
 const groupedApprovers = computed(() => {
   const mainApprovers: any[] = [];
   const proxiesMap: Map<number, any[]> = new Map();
-
-  console.log("Grouping approvers from approversData:", approversData.value);
-
   // Phase 1: Group EVERYTHING exactly like your original working code
   const allMainApprovers: any[] = [];
   const allProxiesMap: Map<number, any[]> = new Map();
