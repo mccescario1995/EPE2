@@ -1093,6 +1093,18 @@ namespace EPEAPI.Controllers
                     .ToListAsync();
 
                 // ============================================================
+                // FIND REQUESTER'S SORT GROUP (from ORIGINAL policy approvers)
+                // Used to determine which Sort to skip for first approval email
+                // MUST capture BEFORE filtering removes the requester
+                // ============================================================
+
+                var originalRequesterSortGroups = policyApprovers
+                    .Where(p => p.Approverid == requesterId.ToString())
+                    .Select(p => p.Sort)
+                    .Distinct()
+                    .ToHashSet();
+
+                // ============================================================
                 // FILTER: REMOVE REQUESTER FROM APPROVERS
                 // If requester is main (Linesequence=1) -> remove entire Sort group
                 // If requester is proxy (Linesequence>1) -> remove only that proxy
@@ -1106,15 +1118,8 @@ namespace EPEAPI.Controllers
 
                 policyApprovers = FilterIMLastApprover(policyApprovers);
 
-                // ============================================================
-                // FIND REQUESTER'S SORT GROUP (from filtered list)
-                // Used to determine which Sort to skip for first approval email
-                // ============================================================
-
-                var requesterSortGroups = policyApprovers
-                    .Where(p => p.Approverid == requesterId.ToString())
-                    .Select(p => p.Sort)
-                    .ToHashSet();
+                // Use captured groups from original list
+                var requesterSortGroups = originalRequesterSortGroups;
 
                 // ============================================================
                 // CREATE TRANSACTION APPROVERS
@@ -1195,26 +1200,160 @@ namespace EPEAPI.Controllers
                 }
 
                 // ============================================================
-                // DETERMINE SORT GROUPS
+                // FIND FIRST ACTIVE SORT GROUP AFTER FILTERING
+                // Skip requester's Sort group(s) and find the next Sort with pending approvers
                 // ============================================================
 
-                var sortGroups = policyApprovers
-                    .Select(p => p.Sort)
-                    .Distinct()
-                    .OrderBy(s => s)
+                var activeApprovers = policyApprovers
+                    .Where(p => !requesterSortGroups.Contains(p.Sort))
                     .ToList();
 
-                // ============================================================
-                // ONLY ONE SORT GROUP
-                //
-                // There is no next approval group.
-                //
-                // Therefore the transaction is immediately closed
-                // as Approved.
-                // ============================================================
-
-                if (sortGroups.Count == 1)
+                if (activeApprovers.Any())
                 {
+                    // There are remaining approvers - send to first Sort group
+                    var firstSort = activeApprovers.Min(p => p.Sort);
+
+                    var firstGroupApprovers = activeApprovers
+                        .Where(p => p.Sort == firstSort)
+                        .OrderBy(p => p.Linesequence ?? int.MaxValue)
+                        .ToList();
+
+                    transactionHeader.Status = "P";
+                    transactionHeader.Finaldecision = "Pending";
+                    transactionHeader.Modifieddate = DateTime.UtcNow.AddHours(8);
+
+                    await _context.SaveChangesAsync();
+
+                    // ----------------------------------------------------
+                    // SEND EMAILS TO FIRST APPROVAL GROUP
+                    // ----------------------------------------------------
+
+                    foreach (var approver in firstGroupApprovers)
+                    {
+                        string approverEmail = approver.Approveremail ?? "";
+
+                        string approverName = approver.Approvername ?? "";
+
+                        int approverUserId = 0;
+
+                        bool isProxy = approver.Linesequence != 1;
+
+                        // ------------------------------------------------
+                        // IMMEDIATE MANAGER
+                        // ------------------------------------------------
+
+                        if (approver.Approvertype == "IM" && userDetails != null)
+                        {
+                            approverEmail = userDetails.ImmediateEmail ?? "";
+
+                            approverName = userDetails.ImmediateName ?? "";
+                        }
+
+                        if (!string.IsNullOrEmpty(approverEmail))
+                        {
+                            try
+                            {
+                                // ========================================
+                                // GET APPROVER USER ID
+                                // ========================================
+
+                                if (!string.IsNullOrEmpty(approver.Approverid))
+                                {
+                                    var approverUser =
+                                        await _context.CoreVUsers.FirstOrDefaultAsync(u =>
+                                            u.EmplId == approver.Approverid
+                                        );
+
+                                    if (approverUser != null)
+                                    {
+                                        approverUserId = approverUser.UserId;
+                                    }
+                                }
+
+                                // ========================================
+                                // FALLBACK FOR IM
+                                // ========================================
+
+                                if (
+                                    approverUserId == 0
+                                    && approver.Approvertype == "IM"
+                                    && userDetails != null
+                                    && !string.IsNullOrEmpty(userDetails.ImmediateId)
+                                )
+                                {
+                                    var imUser = await _context.CoreVUsers.FirstOrDefaultAsync(
+                                        u => u.EmplId == userDetails.ImmediateId
+                                    );
+
+                                    if (imUser != null)
+                                    {
+                                        approverUserId = imUser.UserId;
+                                    }
+                                }
+
+                                // ========================================
+                                // GET TRANSACTION APPROVER
+                                // ========================================
+
+                                var transApproverRecord = await _context
+                                    .EpeTransactionapprovers.Where(a =>
+                                        a.Transactionid == transactionHeader.Transactionid
+                                        && a.Approverid == approver.Id.ToString()
+                                        && a.Isdelete == 0
+                                    )
+                                    .FirstOrDefaultAsync();
+
+                                // ========================================
+                                // PROXY EMAIL
+                                // ========================================
+
+                                if (isProxy)
+                                {
+                                    await _emailService.SendProxyApproverReminderEmailAsync(
+                                        approverEmail,
+                                        approverName,
+                                        firstGroupApprovers.First().Approvername
+                                            ?? "Main Approver",
+                                        transactionHeader.Transactionid,
+                                        transactionHeader.Transactionnumber,
+                                        userDetails?.Employeename,
+                                        transactionHeader.Details ?? "No details provided",
+                                        approverUserId,
+                                        transApproverRecord?.Transapproverid ?? 0
+                                    );
+                                }
+                                else
+                                {
+                                    // ====================================
+                                    // NORMAL APPROVER EMAIL
+                                    // ====================================
+
+                                    await _emailService.SendApprovalRequestEmailAsync(
+                                        approverEmail,
+                                        transactionHeader.Transactionid,
+                                        transactionHeader.Transactionnumber,
+                                        userDetails?.Employeename,
+                                        transactionHeader.Details ?? "No details provided",
+                                        approverUserId,
+                                        transApproverRecord?.Transapproverid ?? 0
+                                    );
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(
+                                    ex,
+                                    "Failed to send approval request email to {Email}",
+                                    approverEmail
+                                );
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // NO APPROVERS LEFT AT ALL AFTER FILTERING
+                    // Only auto-close if truly no one needs to respond
                     transactionHeader.Status = "C";
                     transactionHeader.Finaldecision = "Approved";
                     transactionHeader.Modifieddate = DateTime.UtcNow.AddHours(8);
@@ -1229,162 +1368,6 @@ namespace EPEAPI.Controllers
                     );
 
                     await _context.SaveChangesAsync();
-                }
-                else
-                {
-                    // ========================================================
-                    // MULTIPLE SORT GROUPS
-                    //
-                    // Skip requester's Sort group and find the next Sort.
-                    // ========================================================
-
-                    var activeApprovers = policyApprovers
-                        .Where(p => !requesterSortGroups.Contains(p.Sort))
-                        .ToList();
-
-                    if (activeApprovers.Any())
-                    {
-                        // ----------------------------------------------------
-                        // FIRST ACTIVE SORT
-                        // ----------------------------------------------------
-
-                        var firstSort = activeApprovers.Min(p => p.Sort);
-
-                        // ----------------------------------------------------
-                        // FIRST APPROVAL GROUP
-                        // ----------------------------------------------------
-
-                        var firstGroupApprovers = activeApprovers
-                            .Where(p => p.Sort == firstSort)
-                            .OrderBy(p => p.Linesequence ?? int.MaxValue)
-                            .ToList();
-
-                        // ----------------------------------------------------
-                        // SEND EMAILS
-                        // ----------------------------------------------------
-
-                        foreach (var approver in firstGroupApprovers)
-                        {
-                            string approverEmail = approver.Approveremail ?? "";
-
-                            string approverName = approver.Approvername ?? "";
-
-                            int approverUserId = 0;
-
-                            bool isProxy = approver.Linesequence != 1;
-
-                            // ------------------------------------------------
-                            // IMMEDIATE MANAGER
-                            // ------------------------------------------------
-
-                            if (approver.Approvertype == "IM" && userDetails != null)
-                            {
-                                approverEmail = userDetails.ImmediateEmail ?? "";
-
-                                approverName = userDetails.ImmediateName ?? "";
-                            }
-
-                            if (!string.IsNullOrEmpty(approverEmail))
-                            {
-                                try
-                                {
-                                    // ========================================
-                                    // GET APPROVER USER ID
-                                    // ========================================
-
-                                    if (!string.IsNullOrEmpty(approver.Approverid))
-                                    {
-                                        var approverUser =
-                                            await _context.CoreVUsers.FirstOrDefaultAsync(u =>
-                                                u.EmplId == approver.Approverid
-                                            );
-
-                                        if (approverUser != null)
-                                        {
-                                            approverUserId = approverUser.UserId;
-                                        }
-                                    }
-
-                                    // ========================================
-                                    // FALLBACK FOR IM
-                                    // ========================================
-
-                                    if (
-                                        approverUserId == 0
-                                        && approver.Approvertype == "IM"
-                                        && userDetails != null
-                                        && !string.IsNullOrEmpty(userDetails.ImmediateId)
-                                    )
-                                    {
-                                        var imUser = await _context.CoreVUsers.FirstOrDefaultAsync(
-                                            u => u.EmplId == userDetails.ImmediateId
-                                        );
-
-                                        if (imUser != null)
-                                        {
-                                            approverUserId = imUser.UserId;
-                                        }
-                                    }
-
-                                    // ========================================
-                                    // GET TRANSACTION APPROVER
-                                    // ========================================
-
-                                    var transApproverRecord = await _context
-                                        .EpeTransactionapprovers.Where(a =>
-                                            a.Transactionid == transactionHeader.Transactionid
-                                            && a.Approverid == approver.Id.ToString()
-                                            && a.Isdelete == 0
-                                        )
-                                        .FirstOrDefaultAsync();
-
-                                    // ========================================
-                                    // PROXY EMAIL
-                                    // ========================================
-
-                                    if (isProxy)
-                                    {
-                                        await _emailService.SendProxyApproverReminderEmailAsync(
-                                            approverEmail,
-                                            approverName,
-                                            firstGroupApprovers.First().Approvername
-                                                ?? "Main Approver",
-                                            transactionHeader.Transactionid,
-                                            transactionHeader.Transactionnumber,
-                                            userDetails?.Employeename,
-                                            transactionHeader.Details ?? "No details provided",
-                                            approverUserId,
-                                            transApproverRecord?.Transapproverid ?? 0
-                                        );
-                                    }
-                                    else
-                                    {
-                                        // ====================================
-                                        // NORMAL APPROVER EMAIL
-                                        // ====================================
-
-                                        await _emailService.SendApprovalRequestEmailAsync(
-                                            approverEmail,
-                                            transactionHeader.Transactionid,
-                                            transactionHeader.Transactionnumber,
-                                            userDetails?.Employeename,
-                                            transactionHeader.Details ?? "No details provided",
-                                            approverUserId,
-                                            transApproverRecord?.Transapproverid ?? 0
-                                        );
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    _logger.LogError(
-                                        ex,
-                                        "Failed to send approval request email to {Email}",
-                                        approverEmail
-                                    );
-                                }
-                            }
-                        }
-                    }
                 }
 
                 // ============================================================
@@ -1604,6 +1587,18 @@ namespace EPEAPI.Controllers
                     .ToListAsync();
 
                 // ============================================================
+                // FIND REQUESTER'S SORT GROUP (from ORIGINAL policy approvers)
+                // Used to determine which Sort to skip for first approval email
+                // MUST capture BEFORE filtering removes the requester
+                // ============================================================
+
+                var originalRequesterSortGroups = policyApprovers
+                    .Where(p => p.Approverid == draft.Requestorid.ToString())
+                    .Select(p => p.Sort)
+                    .Distinct()
+                    .ToHashSet();
+
+                // ============================================================
                 // FILTER: REMOVE REQUESTER FROM APPROVERS
                 // If requester is main (Linesequence=1) -> remove entire Sort group
                 // If requester is proxy (Linesequence>1) -> remove only that proxy
@@ -1617,15 +1612,8 @@ namespace EPEAPI.Controllers
 
                 policyApprovers = FilterIMLastApprover(policyApprovers);
 
-                // ============================================================
-                // FIND REQUESTER'S SORT GROUP (from filtered list)
-                // Used to determine which Sort to skip for first approval email
-                // ============================================================
-
-                var requesterSortGroups = policyApprovers
-                    .Where(p => p.Approverid == draft.Requestorid.ToString())
-                    .Select(p => p.Sort)
-                    .ToHashSet();
+                // Use captured groups from original list
+                var requesterSortGroups = originalRequesterSortGroups;
 
                 // ============================================================
                 // CREATE TRANSACTION APPROVERS
@@ -1671,32 +1659,163 @@ namespace EPEAPI.Controllers
                 await _context.SaveChangesAsync();
 
                 // ============================================================
-                // DETERMINE SORT GROUPS
+                // FIND FIRST ACTIVE SORT GROUP AFTER FILTERING
+                // Skip requester's Sort group(s) and find the next Sort with pending approvers
                 // ============================================================
 
-                var sortGroups = policyApprovers
-                    .Select(p => p.Sort)
-                    .Distinct()
-                    .OrderBy(s => s)
+                var activeApprovers = policyApprovers
+                    .Where(p => !requesterSortGroups.Contains(p.Sort))
                     .ToList();
 
-                // ============================================================
-                // ONLY ONE SORT GROUP
-                //
-                // There is no next approval group.
-                //
-                // Close transaction immediately as Approved.
-                // ============================================================
-
-                if (sortGroups.Count == 1)
+                if (activeApprovers.Any())
                 {
+                    // There are remaining approvers - send to first Sort group
+                    var firstSort = activeApprovers.Min(p => p.Sort);
+
+                    var firstGroupApprovers = activeApprovers
+                        .Where(p => p.Sort == firstSort)
+                        .OrderBy(p => p.Linesequence ?? int.MaxValue)
+                        .ToList();
+
+                    draft.Status = "P";
+                    draft.Finaldecision = "Pending";
+                    draft.Modifieddate = DateTime.UtcNow.AddHours(8);
+
+                    await _context.SaveChangesAsync();
+
+                    // ----------------------------------------------------
+                    // SEND EMAILS TO FIRST APPROVAL GROUP
+                    // ----------------------------------------------------
+
+                    foreach (var approver in firstGroupApprovers)
+                    {
+                        string approverEmail = approver.Approveremail ?? "";
+
+                        string approverName = approver.Approvername ?? "";
+
+                        int approverUserId = 0;
+
+                        bool isProxy = approver.Linesequence != 1;
+
+                        // ------------------------------------------------
+                        // IMMEDIATE MANAGER
+                        // ------------------------------------------------
+
+                        if (approver.Approvertype == "IM" && requester != null)
+                        {
+                            approverEmail = requester.ImmediateEmail ?? "";
+
+                            approverName = requester.ImmediateName ?? "";
+                        }
+
+                        if (!string.IsNullOrEmpty(approverEmail))
+                        {
+                            try
+                            {
+                                // ========================================
+                                // GET APPROVER USER ID
+                                // ========================================
+
+                                if (!string.IsNullOrEmpty(approver.Approverid))
+                                {
+                                    var approverUser =
+                                        await _context.CoreVUsers.FirstOrDefaultAsync(u =>
+                                            u.EmplId == approver.Approverid
+                                        );
+
+                                    if (approverUser != null)
+                                    {
+                                        approverUserId = approverUser.UserId;
+                                    }
+                                }
+
+                                // ========================================
+                                // FALLBACK FOR IM
+                                // ========================================
+
+                                if (
+                                    approverUserId == 0
+                                    && approver.Approvertype == "IM"
+                                    && requester != null
+                                    && !string.IsNullOrEmpty(requester.ImmediateId)
+                                )
+                                {
+                                    var imUser = await _context.CoreVUsers.FirstOrDefaultAsync(
+                                        u => u.EmplId == requester.ImmediateId
+                                    );
+
+                                    if (imUser != null)
+                                    {
+                                        approverUserId = imUser.UserId;
+                                    }
+                                }
+
+                                // ========================================
+                                // GET TRANSACTION APPROVER
+                                // ========================================
+
+                                var transApproverRecord = await _context
+                                    .EpeTransactionapprovers.Where(a =>
+                                        a.Transactionid == draft.Transactionid
+                                        && a.Approverid == approver.Id.ToString()
+                                        && a.Isdelete == 0
+                                    )
+                                    .FirstOrDefaultAsync();
+
+                                // ========================================
+                                // PROXY EMAIL
+                                // ========================================
+
+                                if (isProxy)
+                                {
+                                    await _emailService.SendProxyApproverReminderEmailAsync(
+                                        approverEmail,
+                                        approverName,
+                                        firstGroupApprovers.First().Approvername
+                                            ?? "Main Approver",
+                                        draft.Transactionid,
+                                        draft.Transactionnumber,
+                                        requester?.Employeename,
+                                        draft.Details ?? "No details provided",
+                                        approverUserId,
+                                        transApproverRecord?.Transapproverid ?? 0
+                                    );
+                                }
+                                else
+                                {
+                                    // ====================================
+                                    // NORMAL APPROVER EMAIL
+                                    // ====================================
+
+                                    await _emailService.SendApprovalRequestEmailAsync(
+                                        approverEmail,
+                                        draft.Transactionid,
+                                        draft.Transactionnumber,
+                                        requester?.Employeename,
+                                        draft.Details ?? "No details provided",
+                                        approverUserId,
+                                        transApproverRecord?.Transapproverid ?? 0
+                                    );
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(
+                                    ex,
+                                    "Failed to send approval request email to {Email}",
+                                    approverEmail
+                                );
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // NO APPROVERS LEFT AT ALL AFTER FILTERING
+                    // Only auto-close if truly no one needs to respond
                     draft.Status = "C";
                     draft.Finaldecision = "Approved";
                     draft.Modifieddate = DateTime.UtcNow.AddHours(8);
-
-                    // --------------------------------------------------------
-                    // LOG CLOSE
-                    // --------------------------------------------------------
 
                     await LogTransactionAsync(
                         draft.Transactionid,
@@ -1708,162 +1827,6 @@ namespace EPEAPI.Controllers
                     );
 
                     await _context.SaveChangesAsync();
-                }
-                else
-                {
-                    // ========================================================
-                    // MULTIPLE SORT GROUPS
-                    //
-                    // Skip requester's Sort and find next approval group.
-                    // ========================================================
-
-                    var activeApprovers = policyApprovers
-                        .Where(p => !requesterSortGroups.Contains(p.Sort))
-                        .ToList();
-
-                    if (activeApprovers.Any())
-                    {
-                        // ----------------------------------------------------
-                        // FIRST ACTIVE SORT
-                        // ----------------------------------------------------
-
-                        var firstSort = activeApprovers.Min(p => p.Sort);
-
-                        // ----------------------------------------------------
-                        // FIRST APPROVAL GROUP
-                        // ----------------------------------------------------
-
-                        var firstGroupApprovers = activeApprovers
-                            .Where(p => p.Sort == firstSort)
-                            .OrderBy(p => p.Linesequence ?? int.MaxValue)
-                            .ToList();
-
-                        // ----------------------------------------------------
-                        // SEND EMAILS
-                        // ----------------------------------------------------
-
-                        foreach (var approver in firstGroupApprovers)
-                        {
-                            string approverEmail = approver.Approveremail ?? "";
-
-                            string approverName = approver.Approvername ?? "";
-
-                            int approverUserId = 0;
-
-                            bool isProxy = approver.Linesequence != 1;
-
-                            // ------------------------------------------------
-                            // IMMEDIATE MANAGER
-                            // ------------------------------------------------
-
-                            if (approver.Approvertype == "IM" && requester != null)
-                            {
-                                approverEmail = requester.ImmediateEmail ?? "";
-
-                                approverName = requester.ImmediateName ?? "";
-                            }
-
-                            if (!string.IsNullOrEmpty(approverEmail))
-                            {
-                                try
-                                {
-                                    // ========================================
-                                    // GET APPROVER USER ID
-                                    // ========================================
-
-                                    if (!string.IsNullOrEmpty(approver.Approverid))
-                                    {
-                                        var approverUser =
-                                            await _context.CoreVUsers.FirstOrDefaultAsync(u =>
-                                                u.EmplId == approver.Approverid
-                                            );
-
-                                        if (approverUser != null)
-                                        {
-                                            approverUserId = approverUser.UserId;
-                                        }
-                                    }
-
-                                    // ========================================
-                                    // FALLBACK FOR IM
-                                    // ========================================
-
-                                    if (
-                                        approverUserId == 0
-                                        && approver.Approvertype == "IM"
-                                        && requester != null
-                                        && !string.IsNullOrEmpty(requester.ImmediateId)
-                                    )
-                                    {
-                                        var imUser = await _context.CoreVUsers.FirstOrDefaultAsync(
-                                            u => u.EmplId == requester.ImmediateId
-                                        );
-
-                                        if (imUser != null)
-                                        {
-                                            approverUserId = imUser.UserId;
-                                        }
-                                    }
-
-                                    // ========================================
-                                    // GET TRANSACTION APPROVER
-                                    // ========================================
-
-                                    var transApproverRecord = await _context
-                                        .EpeTransactionapprovers.Where(a =>
-                                            a.Transactionid == draft.Transactionid
-                                            && a.Approverid == approver.Id.ToString()
-                                            && a.Isdelete == 0
-                                        )
-                                        .FirstOrDefaultAsync();
-
-                                    // ========================================
-                                    // PROXY EMAIL
-                                    // ========================================
-
-                                    if (isProxy)
-                                    {
-                                        await _emailService.SendProxyApproverReminderEmailAsync(
-                                            approverEmail,
-                                            approverName,
-                                            firstGroupApprovers.First().Approvername
-                                                ?? "Main Approver",
-                                            draft.Transactionid,
-                                            draft.Transactionnumber,
-                                            requester?.Employeename,
-                                            draft.Details ?? "No details provided",
-                                            approverUserId,
-                                            transApproverRecord?.Transapproverid ?? 0
-                                        );
-                                    }
-                                    else
-                                    {
-                                        // ====================================
-                                        // NORMAL APPROVER EMAIL
-                                        // ====================================
-
-                                        await _emailService.SendApprovalRequestEmailAsync(
-                                            approverEmail,
-                                            draft.Transactionid,
-                                            draft.Transactionnumber,
-                                            requester?.Employeename,
-                                            draft.Details ?? "No details provided",
-                                            approverUserId,
-                                            transApproverRecord?.Transapproverid ?? 0
-                                        );
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    _logger.LogError(
-                                        ex,
-                                        "Failed to send approval request email to {Email}",
-                                        approverEmail
-                                    );
-                                }
-                            }
-                        }
-                    }
                 }
 
                 // ============================================================
