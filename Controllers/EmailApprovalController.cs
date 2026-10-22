@@ -367,9 +367,33 @@ public class EmailApprovalController : ControllerBase
                 _logger.LogWarning("No approver found to disapprove with line sequence {LineSequence} for transaction {TransactionId}", lineSequence, transactionId);
             }
 
-            approver.Respond = 2;
-            approver.Responddate = DateTime.Now;
-            approver.Remarks = "Disapproved via email";         
+            // Check if current approver is MAIN (Linesequence == 1)
+            var isMainApprover = approver != null && approver.Linesequence == 1;
+
+            if (isMainApprover)
+            {
+                // Main approver disapproved - hide proxies from UI by soft-deleting them
+                var proxyApprovers = await _context.EpeTransactionapprovers
+                    .Where(a => a.Transactionid == transactionId
+                             && a.Sort == approver.Sort
+                             && a.Linesequence != 1
+                             && a.Isdelete == 0)
+                    .ToListAsync();
+
+                foreach (var proxy in proxyApprovers)
+                {
+                    proxy.Isdelete = 1; // Hide from UI
+                }
+            }
+
+            // Only the acting approver gets Respond=2 with their remarks
+            // NO auto-disapproval for others
+            if (approver != null)
+            {
+                approver.Respond = 2;
+                approver.Responddate = DateTime.Now;
+                approver.Remarks = "Disapproved via email";
+            }
 
             var transHeader = await _context.EpeTransactionheaders
                 .Where(h => h.Transactionid == transactionId)

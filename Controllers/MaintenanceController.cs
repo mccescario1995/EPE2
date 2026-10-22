@@ -627,7 +627,8 @@ namespace EPEAPI.Controllers
                 return NotFound(new { success = false, message = "Approver not found" });
             }
 
-            approver.Isdelete = 1;
+            _context.EpePolicyapprovers.Remove(approver);   
+            // approver.Isdelete = 1;
             await _context.SaveChangesAsync();
 
             return Ok(new { success = true, message = "Approver deleted" });

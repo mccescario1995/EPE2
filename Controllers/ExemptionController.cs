@@ -1093,12 +1093,22 @@ namespace EPEAPI.Controllers
                     .ToListAsync();
 
                 // ============================================================
-                // FIND REQUESTER'S SORT GROUP
-                //
-                // We DO NOT remove these approvers.
-                //
-                // This is only used to determine which Sort should be skipped
-                // when sending the first approval email.
+                // FILTER: REMOVE REQUESTER FROM APPROVERS
+                // If requester is main (Linesequence=1) -> remove entire Sort group
+                // If requester is proxy (Linesequence>1) -> remove only that proxy
+                // ============================================================
+
+                policyApprovers = FilterRequesterApprovers(policyApprovers, requesterId.ToString());
+
+                // ============================================================
+                // FILTER: IF IM IS LAST APPROVER, TRUNCATE AT IM'S SORT
+                // ============================================================
+
+                policyApprovers = FilterIMLastApprover(policyApprovers);
+
+                // ============================================================
+                // FIND REQUESTER'S SORT GROUP (from filtered list)
+                // Used to determine which Sort to skip for first approval email
                 // ============================================================
 
                 var requesterSortGroups = policyApprovers
@@ -1109,16 +1119,9 @@ namespace EPEAPI.Controllers
                 // ============================================================
                 // CREATE TRANSACTION APPROVERS
                 //
-                // KEEP:
-                //   - All approvers
-                //   - Original Sort
-                //   - Original Linesequence
-                //
-                // REQUESTER:
-                //   Respond = 1
-                //
-                // OTHER APPROVERS:
-                //   Respond = 0
+                // REQUESTER (if still in list): Respond = 1 (auto-approved)
+                // OTHER APPROVERS: Respond = 0 (pending)
+                // Note: Requester should already be removed by filter above
                 // ============================================================
 
                 foreach (var policyApprover in policyApprovers)
@@ -1139,7 +1142,7 @@ namespace EPEAPI.Controllers
 
                             Sort = policyApprover.Sort,
 
-                            // REQUESTER IS AUTOMATICALLY APPROVED
+                            // REQUESTER IS AUTOMATICALLY APPROVED (if any remain)
                             Respond = isRequester ? 1 : 0,
 
                             Issent = 0,
@@ -1601,10 +1604,22 @@ namespace EPEAPI.Controllers
                     .ToListAsync();
 
                 // ============================================================
-                // FIND REQUESTER'S SORT GROUP
-                //
-                // This is ONLY used to determine which group to skip
-                // for the initial email.
+                // FILTER: REMOVE REQUESTER FROM APPROVERS
+                // If requester is main (Linesequence=1) -> remove entire Sort group
+                // If requester is proxy (Linesequence>1) -> remove only that proxy
+                // ============================================================
+
+                policyApprovers = FilterRequesterApprovers(policyApprovers, draft.Requestorid.ToString());
+
+                // ============================================================
+                // FILTER: IF IM IS LAST APPROVER, TRUNCATE AT IM'S SORT
+                // ============================================================
+
+                policyApprovers = FilterIMLastApprover(policyApprovers);
+
+                // ============================================================
+                // FIND REQUESTER'S SORT GROUP (from filtered list)
+                // Used to determine which Sort to skip for first approval email
                 // ============================================================
 
                 var requesterSortGroups = policyApprovers
@@ -1615,12 +1630,9 @@ namespace EPEAPI.Controllers
                 // ============================================================
                 // CREATE TRANSACTION APPROVERS
                 //
-                // KEEP ALL APPROVERS
-                // KEEP ORIGINAL SORT
-                // KEEP ORIGINAL LINESEQUENCE
-                //
-                // REQUESTER = RESPOND 1
-                // OTHERS    = RESPOND 0
+                // REQUESTER (if still in list): Respond = 1 (auto-approved)
+                // OTHER APPROVERS: Respond = 0 (pending)
+                // Note: Requester should already be removed by filter above
                 // ============================================================
 
                 foreach (var policyApprover in policyApprovers)
@@ -1641,7 +1653,7 @@ namespace EPEAPI.Controllers
 
                             Sort = policyApprover.Sort,
 
-                            // REQUESTER IS AUTOMATICALLY APPROVED
+                            // REQUESTER IS AUTOMATICALLY APPROVED (if any remain)
                             Respond = isRequester ? 1 : 0,
 
                             Issent = 0,
@@ -2340,39 +2352,32 @@ namespace EPEAPI.Controllers
                 }
                 else if (request.Respond == 2) // Disapproved
                 {
-                    // Auto-disapprove everyone in the same sort group
-                    var allApprovers = await _context
-                        .EpeTransactionapprovers.Where(a =>
-                            a.Transactionid == request.TransactionId && a.Isdelete == 0
-                        )
-                        .ToListAsync();
+                    // Check if current approver is MAIN (Linesequence == 1)
+                    var isMainApprover = approver.Linesequence == 1;
 
-                    var groupIds = allApprovers
-                        .Where(a => a.Sort == approver.Sort && a.Respond == 0)
-                        .Select(a => a.Transapproverid)
-                        .ToList();
+                    if (isMainApprover)
+                    {
+                        // Main approver disapproved - hide proxies from UI by soft-deleting them
+                        var proxyApprovers = await _context.EpeTransactionapprovers
+                            .Where(a => a.Transactionid == request.TransactionId
+                                     && a.Sort == approver.Sort
+                                     && a.Linesequence != 1
+                                     && a.Isdelete == 0)
+                            .ToListAsync();
 
-                    // Disapprove the current approver individually
+                        foreach (var proxy in proxyApprovers)
+                        {
+                            proxy.Isdelete = 1; // Hide from UI
+                        }
+                    }
+
+                    // Only the acting approver gets Respond=2 with their remarks
+                    // NO auto-disapproval for others
                     approver.Respond = 2;
                     approver.Responddate = DateTime.UtcNow.AddHours(8);
-                    approver.Remarks = request.Remarks; // Already saved above, but ensure
+                    approver.Remarks = request.Remarks;
 
                     await _context.SaveChangesAsync();
-
-                    foreach (var groupId in groupIds.Where(id => id != request.TransApproverId))
-                    {
-                        var empName = _context
-                            .CoreVEmployeeDetails.Where(n => n.EmplId == request.EmployeeId)
-                            .Select(m => m.Employeename2)
-                            .FirstOrDefault();
-                        var groupApprover = allApprovers.First(a => a.Transapproverid == groupId);
-                        groupApprover.Respond = 2;
-                        groupApprover.Responddate = DateTime.UtcNow.AddHours(8);
-                        // Use a standard message indicating auto-disapproval
-                        groupApprover.Remarks =
-                            $"Disapproved by: {empName ?? "No remarks provided"}";
-                        await _context.SaveChangesAsync();
-                    }
 
                     await _context
                         .EpeTransactionheaders.Where(h => h.Transactionid == request.TransactionId)
@@ -3358,6 +3363,55 @@ namespace EPEAPI.Controllers
             {
                 return StatusCode(500, "Error: " + e.Message);
             }
+        }
+
+        private List<EpePolicyapprover> FilterRequesterApprovers(
+            List<EpePolicyapprover> policyApprovers,
+            string requesterId)
+        {
+            var requesterSortGroups = policyApprovers
+                .Where(p => p.Approverid == requesterId)
+                .Select(p => p.Sort)
+                .Distinct()
+                .ToHashSet();
+
+            var filtered = policyApprovers
+                .Where(p =>
+                {
+                    if (!requesterSortGroups.Contains(p.Sort)) return true;
+
+                    if (p.Approverid == requesterId) return false;
+
+                    var requesterInGroup = policyApprovers
+                        .FirstOrDefault(r => r.Sort == p.Sort && r.Approverid == requesterId);
+                    if (requesterInGroup?.Linesequence == 1) return false;
+
+                    return true;
+                })
+                .ToList();
+
+            return filtered;
+        }
+
+        private List<EpePolicyapprover> FilterIMLastApprover(
+            List<EpePolicyapprover> policyApprovers)
+        {
+            var maxSort = policyApprovers.Max(p => p.Sort ?? 0);
+            var lastGroupHasIM = policyApprovers
+                .Any(p => p.Sort == maxSort && p.Approvertype == "IM");
+
+            if (!lastGroupHasIM) return policyApprovers;
+
+            var imSort = policyApprovers
+                .Where(p => p.Approvertype == "IM")
+                .Max(p => p.Sort ?? 0);
+
+            if (imSort > 0)
+            {
+                return policyApprovers.Where(p => (p.Sort ?? 0) <= imSort).ToList();
+            }
+
+            return policyApprovers;
         }
 
         private async Task LogTransactionAsync(

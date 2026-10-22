@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 using System.Text.Json;
 using EPEAPI.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace EPEAPI.Services;
@@ -14,17 +14,28 @@ public class EmailNotificationService
     private readonly EmailApprovalTokenService _tokenService;
     private readonly UrlBaseSettings _urlBaseSettings;
 
-    public EmailNotificationService(HttpClient httpClient, ILogger<EmailNotificationService> logger, EpeDbContext context, EmailApprovalTokenService tokenService, IOptions<UrlBaseSettings> urlBaseSettings)
+    public EmailNotificationService(
+        HttpClient httpClient,
+        ILogger<EmailNotificationService> logger,
+        EpeDbContext context,
+        EmailApprovalTokenService tokenService,
+        IOptions<UrlBaseSettings> urlBaseSettings
+    )
     {
         _httpClient = httpClient;
         _logger = logger;
         _urlBaseSettings = urlBaseSettings.Value;
         _context = context;
         _tokenService = tokenService;
-
     }
 
-    public async Task CreateWebNotificationAsync(int userId, string title, string message, string type = "info", string? relatedUrl = null)
+    public async Task CreateWebNotificationAsync(
+        int userId,
+        string title,
+        string message,
+        string type = "info",
+        string? relatedUrl = null
+    )
     {
         try
         {
@@ -36,7 +47,7 @@ public class EmailNotificationService
                 Type = type,
                 IsRead = 0,
                 RelatedUrl = relatedUrl,
-                CreatedDate = DateTime.UtcNow.AddHours(8)
+                CreatedDate = DateTime.UtcNow.AddHours(8),
             };
 
             _context.EpeNotifications.Add(notification);
@@ -49,20 +60,32 @@ public class EmailNotificationService
         }
     }
 
-    public async Task SendApprovalRequestEmailAsync(string toEmail, long requestId, string requestNumber, string requestorName, string requestDetails, int userId, long transApproverId)
+    public async Task SendApprovalRequestEmailAsync(
+        string toEmail,
+        long requestId,
+        string requestNumber,
+        string requestorName,
+        string requestDetails,
+        int userId,
+        long transApproverId
+    )
     {
-        
         try
         {
-            var (approveToken, disapproveToken) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
+            var (approveToken, disapproveToken) = await _tokenService.GenerateTokensAsync(
+                requestId,
+                transApproverId
+            );
 
             var apiBase = _urlBaseSettings.Api;
             var viewBase = _urlBaseSettings.View;
-            var respondUrl = $"{viewBase}/#/main/pending-for-approval/approve?id={requestId}&token={approveToken}";
-            var viewUrl = $"{viewBase}/#/main/pending-for-approval/view?id={requestId}&token={approveToken}";
+            var respondUrl =
+                $"{viewBase}/#/main/pending-for-approval/approve?id={requestId}&token={approveToken}";
+            var viewUrl =
+                $"{viewBase}/#/main/pending-for-approval/view?id={requestId}&token={approveToken}";
 
-            
-            var emailBody = $@"
+            var emailBody =
+                $@"
                     <html>
                     <body style='margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;'>
                       <table width='100%' cellpadding='0' cellspacing='0' style='background:#f5f5f5;'>
@@ -137,7 +160,7 @@ public class EmailNotificationService
                 bccrecipient = "mcccescario@fast.com.ph",
                 mailSubject = $"Exemption Request for Approval - {requestNumber}",
                 mailBody = emailBody,
-                createdBy = "EPE System"
+                createdBy = "EPE System",
             };
 
             var authHeader = "65d9ec1b-316f-4294-a294-d8d54f-utility";
@@ -145,18 +168,18 @@ public class EmailNotificationService
 
             var request = new HttpRequestMessage(HttpMethod.Post, emailUrl)
             {
-                Headers =
-                {
-                    { "Authorization", authHeader }
-                },
-                Content = JsonContent.Create(requestBody)
+                Headers = { { "Authorization", authHeader } },
+                Content = JsonContent.Create(requestBody),
             };
 
             using var response = await _httpClient.SendAsync(request);
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("Approval request email notification sent successfully to {Email}", toEmail);
+                _logger.LogInformation(
+                    "Approval request email notification sent successfully to {Email}",
+                    toEmail
+                );
                 // Create web notification for the approver
                 await CreateWebNotificationAsync(
                     userId,
@@ -169,41 +192,61 @@ public class EmailNotificationService
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Failed to send approval request email notification to {Email}. Status: {StatusCode}. Response: {Response}",
-                    toEmail, response.StatusCode, errorContent);
+                _logger.LogError(
+                    "Failed to send approval request email notification to {Email}. Status: {StatusCode}. Response: {Response}",
+                    toEmail,
+                    response.StatusCode,
+                    errorContent
+                );
                 throw new Exception($"Failed to send email. Status: {response.StatusCode}");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send approval request email notification to {Email}", toEmail);
+            _logger.LogError(
+                ex,
+                "Failed to send approval request email notification to {Email}",
+                toEmail
+            );
             throw;
         }
     }
 
-    private (string Primary, string Border, string LightBg, string Title) GetEmailTheme(string status)
+    private (string Primary, string Border, string LightBg, string Title) GetEmailTheme(
+        string status
+    )
     {
         return status.ToLower() switch
         {
             "approved" => ("#16A34A", "#16A34A", "#ECFDF5", "Approved"),
             "disapproved" => ("#DC2626", "#DC2626", "#FEF2F2", "Disapproved"),
             "pending" => ("#F59E0B", "#F59E0B", "#FFFBEB", "Pending"),
-            _ => ("#2563EB", "#2563EB", "#F3F4F6", "Submitted")
+            _ => ("#2563EB", "#2563EB", "#F3F4F6", "Submitted"),
         };
     }
 
-    public async Task SendStatusChangedEmailAsync(string toEmail, long requestId, string requestNumber, string oldStatus, string newStatus, string changedBy, int userId)
+    public async Task SendStatusChangedEmailAsync(
+        string toEmail,
+        long requestId,
+        string requestNumber,
+        string oldStatus,
+        string newStatus,
+        string changedBy,
+        int userId
+    )
     {
         try
         {
-            var trackUrl = $"https://apps.fastlogistics.com.ph/epe2dev/#/main/pending-for-approval/view?id={requestId}";
+            var trackUrl =
+                $"https://apps.fastlogistics.com.ph/epe2dev/#/main/pending-for-approval/view?id={requestId}";
             //  var trackUrl = $"http://localhost:3000/epe2dev/main/pending-for-approval/view?id={requestId}";
 
             // toEmail = "mccescario@fastgroup.biz"; // for testing
 
             var theme = GetEmailTheme(newStatus);
 
-            var emailBody = $@"
+            var emailBody =
+                $@"
                 <html>
                 <body style='margin:0; padding:0;'>
                     <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f5f5f5;'>
@@ -300,7 +343,7 @@ public class EmailNotificationService
                 bccrecipient = "mcccescario@fast.com.ph",
                 mailSubject = $"Exemption Request Status Updated - {requestNumber}",
                 mailBody = emailBody,
-                createdBy = "EPE System"
+                createdBy = "EPE System",
             };
 
             var authHeader = "65d9ec1b-316f-4294-a294-d8d54f-utility";
@@ -308,18 +351,18 @@ public class EmailNotificationService
 
             var request = new HttpRequestMessage(HttpMethod.Post, emailUrl)
             {
-                Headers =
-                {
-                    { "Authorization", authHeader }
-                },
-                Content = JsonContent.Create(requestBody)
+                Headers = { { "Authorization", authHeader } },
+                Content = JsonContent.Create(requestBody),
             };
 
             using var response = await _httpClient.SendAsync(request);
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("Status changed email notification sent successfully to {Email}", toEmail);
+                _logger.LogInformation(
+                    "Status changed email notification sent successfully to {Email}",
+                    toEmail
+                );
                 // Create web notification for the user
                 await CreateWebNotificationAsync(
                     userId,
@@ -332,19 +375,33 @@ public class EmailNotificationService
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Failed to send status changed email notification to {Email}. Status: {StatusCode}. Response: {Response}",
-                    toEmail, response.StatusCode, errorContent);
+                _logger.LogError(
+                    "Failed to send status changed email notification to {Email}. Status: {StatusCode}. Response: {Response}",
+                    toEmail,
+                    response.StatusCode,
+                    errorContent
+                );
                 throw new Exception($"Failed to send email. Status: {response.StatusCode}");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send status changed email notification to {Email}", toEmail);
+            _logger.LogError(
+                ex,
+                "Failed to send status changed email notification to {Email}",
+                toEmail
+            );
             throw;
         }
     }
 
-    public async Task SendRequestCreatedEmailAsync(string toEmail, long requestId, string requestNumber, string requestDetails, int userId)
+    public async Task SendRequestCreatedEmailAsync(
+        string toEmail,
+        long requestId,
+        string requestNumber,
+        string requestDetails,
+        int userId
+    )
     {
         try
         {
@@ -354,7 +411,8 @@ public class EmailNotificationService
 
             // toEmail = "mcccescario@fastgroup.biz"; // for testing
 
-            var emailBody = $@"
+            var emailBody =
+                $@"
                 <html>
                 <body style='margin:0; padding:0;'>
                     <table role='presentation' width='100%' cellpadding='0' cellspacing='0' border='0' style='background-color:#f5f5f5;'>
@@ -455,7 +513,7 @@ public class EmailNotificationService
                 bccrecipient = "mcccescario@fast.com.ph",
                 mailSubject = $"Exemption Request Submitted - {requestNumber}",
                 mailBody = emailBody,
-                createdBy = "EPE System"
+                createdBy = "EPE System",
             };
 
             var authHeader = "65d9ec1b-316f-4294-a294-d8d54f-utility";
@@ -463,18 +521,18 @@ public class EmailNotificationService
 
             var request = new HttpRequestMessage(HttpMethod.Post, emailUrl)
             {
-                Headers =
-                {
-                    { "Authorization", authHeader }
-                },
-                Content = JsonContent.Create(requestBody)
+                Headers = { { "Authorization", authHeader } },
+                Content = JsonContent.Create(requestBody),
             };
 
             using var response = await _httpClient.SendAsync(request);
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("Request created email notification sent successfully to {Email}", toEmail);
+                _logger.LogInformation(
+                    "Request created email notification sent successfully to {Email}",
+                    toEmail
+                );
                 // Create web notification for the user
                 await CreateWebNotificationAsync(
                     userId,
@@ -487,31 +545,50 @@ public class EmailNotificationService
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Failed to send request created email notification to {Email}. Status: {StatusCode}. Response: {Response}",
-                    toEmail, response.StatusCode, errorContent);
+                _logger.LogError(
+                    "Failed to send request created email notification to {Email}. Status: {StatusCode}. Response: {Response}",
+                    toEmail,
+                    response.StatusCode,
+                    errorContent
+                );
                 throw new Exception($"Failed to send email. Status: {response.StatusCode}");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send request created email notification to {Email}", toEmail);
+            _logger.LogError(
+                ex,
+                "Failed to send request created email notification to {Email}",
+                toEmail
+            );
             throw;
         }
     }
 
     //No Use yet, for future use when messaging feature is implemented
-    public async Task SendNewMessageEmailAsync(string toEmail, string requestNumber, string messagePreview, string postedBy)
+    public async Task SendNewMessageEmailAsync(
+        string toEmail,
+        string requestNumber,
+        string messagePreview,
+        string postedBy
+    )
     {
         try
         {
-            var trackUrl = "https://apps.fastlogistics.com.ph/epe2dev/#/main/pending-for-approval/view?id=" + requestNumber;
+            var trackUrl =
+                "https://apps.fastlogistics.com.ph/epe2dev/#/main/pending-for-approval/view?id="
+                + requestNumber;
             //  var trackUrl = "http://localhost:3000/epe2dev/main/pending-for-approval/view?id=" + requestNumber;
 
             // toEmail = "mccescario@fastgroup.biz"; // for testing
 
-            var truncatedMessage = messagePreview.Length > 100 ? messagePreview.Substring(0, 100) + "..." : messagePreview;
+            var truncatedMessage =
+                messagePreview.Length > 100
+                    ? messagePreview.Substring(0, 100) + "..."
+                    : messagePreview;
 
-            var emailBody = $@"
+            var emailBody =
+                $@"
                 <html>
                 <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
                     <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
@@ -554,7 +631,7 @@ public class EmailNotificationService
                 bccrecipient = "mcccescario@fast.com.ph",
                 mailSubject = $"New Message on Exemption Request - {requestNumber}",
                 mailBody = emailBody,
-                createdBy = "EPE System"
+                createdBy = "EPE System",
             };
 
             var authHeader = "65d9ec1b-316f-4294-a294-d8d54f-utility";
@@ -562,53 +639,68 @@ public class EmailNotificationService
 
             var request = new HttpRequestMessage(HttpMethod.Post, emailUrl)
             {
-                Headers =
-                {
-                    { "Authorization", authHeader }
-                },
-                Content = JsonContent.Create(requestBody)
+                Headers = { { "Authorization", authHeader } },
+                Content = JsonContent.Create(requestBody),
             };
 
             using var response = await _httpClient.SendAsync(request);
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("New message email notification sent successfully to {Email}", toEmail);
+                _logger.LogInformation(
+                    "New message email notification sent successfully to {Email}",
+                    toEmail
+                );
             }
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Failed to send new message email notification to {Email}. Status: {StatusCode}. Response: {Response}",
-                    toEmail, response.StatusCode, errorContent);
+                _logger.LogError(
+                    "Failed to send new message email notification to {Email}. Status: {StatusCode}. Response: {Response}",
+                    toEmail,
+                    response.StatusCode,
+                    errorContent
+                );
                 throw new Exception($"Failed to send email. Status: {response.StatusCode}");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send new message email notification to {Email}", toEmail);
+            _logger.LogError(
+                ex,
+                "Failed to send new message email notification to {Email}",
+                toEmail
+            );
             throw;
         }
     }
 
     public async Task SendMainApproverReminderEmailAsync(
-    string toEmail,
-    string approverName,
-    long requestId,
-    string requestNumber,
-    string requestorName,
-    string requestDetails,
-    int userId,
-    long transApproverId)
+        string toEmail,
+        string approverName,
+        long requestId,
+        string requestNumber,
+        string requestorName,
+        string requestDetails,
+        int userId,
+        long transApproverId
+    )
     {
         try
         {
-            var (approveToken, _) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
+            var (approveToken, _) = await _tokenService.GenerateTokensAsync(
+                requestId,
+                transApproverId
+            );
 
             var viewBase = _urlBaseSettings.View;
-            var viewUrl = $"{viewBase}/#/main/pending-for-approval/view?id={requestId}&token={approveToken}";
-            var respondUrl = $"{viewBase}/#/main/pending-for-approval/approve?id={requestId}&token={approveToken}";
+            var viewUrl =
+                $"{viewBase}/#/main/pending-for-approval/view?id={requestId}&token={approveToken}";
+            var respondUrl =
+                $"{viewBase}/#/main/pending-for-approval/approve?id={requestId}&token={approveToken}";
 
-            var emailBody = $@"
+            var emailBody =
+                $@"
             <html>
             <body style='margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;'>
               <table width='100%' cellpadding='0' cellspacing='0' style='background:#f5f5f5;'>
@@ -631,7 +723,7 @@ public class EmailNotificationService
                     <tr><td height='20'></td></tr>
 
                     <tr><td>
-                      <p style='font-weight:bold;margin-bottom:12px;'>Action required � please respond:</p>
+                      <p style='font-weight:bold;margin-bottom:12px;'>Action required ï¿½ please respond:</p>
                       <table cellpadding='0' cellspacing='0'>
                         <tr>
                           <td style='padding-right:10px;'>
@@ -674,7 +766,7 @@ public class EmailNotificationService
                 bccrecipient = "mcccescario@fast.com.ph",
                 mailSubject = $"[Reminder] Approval Required - {requestNumber}",
                 mailBody = emailBody,
-                createdBy = "EPE System"
+                createdBy = "EPE System",
             };
 
             await SendEmailAsync(requestBody);
@@ -703,17 +795,24 @@ public class EmailNotificationService
         string requestorName,
         string requestDetails,
         int userId,
-        long transApproverId)
+        long transApproverId
+    )
     {
         try
         {
-            var (approveToken, _) = await _tokenService.GenerateTokensAsync(requestId, transApproverId);
+            var (approveToken, _) = await _tokenService.GenerateTokensAsync(
+                requestId,
+                transApproverId
+            );
 
             var viewBase = _urlBaseSettings.View;
-            var viewUrl = $"{viewBase}/#/main/pending-for-approval/view?id={requestId}&token={approveToken}";
-            var respondUrl = $"{viewBase}/#/main/pending-for-approval/approve?id={requestId}&token={approveToken}";
+            var viewUrl =
+                $"{viewBase}/#/main/pending-for-approval/view?id={requestId}&token={approveToken}";
+            var respondUrl =
+                $"{viewBase}/#/main/pending-for-approval/approve?id={requestId}&token={approveToken}";
 
-            var emailBody = $@"
+            var emailBody =
+                $@"
             <html>
             <body style='margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;'>
               <table width='100%' cellpadding='0' cellspacing='0' style='background:#f5f5f5;'>
@@ -783,7 +882,7 @@ public class EmailNotificationService
                 bccrecipient = "mcccescario@fast.com.ph",
                 mailSubject = $"[Proxy Reminder] Approval Required - {requestNumber}",
                 mailBody = emailBody,
-                createdBy = "EPE System"
+                createdBy = "EPE System",
             };
 
             await SendEmailAsync(requestBody);
@@ -813,11 +912,13 @@ public class EmailNotificationService
         string requestDetails,
         string approverName,
         string approverEmail,
-        int hoursPending)
+        int hoursPending
+    )
     {
         try
         {
-            var emailBody = $@"
+            var emailBody =
+                $@"
             <html>
             <body style='margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;'>
               <table width='100%' cellpadding='0' cellspacing='0' style='background:#f5f5f5;'>
@@ -862,7 +963,7 @@ public class EmailNotificationService
                 bccrecipient = "mcccescario@fast.com.ph",
                 mailSubject = $"[Escalation] Approval Required - {requestNumber}",
                 mailBody = emailBody,
-                createdBy = "EPE System"
+                createdBy = "EPE System",
             };
 
             await SendEmailAsync(requestBody);
@@ -883,7 +984,7 @@ public class EmailNotificationService
         var request = new HttpRequestMessage(HttpMethod.Post, emailUrl)
         {
             Headers = { { "Authorization", authHeader } },
-            Content = JsonContent.Create(requestBody)
+            Content = JsonContent.Create(requestBody),
         };
 
         using var response = await _httpClient.SendAsync(request);
@@ -891,7 +992,9 @@ public class EmailNotificationService
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Failed to send email. Status: {response.StatusCode}. Response: {errorContent}");
+            throw new Exception(
+                $"Failed to send email. Status: {response.StatusCode}. Response: {errorContent}"
+            );
         }
     }
 
@@ -899,11 +1002,18 @@ public class EmailNotificationService
     /// Sends notification to the next approval group after current group responds
     /// </summary>
     public async Task SendNextApprovalGroupNotificationAsync(
-        List<(string Email, string Name, int UserId, long TransApproverId, bool IsProxy)> nextApprovers,
+        List<(
+            string Email,
+            string Name,
+            int UserId,
+            long TransApproverId,
+            bool IsProxy
+        )> nextApprovers,
         long requestId,
         string requestNumber,
         string requestorName,
-        string requestDetails)
+        string requestDetails
+    )
     {
         foreach (var (email, name, userId, transApproverId, isProxy) in nextApprovers)
         {
@@ -913,21 +1023,38 @@ public class EmailNotificationService
                 {
                     // For proxy, we need the main approver's name
                     await SendProxyApproverReminderEmailAsync(
-                        email, name, requestorName, // mainApproverName would be passed differently
-                        requestId, requestNumber, requestorName, requestDetails,
-                        userId, transApproverId);
+                        email,
+                        name,
+                        requestorName, // mainApproverName would be passed differently
+                        requestId,
+                        requestNumber,
+                        requestorName,
+                        requestDetails,
+                        userId,
+                        transApproverId
+                    );
                 }
                 else
                 {
                     await SendMainApproverReminderEmailAsync(
-                        email, name,
-                        requestId, requestNumber, requestorName, requestDetails,
-                        userId, transApproverId);
+                        email,
+                        name,
+                        requestId,
+                        requestNumber,
+                        requestorName,
+                        requestDetails,
+                        userId,
+                        transApproverId
+                    );
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send next approval group notification to {Email}", email);
+                _logger.LogError(
+                    ex,
+                    "Failed to send next approval group notification to {Email}",
+                    email
+                );
             }
         }
     }
