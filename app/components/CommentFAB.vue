@@ -1,9 +1,9 @@
 <template>
   <!-- Comment Flyout (renders at fixed position via v-model) -->
-  <CommentFlyout v-model:isOpen="flyoutOpen" :transactionId="transactionId" :requesterId="requesterId" :approvers="approvers" :transactionStatus="transactionStatus" @close="flyoutOpen = false" />
+  <CommentFlyout   v-model:isOpen="flyoutOpen" :transactionId="transactionId" :requesterId="requesterId" :approvers="approvers" :transactionStatus="transactionStatus" @close="flyoutOpen = false" />
 
   <!-- Floating Action Button -->
-  <div class="fixed bottom-3 right-10 z-[9999] hidden sm:block">
+  <div v-if="commentsEnabled" class="fixed bottom-3 right-10 z-[9999] hidden sm:block">
     <Button variant="primary" size="2xl" icon="chat" iconPosition="center"
       class="bg-blue-500 w-14 h-14 flex items-center justify-center rounded-full shadow-lg ring-2 ring-blue-600 hover:bg-blue-600"
       @click="toggleFlyout"
@@ -15,6 +15,7 @@
       </div>
     </Button>
   </div>
+
 </template>
 
 <script setup lang="ts">
@@ -36,6 +37,10 @@ const emit = defineEmits([
 // State
 const flyoutOpen = ref(false)
 const unresolvedCount = ref(0)
+
+// Feature flag check
+const config = useRuntimeConfig()
+const commentsEnabled = computed(() => config.public.commentsEnabled)
 
 // Composables
 const { getUnresolvedQuestionsCount, transactionStatus } = useComments()

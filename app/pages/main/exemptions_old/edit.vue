@@ -726,25 +726,75 @@ const resendToProxyApprover = async (transApproverId: number) => {
 };
 
 // Computed property to group main approvers with their proxies
+// const groupedApprovers = computed(() => {
+//   const mainApprovers: any[] = [];
+//   const proxiesMap: Map<number, any[]> = new Map();
+
+//   approversData.value.forEach((approver) => {
+//     const isMain = approver.lineSequence === 1;
+
+//     if (isMain) {
+//       mainApprovers.push(approver);
+//       proxiesMap.set(approver.transApproverId, []);
+//     } else {
+//       const mainApprover = mainApprovers.find((m) => m.sort === approver.sort);
+//       if (mainApprover) {
+//         const proxies = proxiesMap.get(mainApprover.transApproverId) || [];
+//         proxies.push(approver);
+//         proxiesMap.set(mainApprover.transApproverId, proxies);
+//       }
+//     }
+//   });
+
+//   return { mainApprovers, proxiesMap };
+// });
+
 const groupedApprovers = computed(() => {
   const mainApprovers: any[] = [];
   const proxiesMap: Map<number, any[]> = new Map();
 
-  approversData.value.forEach((approver) => {
+  console.log("Grouping approvers from approversData:", approversData.value);
+
+  // Phase 1: Group EVERYTHING exactly like your original working code
+  const allMainApprovers: any[] = [];
+  const allProxiesMap: Map<number, any[]> = new Map();
+
+  approversData.value.forEach((approver: any) => {
     const isMain = approver.lineSequence === 1;
 
     if (isMain) {
-      mainApprovers.push(approver);
-      proxiesMap.set(approver.transApproverId, []);
+      allMainApprovers.push(approver);
+      allProxiesMap.set(approver.transApproverId, []);
     } else {
-      const mainApprover = mainApprovers.find((m) => m.sort === approver.sort);
+      const mainApprover = allMainApprovers.find((m) => m.sort === approver.sort);
       if (mainApprover) {
-        const proxies = proxiesMap.get(mainApprover.transApproverId) || [];
+        const proxies = allProxiesMap.get(mainApprover.transApproverId) || [];
         proxies.push(approver);
-        proxiesMap.set(mainApprover.transApproverId, proxies);
+        allProxiesMap.set(mainApprover.transApproverId, proxies);
       }
     }
   });
+
+  // Phase 2: Apply the "break" sequentially by checking main records and their mapped proxies
+  for (const approver of allMainApprovers) {
+    mainApprovers.push(approver);
+    
+    // Copy over the full proxies list for this specific main approver
+    const proxies = allProxiesMap.get(approver.transApproverId) || [];
+    proxiesMap.set(approver.transApproverId, proxies);
+
+    // Stop adding further rows if the main approver rejected...
+    if (approver.respond === 2) {
+      console.log("Breaking loop due to main approver rejection:", approver);
+      break;
+    }
+
+    // ...or if any of their proxies rejected
+    if (proxies.some((p: any) => p.respond === 2)) {
+      console.log("Breaking loop due to proxy rejection in main approver:", approver);
+      break;
+    }
+  }
 
   return { mainApprovers, proxiesMap };
 });

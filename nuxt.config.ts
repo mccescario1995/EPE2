@@ -16,7 +16,7 @@ export default defineNuxtConfig({
   modules: ["@pinia/nuxt", "nuxt-charts", "nuxt-tiptap-editor"],
   tiptap: {
     prefix: 'Tiptap', // component prefix
-  },                                                                                                                                                                                            
+  },
   css: ["~/assets/css/main.css"],
   plugins: ["~/plugins/pinia-persisted-state.ts",
     "~/plugins/theme.client.ts"
@@ -35,9 +35,12 @@ export default defineNuxtConfig({
       apiBase:
         process.env.NUXT_PUBLIC_API ||
         "https://apps.fastlogistics.com.ph/epe2apidev",
+
+      commentsEnabled: process.env.NUXT_PUBLIC_COMMENTS_ENABLED === 'false'
+
     },
   },
-app: {
+  app: {
     /* head: {
       link: [
         { rel: "icon", type: "image/x-icon", href: "/epe2/favicon.ico" }, 
