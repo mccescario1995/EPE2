@@ -217,10 +217,7 @@ async function fetchApprovers() {
       }
     );
     rawApprovers.value = response.items ?? [];
-    // console.log("Fetched approvers ManageApprovers:", rawApprovers.value);
     groups.value = buildGroups(rawApprovers.value);
-    // console.log("RAW:", rawApprovers.value);
-    // console.log("GROUPS:", groups.value);
     hasUnsavedOrder.value = false;
   } catch (err) {
     console.error("Failed to fetch approvers ManageApprovers:", err);

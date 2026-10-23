@@ -121,9 +121,9 @@ const loadApprovers = async () => {
     );
 
     const flat: Approver[] = (data.items ?? []).filter((a) => a.isdelete === 0);
-    console.log("Loaded approvers flat:", flat);
+    
     steps.value = buildSteps(flat);
-    console.log("Loaded approvers:", steps.value);
+    
   } catch (e: any) {
     error.value = e.message ?? "Failed to load approvers";
   } finally {
@@ -234,9 +234,9 @@ const onSearchInput = () => {
       const results = await apiFetch(
         `/api/maintenance/employees/search?q=${encodeURIComponent(searchQuery.value)}`,
       );
-      console.log("Search results:", results);
+      
       searchResults.value = results.value;
-      console.log("Search results (processed):", searchResults.value);
+      
     } catch {
       searchResults.value = [];
     } finally {

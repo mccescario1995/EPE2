@@ -193,7 +193,6 @@ const unresolvedCount = computed(() => getUnresolvedQuestionsCount.value)
 
 // Check if comments should be disabled (unresolved questions exist or transaction is closed)
 const commentsDisabled = computed(() => {
-  console.log('unresolvedCount.value:', unresolvedCount.value, 'transactionStatus.value:', transactionStatus.value)
   // return transactionStatus.value === 'C'
   return getUnresolvedQuestionsCount.value > 0 || transactionStatus.value === 'C'
 })

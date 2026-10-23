@@ -246,15 +246,12 @@ function closeNotificationDropdown() {
 }
 
 function markAsReadAndNavigate(notification) {
-  console.log("Notification clicked:", notification);
   // Mark as read
   notificationStore.markAsRead(notification.id);
   // Update the notification's isRead property locally to reflect the change immediately
   var response = apiFetch(`/api/notification/${notification.id}/read`, {
     method: "POST",
   });
-
-  console.log("Mark as read response:", response);
 
   // Close dropdown
   closeNotificationDropdown();
@@ -275,7 +272,6 @@ function markAllAsRead() {
     credentials: "include",
     parseJson: true,
   });
-  console.log("Mark all as read response:", response);
   closeNotificationDropdown();
 }
 
@@ -326,8 +322,6 @@ async function storeEncryptedDataInCookie(iframeUrl) {
     department: userDATA.department ?? userDATA.departmentname,
     sex: userDATA.sex,
   };
-
-  console.log("Payload for encryption:", payload); // Debug log for payload
 
   const key = await getKey(); // You can share the password securely across systems
   const encrypted = await encryptData(payload, key);

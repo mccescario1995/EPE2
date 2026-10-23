@@ -38,14 +38,14 @@ const fetchExemptionDetails = async () => {
       }
     );
 
-    console.log("Exemption Details Response:", response);
+    
     if (response) {
       exemptionDetails.value = response.item;
       if (exemptionDetails.value?.transactionId) {
         await fetchTransactionHeaderDetails(exemptionDetails.value.transactionId);
         await fetchAttachments();
         await fetchTransactionLogs();
-        console.log("fetchTransactionLogs", transactionLogs.value);
+        
       }
     } else {
       showToast({

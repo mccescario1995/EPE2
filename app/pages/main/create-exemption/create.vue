@@ -332,8 +332,6 @@ const fetchApprovers = async (policyId: number) => {
 
     const items = response ? response.items : response;
 
-    // console.log("Fetched approvers in Create Page", items);
-
     if (!items || !Array.isArray(items)) {
       console.error("Invalid approvers response:", items);
       approvers.value = [];
@@ -627,7 +625,6 @@ const handleSaveDraft = async () => {
 
     const transactionId =
       response?.item?.transactionId || response?.item?.transactionid;
-    console.log("Transaction ID from response:", transactionId);
 
     const attachmentResponse: any = await apiFetch(
       "/api/exemption/add-attachment/" + transactionId,
@@ -638,13 +635,9 @@ const handleSaveDraft = async () => {
       },
     );
 
-    console.log("Attachment response:", attachmentResponse);
-    console.log("Attachment response transaction ID:", transactionId);
-
     if (attachmentResponse && response) {
       const previousKey = transactionIdRef.value;
       draftId.value = transactionId.toString();
-      console.log("Draft ID:", draftId.value);
       isDraft.value = true;
 
       isDiscarded.value = true;
@@ -692,12 +685,6 @@ const handleSubmit = async () => {
   if (!validateForm()) return;
 
   isSubmitting.value = true;
-
-  console.log("Submitting form with data:", {
-    policyid: formData.value.policyid,
-    details: formData.value.details,
-    attachments: newAttachments.value,
-  });
 
   try {
     const formDataToSend = new FormData();

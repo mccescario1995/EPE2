@@ -1131,9 +1131,6 @@ function onDrop() {
   }
 
   if (draggingIndex.value !== targetIndex.value) {
-    console.log("drag row: ", props.tableData[draggingIndex.value]);
-
-    console.log("target row: ", props.tableData[targetIndex.value]);
 
     [props.tableData[draggingIndex.value], props.tableData[targetIndex.value]] =
       [
@@ -1141,17 +1138,12 @@ function onDrop() {
         props.tableData[draggingIndex.value],
       ];
 
-    console.log("done drag row: ", props.tableData[draggingIndex.value]);
-
-    console.log("done target row: ", props.tableData[targetIndex.value]);
-
     emit(
       "on-drop",
       props.tableData[draggingIndex.value],
       props.tableData[targetIndex.value],
     );
 
-    console.log("Dropping");
   }
 
   draggingIndex.value = null;

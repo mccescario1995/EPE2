@@ -87,8 +87,6 @@ onMounted(() => {
       cardRect.top < trashRect.bottom &&
       cardRect.bottom > trashRect.top;
 
-    console.log(isOverTrash.value);
-
     trashRef.value.classList.toggle("bg-red-400", isOverTrash.value);
   });
 
@@ -110,12 +108,9 @@ onMounted(() => {
       cardRect.top < trashRect.bottom &&
       cardRect.bottom > trashRect.top; */
 
-    console.log(isOverTrash.value);
-
     if (isOverTrash.value) {
       grid.removeWidget(widgetEl);
       trashRef.value.classList.remove("bg-red-400");
-      console.log("Card deleted!");
       isOverTrash.value = false;
     }
   });

@@ -35,8 +35,6 @@ const fetchExemptionDetails = async () => {
       },
     );
 
-    console.log("Fetched exemption details:", response);
-
     if (response && response.item) {
       exemptionDetails.value = response.item;
 
@@ -153,8 +151,6 @@ const fetchApprovers = async (policyId: number) => {
     );
 
     const items = response.success ? response.items : response;
-
-    // console.log("Fetched approvers in View page", items);
 
     if (!items || !Array.isArray(items)) {
       console.error("Invalid approvers response:", items);
@@ -303,8 +299,6 @@ const getApproverStatusColor = (respond: number) => {
 //     // 3. Set the flag to true if this approver rejected
 //     if (approver.respond === 2) {
 //       isBroken = true;
-//       console.log("Breaking loop due to rejection by approver:", approver);
-//       console.log("Approver response:", approver.respond);
 //     }
 //   });
 
@@ -314,8 +308,6 @@ const getApproverStatusColor = (respond: number) => {
 const groupedApprovers = computed(() => {
   const mainApprovers: any[] = [];
   const proxiesMap: Map<number, any[]> = new Map();
-
-  console.log("Grouping approvers from approversData:", approversData.value);
 
   // Phase 1: Group EVERYTHING exactly like your original working code
   const allMainApprovers: any[] = [];
@@ -347,13 +339,11 @@ const groupedApprovers = computed(() => {
 
     // Stop adding further rows if the main approver rejected...
     if (approver.respond === 2) {
-      console.log("Breaking loop due to main approver rejection:", approver);
       break;
     }
 
     // ...or if any of their proxies rejected
     if (proxies.some((p: any) => p.respond === 2)) {
-      console.log("Breaking loop due to proxy rejection in main approver:", approver);
       break;
     }
   }

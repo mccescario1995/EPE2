@@ -272,7 +272,6 @@ async function fetchImmediateHead() {
       { method: "GET", parseJson: true },
     );
     imEmployeeId.value = response?.immediateId ?? null;
-    console.log("Fetched IM Employee ID:", imEmployeeId.value);
   } catch {
     imEmployeeId.value = null;
   }
@@ -325,8 +324,6 @@ async function searchEmployees(query: string) {
         if (!imEmployeeId.value) return true; // couldn't fetch IM, show all
         return e.id !== imEmployeeId.value; // exclude the IM's emplId
       });
-
-    console.log("Employee Searched: ", employeeOptions);
   } catch (err) {
     console.error(err);
     employeeOptions.value = [];
@@ -385,12 +382,6 @@ function resetAddForm() {
 }
 
 async function confirmAddApprover() {
-  console.log(
-    "[ManageApprovers] confirmAddApprover called, createMode:",
-    props.createMode,
-    "policy:",
-    props.policy,
-  );
   if (!props.policy) return;
   const { approvertype, approverid, approvername, approveremail } =
     newApprover.value;
@@ -863,29 +854,16 @@ onMounted(() => {
 </script>
 
 <template>
-  <Modal
-    v-if="!props.inline"
-    v-model:isOpen="isModalOpen"
-    size="lg"
-    position="top-center"
-    :show-close-button="false"
-    :close-on-esc="false"
-    :close-on-overlay-click="false"
-    @update:isOpen="handleModalUpdate"
-  >
+  <Modal v-if="!props.inline" v-model:isOpen="isModalOpen" size="lg" position="top-center" :show-close-button="false"
+    :close-on-esc="false" :close-on-overlay-click="false" @update:isOpen="handleModalUpdate">
     <template #header>
-      <div
-        class="flex items-start justify-between border-b border-gray-100 bg-gray-50"
-      >
+      <div class="flex items-start justify-between border-b border-gray-100 bg-gray-50">
         <div>
           <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Manage Approvers</h2>
           <p class="text-sm text-gray-500 mt-0.5">
             {{ policy?.description }}
-            <span
-              v-if="policy?.shortName"
-              class="ml-1 text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded"
-              >{{ policy.shortName }}</span
-            >
+            <span v-if="policy?.shortName" class="ml-1 text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">{{
+              policy.shortName }}</span>
           </p>
         </div>
       </div>
@@ -894,48 +872,21 @@ onMounted(() => {
     <div class="space-y-4">
       <!-- Loading -->
       <div v-if="loading" class="flex items-center justify-center py-16">
-        <svg
-          class="animate-spin h-7 w-7 text-blue-500"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          />
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          />
+        <svg class="animate-spin h-7 w-7 text-blue-500" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
         <span class="ml-2 text-sm text-gray-500">Loading approvers...</span>
       </div>
 
       <!-- Empty state (no groups, no add form) -->
-      <div
-        v-else-if="!loading && groups.length === 0 && !showAddForm"
-        class="flex flex-col items-center justify-center py-14 text-center"
-      >
-        <div
-          class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mb-3"
-        >
-          <svg
-            class="w-7 h-7 text-blue-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.5"
-              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
-            />
+      <div v-else-if="!loading && groups.length === 0 && !showAddForm"
+        class="flex flex-col items-center justify-center py-14 text-center">
+        <div class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mb-3">
+          <svg class="w-7 h-7 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </div>
         <p class="text-sm font-medium text-gray-700">No approvers yet</p>
@@ -944,20 +895,9 @@ onMounted(() => {
         </p>
         <button
           class="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
-          @click="openAddMain"
-        >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4v16m8-8H4"
-            />
+          @click="openAddMain">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           Add Approver
         </button>
@@ -972,114 +912,55 @@ onMounted(() => {
         </div>
 
         <!-- Top-level draggable: reorder groups -->
-        <VueDraggable
-          v-model="groups"
-          :animation="150"
-          ghost-class="ghost"
-          :fallbackOnBody="true"
-          class="flex flex-col gap-2"
-        >
-          <div
-            v-for="(element, index) in groups"
-            :key="element.id"
-            class="bg-white border rounded p-3"
-          >
+        <VueDraggable v-model="groups" :animation="150" ghost-class="ghost" :fallbackOnBody="true"
+          class="flex flex-col gap-2">
+          <div v-for="(element, index) in groups" :key="element.id" class="bg-white border rounded p-3">
             <!-- MAIN -->
             <div class="font-medium text-gray-900 flex items-center gap-2">
               <div
                 class="group-drag-handle cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 select-none px-0.5 text-lg leading-none flex-shrink-0"
-                title="Drag to reorder step"
-              >
+                title="Drag to reorder step">
                 ⠿
               </div>
-              <span
-                class="rounded-full bg-blue-200 h-7 w-7 flex justify-center"
-                >{{ index + 1 }}</span
-              >
+              <span class="rounded-full bg-blue-200 h-7 w-7 flex justify-center">{{ index + 1 }}</span>
               <div class="uppercase">{{ element.name }}</div>
               <button
                 class="ml-auto text-red-500 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Delete approver"
-                :disabled="element.children.length > 0"
-                @click="confirmDelete(element.approver)"
-              >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
+                title="Delete approver" :disabled="element.children.length > 0"
+                @click="confirmDelete(element.approver)">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </button>
             </div>
 
             <!-- CHILDREN DRAG -->
-            <VueDraggable
-              v-model="element.children"
-              :animation="150"
-              group="nested"
-              class="ml-4 mt-2 flex flex-col gap-2"
-            >
-              <div
-                v-for="child in element.children"
-                :key="child.id"
-                class="bg-gray-100 p-2 rounded flex items-center gap-2 text-sm text-gray-700"
-              >
+            <VueDraggable v-model="element.children" :animation="150" group="nested"
+              class="ml-4 mt-2 flex flex-col gap-2">
+              <div v-for="child in element.children" :key="child.id"
+                class="bg-gray-100 p-2 rounded flex items-center gap-2 text-sm text-gray-700">
                 <div
                   class="group-drag-handle cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 select-none px-0.5 text-lg leading-none flex-shrink-0"
-                  title="Drag to reorder step"
-                >
+                  title="Drag to reorder step">
                   ⠿
                 </div>
-                <span
-                  class="rounded-full bg-orange-200 h-5 w-5 flex justify-center"
-                  >{{ index + 1 }}</span
-                >
+                <span class="rounded-full bg-orange-200 h-5 w-5 flex justify-center">{{ index + 1 }}</span>
                 {{ child.name }}
-                <button
-                  class="ml-auto text-red-400 hover:text-red-600 transition-colors"
-                  title="Delete approver"
-                  @click="confirmDelete(child.approver)"
-                >
-                  <svg
-                    class="w-3.5 h-3.5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
+                <button class="ml-auto text-red-400 hover:text-red-600 transition-colors" title="Delete approver"
+                  @click="confirmDelete(child.approver)">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
               </div>
             </VueDraggable>
-            <button
-              v-if="!showAddForm"
+            <button v-if="!showAddForm"
               class="mt-2 ml-auto w-full flex items-center justify-center gap-2 py-2 px-4 border-2 border-dashed border-orange-200 rounded text-sm text-orange-400 hover:border-orange-300 hover:text-orange-500 hover:bg-orange-50 transition-all"
-              @click="openAddProxy(element.approver.sort)"
-            >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 4v16m8-8H4"
-                />
+              @click="openAddProxy(element.approver.sort)">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
               Add Proxy
             </button>
@@ -1087,13 +968,8 @@ onMounted(() => {
         </VueDraggable>
 
         <!-- ─── Inline Add Form (for new main approver) ──────────────── -->
-        <div
-          v-if="showAddForm"
-          class="mt-3 border-2 border-blue-200 border-dashed rounded-xl p-4 bg-blue-50"
-        >
-          <p
-            class="text-xs font-semibold text-blue-700 mb-3 uppercase tracking-wide"
-          >
+        <div v-if="showAddForm" class="mt-3 border-2 border-blue-200 border-dashed rounded-xl p-4 bg-blue-50">
+          <p class="text-xs font-semibold text-blue-700 mb-3 uppercase tracking-wide">
             {{
               addingAsProxy !== null
                 ? `New Proxy for Approver ${addingAsProxy}`
@@ -1103,111 +979,58 @@ onMounted(() => {
 
           <!-- Type selector (only show for main approvers) -->
           <div v-if="addingAsProxy === null" class="flex gap-2 mb-3">
-            <button
-              class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-all"
-              :class="
-                newApprover.approvertype === 'M'
-                  ? 'border-blue-500 bg-blue-500 text-white'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-              "
-              @click="setApproverType('M')"
-            >
+            <button class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-all" :class="newApprover.approvertype === 'M'
+                ? 'border-blue-500 bg-blue-500 text-white'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+              " @click="setApproverType('M')">
               Main
             </button>
-            <button
-              class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-all"
-              :class="[
-                newApprover.approvertype === 'IM'
-                  ? 'border-purple-500 bg-purple-500 text-white'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
-                hasIM || imHasMain ? 'opacity-50 cursor-not-allowed' : '',
-                imHasMain ? 'opacity-50 cursor-not-allowed' : '',
-              ]"
-              :disabled="hasIM || imHasMain"
-              :title="hasIM ? 'Only one Immediate Head approver allowed' : ''"
-              @click="!hasIM && setApproverType('IM')"
-            >
+            <button class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-all" :class="[
+              newApprover.approvertype === 'IM'
+                ? 'border-purple-500 bg-purple-500 text-white'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
+              hasIM || imHasMain ? 'opacity-50 cursor-not-allowed' : '',
+              imHasMain ? 'opacity-50 cursor-not-allowed' : '',
+            ]" :disabled="hasIM || imHasMain" :title="hasIM ? 'Only one Immediate Head approver allowed' : ''"
+              @click="!hasIM && setApproverType('IM')">
               Immediate Head
             </button>
           </div>
 
           <!-- IM info (only for main IM) -->
-          <div
-            v-if="addingAsProxy === null && newApprover.approvertype === 'IM'"
-            class="flex items-start gap-2 p-3 bg-purple-50 rounded-lg mb-3 text-xs text-purple-700"
-          >
-            <svg
-              class="w-4 h-4 mt-0.5 flex-shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
+          <div v-if="addingAsProxy === null && newApprover.approvertype === 'IM'"
+            class="flex items-start gap-2 p-3 bg-purple-50 rounded-lg mb-3 text-xs text-purple-700">
+            <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             The immediate head of each requester will be automatically resolved
             when a request is submitted.
           </div>
 
           <!-- Main fields (always show, but adjust for proxy) -->
-          <div
-            v-if="addingAsProxy !== null || newApprover.approvertype !== 'IM'"
-            class="space-y-2 mb-3"
-          >
-            <Dropdown
-              v-model="newApprover.selectedEmployee"
-              :initialItems="employeeOptions"
-              placeholder="Select an employee"
-              @input="(e) => onEmployeeSearch(e.target.value)"
-            />
+          <div v-if="addingAsProxy !== null || newApprover.approvertype !== 'IM'" class="space-y-2 mb-3">
+            <Dropdown v-model="newApprover.selectedEmployee" :initialItems="employeeOptions"
+              placeholder="Select an employee" @input="(e) => onEmployeeSearch(e.target.value)" />
 
             <!-- Selected employee confirmation -->
-            <div
-              v-if="newApprover.selectedEmployee"
-              class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm"
-            >
-              <svg
-                class="w-4 h-4 text-green-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
-                />
+            <div v-if="newApprover.selectedEmployee"
+              class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm">
+              <svg class="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
               <span class="text-green-700 text-xs">{{
                 newApprover.approveremail
               }}</span>
-              <button
-                class="ml-auto text-gray-400 hover:text-gray-600"
-                @click="
-                  newApprover.selectedEmployee = null;
-                  newApprover.searchQuery = '';
-                  newApprover.approverid = '';
-                  newApprover.approvername = '';
-                  newApprover.approveremail = '';
-                "
-              >
-                <svg
-                  class="w-3.5 h-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+              <button class="ml-auto text-gray-400 hover:text-gray-600" @click="
+                newApprover.selectedEmployee = null;
+              newApprover.searchQuery = '';
+              newApprover.approverid = '';
+              newApprover.approvername = '';
+              newApprover.approveremail = '';
+              ">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
@@ -1216,58 +1039,28 @@ onMounted(() => {
           <div class="flex gap-2">
             <button
               class="flex-1 py-2 px-4 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
-              :disabled="addFormLoading"
-              @click="confirmAddApprover"
-            >
-              <svg
-                v-if="addFormLoading"
-                class="animate-spin w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="4"
-                />
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
+              :disabled="addFormLoading" @click="confirmAddApprover">
+              <svg v-if="addFormLoading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
               <span>{{ addFormLoading ? "Adding..." : "Add Approver" }}</span>
             </button>
             <button
               class="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              @click="cancelAdd"
-            >
+              @click="cancelAdd">
               Cancel
             </button>
           </div>
         </div>
 
         <!-- Add main approver button -->
-        <button
-          v-if="!showAddForm"
+        <button v-if="!showAddForm"
           class="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-blue-200 rounded-xl text-sm text-blue-400 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-100 transition-all"
-          @click="openAddMain"
-        >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4v16m8-8H4"
-            />
+          @click="openAddMain">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           Add Approver
         </button>
@@ -1284,41 +1077,21 @@ onMounted(() => {
         <div class="flex gap-3 ms-2">
           <button
             class="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            :disabled="saving"
-            @click="tryClose"
-          >
+            :disabled="saving" @click="tryClose">
             Cancel
           </button>
           <button
             class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-            :disabled="
-              saving ||
+            :disabled="saving ||
               loading ||
               showAddForm ||
               !hasUnsavedOrder ||
               justOppened
-            "
-            @click="saveOrder"
-          >
-            <svg
-              v-if="saving"
-              class="animate-spin w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              />
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
+              " @click="saveOrder">
+            <svg v-if="saving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
             {{ saving ? "Saving..." : "Save Order" }}
           </button>
@@ -1328,29 +1101,12 @@ onMounted(() => {
   </Modal>
 
   <!-- ─── Delete Confirmation Modal ────────────────────────────────────── -->
-  <Modal
-    v-model:isOpen="isDeleteModalOpen"
-    size="sm"
-    position="center"
-    :closeOnOverlayClick="true"
-    :closeOnEsc="true"
-    @update:isOpen="cancelDelete"
-  >
-    <div
-      class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4"
-    >
-      <svg
-        class="w-6 h-6 text-red-600"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-        />
+  <Modal v-model:isOpen="isDeleteModalOpen" size="sm" position="center" :closeOnOverlayClick="true" :closeOnEsc="true"
+    @update:isOpen="cancelDelete">
+    <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+      <svg class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
     </div>
     <h3 class="text-base font-semibold text-gray-900 text-center mb-1">
@@ -1366,47 +1122,25 @@ onMounted(() => {
       from this policy? This cannot be undone.
     </p>
     <div class="flex gap-3">
-      <button
-        class="flex-1 py-2 px-4 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-        :disabled="deleteLoading"
-        @click="cancelDelete"
-      >
+      <button class="flex-1 py-2 px-4 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+        :disabled="deleteLoading" @click="cancelDelete">
         Cancel
       </button>
       <button
         class="flex-1 py-2 px-4 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-        :disabled="deleteLoading"
-        @click="executeDelete"
-      >
+        :disabled="deleteLoading" @click="executeDelete">
         {{ deleteLoading ? "Removing..." : "Remove" }}
       </button>
     </div>
   </Modal>
 
   <!-- ─── Close Confirmation Modal (similar to delete prompt) ───── -->
-  <Modal
-    v-model:isOpen="isCloseConfirmOpen"
-    size="sm"
-    position="center"
-    :closeOnOverlayClick="true"
-    :closeOnEsc="true"
-    @update:isOpen="cancelClose"
-  >
-    <div
-      class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4"
-    >
-      <svg
-        class="w-6 h-6 text-red-600"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-        />
+  <Modal v-model:isOpen="isCloseConfirmOpen" size="sm" position="center" :closeOnOverlayClick="true" :closeOnEsc="true"
+    @update:isOpen="cancelClose">
+    <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+      <svg class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
     </div>
     <h3 class="text-base font-semibold text-gray-900 text-center mb-1">
@@ -1416,16 +1150,13 @@ onMounted(() => {
       Are you sure you want to cancel?
     </p>
     <div class="flex gap-3">
-      <button
-        class="flex-1 py-2 px-4 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-        @click="cancelClose"
-      >
+      <button class="flex-1 py-2 px-4 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+        @click="cancelClose">
         No, Keep Editing
       </button>
       <button
         class="flex-1 py-2 px-4 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
-        @click="confirmClose"
-      >
+        @click="confirmClose">
         Yes, Cancel
       </button>
     </div>
@@ -1442,46 +1173,19 @@ onMounted(() => {
       </div>
       <div class="space-y-4">
         <div v-if="loading" class="flex items-center justify-center py-16">
-          <svg
-            class="animate-spin h-7 w-7 text-blue-500"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            />
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
+          <svg class="animate-spin h-7 w-7 text-blue-500" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
           <span class="ml-2 text-sm text-gray-500">Loading approvers...</span>
         </div>
-        <div
-          v-else-if="!loading && groups.length === 0 && !showAddForm"
-          class="flex flex-col items-center justify-center py-14 text-center"
-        >
-          <div
-            class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mb-3"
-          >
-            <svg
-              class="w-7 h-7 text-blue-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="1.5"
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
-              />
+        <div v-else-if="!loading && groups.length === 0 && !showAddForm"
+          class="flex flex-col items-center justify-center py-14 text-center">
+          <div class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mb-3">
+            <svg class="w-7 h-7 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </div>
           <p class="text-sm font-medium text-gray-700 dark:text-gray-200">No approvers yet</p>
@@ -1490,20 +1194,9 @@ onMounted(() => {
           </p>
           <button
             class="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
-            @click="openAddMain"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4v16m8-8H4"
-              />
+            @click="openAddMain">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             Add Approver
           </button>
@@ -1513,29 +1206,18 @@ onMounted(() => {
             Drag <span class="font-bold px-0.5">⠿</span> handles to reorder
             approvers and their proxies
           </div>
-          <VueDraggable
-            v-model="groups"
-            :animation="150"
-            ghost-class="ghost"
-            :fallbackOnBody="true"
-            class="flex flex-col gap-2 overflow-y-auto max-h-97"
-          >
-            <div
-              v-for="(element, index) in groups"
-              :key="element.id"
-              class="bg-white dark:bg-gray-700 border rounded p-3"
-            >
+          <VueDraggable v-model="groups" :animation="150" ghost-class="ghost" :fallbackOnBody="true"
+            class="flex flex-col gap-2 overflow-y-auto max-h-97">
+            <div v-for="(element, index) in groups" :key="element.id"
+              class="bg-white dark:bg-gray-700 border rounded p-3">
               <div class="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 <div
                   class="group-drag-handle cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 select-none px-0.5 text-lg leading-none flex-shrink-0"
-                  title="Drag to reorder step"
-                >
+                  title="Drag to reorder step">
                   ⠿
                 </div>
-                <span
-                  class="rounded-full bg-blue-200 h-7 w-7 flex justify-center dark:text-gray-700"
-                  >{{ index + 1 }}</span
-                >
+                <span class="rounded-full bg-blue-200 h-7 w-7 flex justify-center dark:text-gray-700">{{ index + 1
+                  }}</span>
                 <div class="uppercase">
                   {{ element.name }}
                   <div class="lowercase text-gray-500 ps-2 -mt-1 text-sm dark:text-gray-400">
@@ -1545,110 +1227,58 @@ onMounted(() => {
 
                 <button
                   class="ml-auto text-red-500 hover:text-red-600 dark:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Delete approver"
-                  :disabled="element.children.length > 0"
-                  @click="confirmDelete(element.approver)"
-                >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
+                  title="Delete approver" :disabled="element.children.length > 0"
+                  @click="confirmDelete(element.approver)">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
               </div>
-              <VueDraggable
-                v-model="element.children"
-                :animation="150"
-                group="nested"
-                class="ml-4 mt-2 flex flex-col gap-2"
-              >
-                <div
-                  v-for="child in element.children"
-                  :key="child.id"
-                  class="bg-gray-100 p-2 rounded flex items-center gap-2 text-sm text-gray-700 dark:bg-gray-600 dark:text-gray-200"
-                >
+              <VueDraggable v-model="element.children" :animation="150" group="nested"
+                class="ml-4 mt-2 flex flex-col gap-2">
+                <div v-for="child in element.children" :key="child.id"
+                  class="bg-gray-100 p-2 rounded flex items-center gap-2 text-sm text-gray-700 dark:bg-gray-600 dark:text-gray-200">
                   <div
                     class="group-drag-handle cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 select-none px-0.5 text-lg leading-none flex-shrink-0"
-                    title="Drag to reorder step"
-                  >
+                    title="Drag to reorder step">
                     ⠿
                   </div>
-                  <span
-                    class="rounded-full bg-orange-200 h-5 w-5 flex justify-center dark:text-gray-700"
-                    >{{ index + 1 }}</span
-                  >
+                  <span class="rounded-full bg-orange-200 h-5 w-5 flex justify-center dark:text-gray-700">{{ index + 1
+                    }}</span>
                   <div class="uppercase ">
-                  {{ child.name }}
-                  <div class="lowercase text-gray-500 ps-2 -mt-1 text-sm dark:text-gray-400">
-                    {{ child.approver.approveremail }}
+                    {{ child.name }}
+                    <div class="lowercase text-gray-500 ps-2 -mt-1 text-sm dark:text-gray-400">
+                      {{ child.approver.approveremail }}
+                    </div>
                   </div>
-                </div>
-                  <button
-                    class="ml-auto text-red-400 hover:text-red-600 transition-colors dark:hover:text-red-500"
-                    title="Delete approver"
-                    @click="confirmDelete(child.approver)"
-                  >
-                    <svg
-                      class="w-3.5 h-3.5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
+                  <button class="ml-auto text-red-400 hover:text-red-600 transition-colors dark:hover:text-red-500"
+                    title="Delete approver" @click="confirmDelete(child.approver)">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
                 </div>
               </VueDraggable>
-              <button
-                v-if="!showAddForm"
+              <button v-if="!showAddForm"
                 class="mt-2 ml-auto w-full flex items-center justify-center gap-2 py-2 px-4 border-2 border-dashed border-orange-200 rounded text-sm text-orange-400 hover:border-orange-300 hover:text-orange-500 hover:bg-orange-50 transition-all"
-                @click="openAddProxy(element.approver.sort)"
-              >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 4v16m8-8H4"
-                  />
+                @click="openAddProxy(element.approver.sort)">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
                 Add Proxy
               </button>
             </div>
           </VueDraggable>
-          <div
-            v-if="showAddForm"
+          <div v-if="showAddForm"
             class="mt-3 border-2 border-dashed rounded-xl p-4 dark:bg-gray-700 dark:border-gray-600 dark:border-solid"
-            :class="
-              addingAsProxy !== null
+            :class="addingAsProxy !== null
                 ? 'border-orange-200 bg-orange-50'
                 : 'border-blue-200 bg-blue-50'
-            "
-          >
-            <p
-              class="text-xs font-semibold mb-3 uppercase tracking-wide"
-              :class="
-                addingAsProxy !== null ? 'text-orange-700 dark:text-orange-400' : 'text-blue-700 dark:text-blue-400'
-              "
-            >
+              ">
+            <p class="text-xs font-semibold mb-3 uppercase tracking-wide" :class="addingAsProxy !== null ? 'text-orange-700 dark:text-orange-400' : 'text-blue-700 dark:text-blue-400'
+              ">
               {{
                 addingAsProxy !== null
                   ? `New Proxy for Approver ${addingAsProxy}`
@@ -1657,103 +1287,50 @@ onMounted(() => {
             </p>
 
             <div v-if="addingAsProxy === null" class="flex gap-2 mb-3">
-              <button
-                class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-all"
-                :class="
-                  newApprover.approvertype === 'M'
-                    ? 'border-blue-500 bg-blue-500 text-white'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                "
-                @click="setApproverType('M')"
-              >
+              <button class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-all" :class="newApprover.approvertype === 'M'
+                  ? 'border-blue-500 bg-blue-500 text-white'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                " @click="setApproverType('M')">
                 Main
               </button>
-              <button
-                class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-all"
-                :class="[
-                  newApprover.approvertype === 'IM'
-                    ? 'border-purple-500 bg-purple-500 text-white'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
-                  hasIM || imHasMain ? 'opacity-50 cursor-not-allowed' : '',
-                ]"
-                :disabled="hasIM || imHasMain"
-                @click="!hasIM && setApproverType('IM')"
-              >
+              <button class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-all" :class="[
+                newApprover.approvertype === 'IM'
+                  ? 'border-purple-500 bg-purple-500 text-white'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
+                hasIM || imHasMain ? 'opacity-50 cursor-not-allowed' : '',
+              ]" :disabled="hasIM || imHasMain" @click="!hasIM && setApproverType('IM')">
                 Immediate Head
               </button>
             </div>
-            <div
-              v-if="addingAsProxy === null && newApprover.approvertype === 'IM'"
-              class="flex items-start gap-2 p-3 bg-purple-50 rounded-lg mb-3 text-xs text-purple-700 dark:bg-purple-900 dark:text-gray-200"
-            >
-              <svg
-                class="w-4 h-4 mt-0.5 flex-shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+            <div v-if="addingAsProxy === null && newApprover.approvertype === 'IM'"
+              class="flex items-start gap-2 p-3 bg-purple-50 rounded-lg mb-3 text-xs text-purple-700 dark:bg-purple-900 dark:text-gray-200">
+              <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               The immediate head of each requester will be automatically
               resolved when a request is submitted.
             </div>
-            <div
-              v-if="addingAsProxy !== null || newApprover.approvertype !== 'IM'"
-              class="space-y-2 mb-3"
-            >
-              <Dropdown
-                v-model="newApprover.selectedEmployee"
-                :initialItems="employeeOptions"
-                placeholder="Select an employee"
-                @input="(e) => onEmployeeSearch(e.target.value)"
-              />
-              <div
-                v-if="newApprover.selectedEmployee"
-                class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-gray-200 rounded-lg text-sm"
-              >
-                <svg
-                  class="w-4 h-4 text-green-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  />
+            <div v-if="addingAsProxy !== null || newApprover.approvertype !== 'IM'" class="space-y-2 mb-3">
+              <Dropdown v-model="newApprover.selectedEmployee" :initialItems="employeeOptions"
+                placeholder="Select an employee" @input="(e) => onEmployeeSearch(e.target.value)" />
+              <div v-if="newApprover.selectedEmployee"
+                class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-gray-200 rounded-lg text-sm">
+                <svg class="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
                 <span class="text-green-700 text-xs">{{
                   newApprover.approveremail
                 }}</span>
-                <button
-                  class="ml-auto text-gray-400 hover:text-gray-600"
-                  @click="
-                    newApprover.selectedEmployee = null;
-                    newApprover.searchQuery = '';
-                    newApprover.approverid = '';
-                    newApprover.approvername = '';
-                    newApprover.approveremail = '';
-                  "
-                >
-                  <svg
-                    class="w-3.5 h-3.5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                <button class="ml-auto text-gray-400 hover:text-gray-600" @click="
+                  newApprover.selectedEmployee = null;
+                newApprover.searchQuery = '';
+                newApprover.approverid = '';
+                newApprover.approvername = '';
+                newApprover.approveremail = '';
+                ">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
@@ -1761,61 +1338,29 @@ onMounted(() => {
             <div class="flex gap-2">
               <button
                 class="flex-1 py-2 px-4 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
-                :class="
-                  addingAsProxy !== null
+                :class="addingAsProxy !== null
                     ? 'bg-orange-400 hover:bg-orange-500'
                     : 'bg-blue-600 hover:bg-blue-700'
-                "
-                :disabled="addFormLoading"
-                @click="confirmAddApprover"
-              >
-                <svg
-                  v-if="addFormLoading"
-                  class="animate-spin w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  />
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
+                  " :disabled="addFormLoading" @click="confirmAddApprover">
+                <svg v-if="addFormLoading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
                 <span>{{ addFormLoading ? "Adding..." : "Add Approver" }}</span>
               </button>
               <button
                 class="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                @click="cancelAdd"
-              >
+                @click="cancelAdd">
                 Cancel
               </button>
             </div>
           </div>
-          <button
-            v-if="!showAddForm"
+          <button v-if="!showAddForm"
             class="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 border-2 border-dashed border-blue-200 rounded-xl text-sm text-blue-400 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-100 transition-all"
-            @click="openAddMain"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4v16m8-8H4"
-              />
+            @click="openAddMain">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             Add Approver
           </button>
@@ -1824,9 +1369,3 @@ onMounted(() => {
     </div>
   </div>
 </template>
-
-
-
-
-
-

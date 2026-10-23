@@ -135,12 +135,10 @@ const deleteItem = async () => {
     title: "aiuwydhaiwudh",
     type: "warning",
   });
-  console.log("Modal result:", confirmed);
   if (confirmed) {
-    console.log("User confirmed delete");
     // proceed with delete
   } else {
-    console.log("User canceled");
+    // cancel delete
   }
 };
 </script>

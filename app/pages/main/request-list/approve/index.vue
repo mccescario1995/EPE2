@@ -451,8 +451,6 @@ const handleApprove = async () => {
       respond: selectedRespond.value,
     };
 
-    console.log("Submitting approval response with payload:", payload);
-
     const response = await apiFetch("/api/exemption/respond", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -527,7 +525,6 @@ const groupedApprovers = computed(() => {
 
 // Handle back navigation with fallback
 const handleBack = () => {
-  console.log("Window history length:", window.history.length);
   if (window.history.length > 0 && document.referrer.startsWith(window.location.origin)) {
     router.back();
   } else {

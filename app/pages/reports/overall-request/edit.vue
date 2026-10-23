@@ -822,13 +822,13 @@ const groupedApprovers = computed(() => {
 
     // Stop adding further rows if the main approver rejected...
     if (approver.respond === 2) {
-      console.log("Breaking loop due to main approver rejection:", approver);
+      
       break;
     }
 
     // ...or if any of their proxies rejected
     if (proxies.some((p: any) => p.respond === 2)) {
-      console.log("Breaking loop due to proxy rejection in main approver:", approver);
+      
       break;
     }
   }
