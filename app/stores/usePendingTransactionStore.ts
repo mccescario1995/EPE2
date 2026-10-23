@@ -85,7 +85,6 @@ export const usePendingTransactionStore = defineStore(
               if (parsed.snapshots && parsed.snapshots[key]) {
                 delete parsed.snapshots[key];
                 localStorage.setItem(storeKey, encryptString(JSON.stringify(parsed)));
-                console.log(`Discarded pending transaction for transaction ${transactionId} and route ${route}`);
               }
             }
           }

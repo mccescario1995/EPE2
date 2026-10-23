@@ -451,8 +451,6 @@ const handleApprove = async () => {
       respond: selectedRespond.value,
     };
 
-    console.log("Submitting approval response with payload:", payload);
-
     const response = await apiFetch("/api/exemption/respond", {
       method: "POST",
       body: JSON.stringify(payload),

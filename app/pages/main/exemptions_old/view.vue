@@ -152,8 +152,6 @@ const fetchApprovers = async (policyId: number) => {
 
     const items = response.success ? response.items : response;
 
-    // console.log("Fetched approvers in View page", items);
-
     if (!items || !Array.isArray(items)) {
       console.error("Invalid approvers response:", items);
       approversData.value = [];
@@ -285,8 +283,6 @@ const groupedApprovers = computed(() => {
   const mainApprovers: any[] = [];
   const proxiesMap: Map<number, any[]> = new Map();
 
-  console.log("Grouping approvers from approversData:", approversData.value);
-
   // Phase 1: Group EVERYTHING exactly like your original working code
   const allMainApprovers: any[] = [];
   const allProxiesMap: Map<number, any[]> = new Map();
@@ -317,13 +313,13 @@ const groupedApprovers = computed(() => {
 
     // Stop adding further rows if the main approver rejected...
     if (approver.respond === 2) {
-      console.log("Breaking loop due to main approver rejection:", approver);
+      
       break;
     }
 
     // ...or if any of their proxies rejected
     if (proxies.some((p: any) => p.respond === 2)) {
-      console.log("Breaking loop due to proxy rejection in main approver:", approver);
+      
       break;
     }
   }

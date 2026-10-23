@@ -81,12 +81,10 @@ export const useUserStore = defineStore("epe2_user", {
       try {
         const backend: any = await apiFetch("/menu/version");
         if (backend.version !== this.menuVersion) {
-          console.log("Menu version changed — refetching menu...");
           const newMenu = await apiFetch("/menu");
           this.menu = newMenu;
           this.menuVersion = backend.version;
         } else {
-          console.log("Menu version is up-to-date.");
         }
       } catch (err) {
         console.error("Failed to refresh menu:", err);

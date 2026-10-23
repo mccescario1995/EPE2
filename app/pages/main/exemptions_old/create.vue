@@ -191,8 +191,6 @@ const fetchApprovers = async (policyId: number) => {
 
     const items = response ? response.items : response;
 
-    // console.log("Fetched approvers in Create Page", items);
-
     if (!items || !Array.isArray(items)) {
       console.error("Invalid approvers response:", items);
       approvers.value = [];
@@ -472,11 +470,9 @@ const handleSaveDraft = async () => {
       });
     }
 
-    console.log("Draft save response:", response);
 
     const transactionId =
       response?.item?.transactionId || response?.item?.transactionid;
-    console.log("Transaction ID from response:", transactionId);
 
     const attachmentResponse: any = await apiFetch(
       "/api/exemption/add-attachment/" + transactionId,
@@ -487,12 +483,8 @@ const handleSaveDraft = async () => {
       },
     );
 
-    console.log("Attachment response:", attachmentResponse);
-    console.log("Attachment response transaction ID:", transactionId);
-
     if (attachmentResponse && response) {
       draftId.value = transactionId.toString();
-      console.log("Draft ID:", draftId.value);
       isDraft.value = true;
       showToast({
         type: "success",
@@ -530,12 +522,6 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true;
 
-  console.log("Submitting form with data:", {
-    policyid: formData.value.policyid,
-    details: formData.value.details,
-    attachments: newAttachments.value,
-  });
-
   try {
     const formDataToSend = new FormData();
 
@@ -544,8 +530,6 @@ const handleSubmit = async () => {
       formDataToSend.append("policyid", String(policyId));
     }
 
-    console.log("Policy ID to send:", formDataToSend.get("policyid"));
-
     formDataToSend.append("details", formData.value.details ?? "");
     formDataToSend.append("requestorid", userId.emplId);
     formDataToSend.append("createdby", userId.userId.toString());
@@ -553,26 +537,17 @@ const handleSubmit = async () => {
     const workstation = parseWorkstation();
     formDataToSend.append("computerhost", workstation);
 
-    console.log("Workstation to send:", formDataToSend.get("computerhost"));
-
     // ✅ FIXED ATTACHMENTS
     newAttachments.value.forEach((attachment) => {
       // formDataToSend.append(`Attachments[${index}].File`, attachment.file);
       formDataToSend.append("files", attachment.file);
     });
 
-    // console.log("FormData entries:");
-    // for (const pair of formDataToSend.entries()) {
-    //   console.log(`${pair[0]}:`, pair[1]);
-    // }
-
     const response: any = await apiFetch("/api/exemption/create", {
       method: "POST",
       body: formDataToSend,
       parseJson: true,
     });
-
-    console.log("Create response:", response);
 
     const attachmentResponse: any = await apiFetch(
       "/api/exemption/add-attachment/" + response.item.transactionid,
@@ -582,8 +557,6 @@ const handleSubmit = async () => {
         parseJson: true,
       },
     );
-
-    console.log("Attachment response:", attachmentResponse);
 
     if (response && attachmentResponse) {
       showToast({

@@ -164,7 +164,6 @@ const fetchTransactionLogs = async () => {
         parseJson: true,
       }
     );
-    console.log("Transaction Logs Response:", response);
     if (response) {
       transactionLogs.value = response.items ?? [];
     }

@@ -106,10 +106,6 @@ const loadApprovers = async () => {
   loading.value = true;
   error.value = "";
   try {
-    console.log(
-      "Fetching approvers for policy (loadApprovers)",
-      policyId.value,
-    );
     const data = await apiFetch(
       `/api/maintenance/policy/${policyId.value}/approvers`,
       {

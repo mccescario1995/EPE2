@@ -41,10 +41,8 @@ export const useNotificationStore = defineStore("notification", () => {
   const markAsRead = (id: string | number) => {
     const notification = notifications.value.find((n) => n.id === id);
 
-    console.log("Marking notification as read:", notification);
     if (notification && !notification.isRead) {
       notification.isRead = 1;
-      console.log("Notification marked as read:", notification);
       updateUnreadCount();
     }
   };

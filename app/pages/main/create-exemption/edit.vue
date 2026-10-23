@@ -390,7 +390,7 @@ const validateForm = () => {
 
 // Get policy ID from form data (handles both object and number)
 const getPolicyId = () => {
-console.log("getPolicyId called, policyValue:", policyValue.value, "formData.policy:", formData.value);
+
   return policyValue.value?.id ?? formData.value.policyId;
 };
 
@@ -974,8 +974,6 @@ const groupedApprovers = computed(() => {
   const mainApprovers: any[] = [];
   const proxiesMap: Map<number, any[]> = new Map();
 
-  console.log("Grouping approvers from approversData:", approversData.value);
-
   // Phase 1: Group EVERYTHING exactly like your original working code
   const allMainApprovers: any[] = [];
   const allProxiesMap: Map<number, any[]> = new Map();
@@ -1006,13 +1004,13 @@ const groupedApprovers = computed(() => {
 
     // Stop adding further rows if the main approver rejected...
     if (approver.respond === 2) {
-      console.log("Breaking loop due to main approver rejection:", approver);
+      
       break;
     }
 
     // ...or if any of their proxies rejected
     if (proxies.some((p: any) => p.respond === 2)) {
-      console.log("Breaking loop due to proxy rejection in main approver:", approver);
+      
       break;
     }
   }
@@ -1027,7 +1025,7 @@ const getProxies = (transApproverId: number): any[] => {
 
 // Helper function to check if a group (main + proxies) is satisfied (someone in group approved)
 const isGroupSatisfied = (transApproverId: number): boolean => {
-  console.log(" Group approvers for transApproverId", groupedApprovers.value);
+  
   const { mainApprovers, proxiesMap } = groupedApprovers.value;
   const mainApprover = mainApprovers.find(
     (a) => a.transApproverId === transApproverId,

@@ -840,7 +840,7 @@ const getProxies = (transApproverId: number): any[] => {
 
 // Helper function to check if a group (main + proxies) is satisfied (someone in group approved)
 const isGroupSatisfied = (transApproverId: number): boolean => {
-  console.log(" Group approvers for transApproverId", groupedApprovers.value);
+  
   const { mainApprovers, proxiesMap } = groupedApprovers.value;
   const mainApprover = mainApprovers.find(
     (a) => a.transApproverId === transApproverId,
@@ -1114,8 +1114,6 @@ const fetchApprovers = async (policyId: number) => {
     );
 
     const items = response.success ? response.items : response;
-
-    // console.log("Fetched approvers in Edit page", items);
 
     if (!items || !Array.isArray(items)) {
       console.error("Invalid approvers response:", items);

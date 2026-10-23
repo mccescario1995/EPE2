@@ -153,8 +153,6 @@ const fetchApprovers = async (policyId: number) => {
 
     const items = response.success ? response.items : response;
 
-    // console.log("Fetched approvers in View page", items);
-
     if (!items || !Array.isArray(items)) {
       console.error("Invalid approvers response:", items);
       approversData.value = [];
