@@ -3359,19 +3359,53 @@ namespace EPEAPI.Controllers
         private List<EpePolicyapprover> FilterIMLastApprover(
             List<EpePolicyapprover> policyApprovers)
         {
-            var maxSort = policyApprovers.Max(p => p.Sort ?? 0);
-            var lastGroupHasIM = policyApprovers
-                .Any(p => p.Sort == maxSort && p.Approvertype == "IM");
-
-            if (!lastGroupHasIM) return policyApprovers;
-
-            var imSort = policyApprovers
+            // 1. Find all IM approvers grouped by person identity (Approverid)
+            var imApprovers = policyApprovers
                 .Where(p => p.Approvertype == "IM")
-                .Max(p => p.Sort ?? 0);
+                .GroupBy(p => p.Approverid)
+                .ToList();
 
-            if (imSort > 0)
+            var imToRemove = new HashSet<int>(); // PolicyApprover Ids to remove
+            var lastSortByPerson = new Dictionary<string, int>(); // Approverid -> max Sort where they appear as non-IM
+
+            // 2. For each IM person, check if they appear as Main/Proxy in later Sort
+            foreach (var imGroup in imApprovers)
             {
-                return policyApprovers.Where(p => (p.Sort ?? 0) <= imSort).ToList();
+                var approverId = imGroup.Key;
+                var imSorts = imGroup.Select(p => p.Sort ?? 0).ToList();
+                var minImSort = imSorts.Min();
+
+                // Find non-IM approvers with same identity in later sorts
+                var laterNonImApprovers = policyApprovers
+                    .Where(p => p.Approverid == approverId
+                             && p.Approvertype != "IM"
+                             && p.Sort > minImSort)
+                    .ToList();
+
+                if (laterNonImApprovers.Any())
+                {
+                    // Mark earlier IM(s) for removal
+                    foreach (var im in imGroup)
+                    {
+                        imToRemove.Add(im.Id);
+                    }
+
+                    // Track the last sort this person appears at
+                    lastSortByPerson[approverId] = laterNonImApprovers.Max(p => p.Sort ?? 0);
+                }
+            }
+
+            // 3. Remove deduplicated IMs
+            if (imToRemove.Any())
+            {
+                policyApprovers = policyApprovers.Where(p => !imToRemove.Contains(p.Id)).ToList();
+            }
+
+            // 4. Truncate at the maximum last-sort of any deduplicated person
+            if (lastSortByPerson.Any())
+            {
+                var truncateSort = lastSortByPerson.Values.Max();
+                policyApprovers = policyApprovers.Where(p => (p.Sort ?? 0) <= truncateSort).ToList();
             }
 
             return policyApprovers;
