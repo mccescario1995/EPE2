@@ -1,0 +1,44 @@
+{
+  "name": "fast-template",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev --dotenv .env.development",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.3.0",
+    "@heroicons/vue": "^2.2.0",
+    "@iconify/vue": "^5.0.0",
+    "@pinia/nuxt": "^0.11.3",
+    "@tailwindcss/vite": "^4.1.16",
+    "@tiptap/core": "^3.31.3",
+    "@tiptap/pm": "^3.31.3",
+    "bcrypt-ts": "^7.1.0",
+    "crypto-js": "^4.2.0",
+    "date-fns": "^4.1.0",
+    "gridstack": "^12.3.3",
+    "lottie-web": "^5.13.0",
+    "nuxt": "^4.2.0",
+    "nuxt-charts": "^2.1.4",
+    "nuxt-echarts": "^1.0.1",
+    "nuxt-google-auth": "^0.1.1",
+    "nuxt-tiptap-editor": "^3.4.0",
+    "pinia": "^3.0.4",
+    "pinia-plugin-persistedstate": "^4.7.1",
+    "tailwindcss": "^4.1.16",
+    "vue": "^3.5.22",
+    "vue-draggable-plus": "^0.6.1",
+    "vue-router": "^4.6.3",
+    "vue3-lottie": "^3.3.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.4.5",
+    "vue-tsc": "^3.3.11"
+  }
+}

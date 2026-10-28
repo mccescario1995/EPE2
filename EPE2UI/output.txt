@@ -1,0 +1,29 @@
+﻿
+> dev
+> nuxt dev --dotenv .env.development
+
+|
+•  [32mNuxt [1m4.4.8[22m[39m[90m (with [39m[90mNitro [1m2.13.4[22m[39m[90m, Vite [1m7.3.6[22m[39m[90m and Vue [1m3.5.39[22m[39m[90m)[39m
+[get-port] Unable to find an available port (tried 3000 on host "localhost"). Using alternative port 3001.
+
+[32m  ➜ Local:   [39m [36m[4mhttp://localhost:[1m3001[22m/epe2dev/[24m[39m
+[90m  ➜ Network:  use [37m--host[90m to expose[39m
+
+[36mi[39m Tiptap Editor initialized
+[33m  ➜ DevTools: [39m[2mpress [22m[32mShift[39m[2m + [22m[32mAlt[39m[2m + [22m[32mD[39m[2m in the browser (v3.2.4)[22m
+
+[32m√[39m Vite client built in 24ms
+[32m√[39m Vite server built in 64ms
+[90m[[90mnitro[90m][39m [32m√[39m Nuxt Nitro server built in 650ms
+[36mi[39m Vite client warmed up in 1ms
+node.exe : 
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[90m[[90mnuxt[90m][39m [43m[30m WARN [39m[49m Using [36mpostcss.config.js[39m is not supported together with 
+Nuxt. Use [36moptions.postcss[39m instead. You can read more in 
+[36mhttps://nuxt.com/docs/4.x/api/nuxt-config#postcss[39m.
+
